@@ -53,11 +53,11 @@ em {
 }
 
 .gm-site {
-  min-height: 900svh;
+  min-height: 700svh;
   background: #040506;
 }
 
-.gm-story { position: relative; height: 900svh; }
+.gm-story { position: relative; height: 700svh; }
 .gm-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; }
 
 .gm-neural-atmosphere {

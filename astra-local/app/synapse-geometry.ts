@@ -33,8 +33,8 @@ function addParticle(
 }
 
 function tubePoint(fiber: Fiber, t: number, random: () => number) {
-  const point = fiber.curve.getPoint(t);
-  const tangent = fiber.curve.getTangent(t).normalize();
+  const point = fiber.curve.getPointAt(t);
+  const tangent = fiber.curve.getTangentAt(t).normalize();
   const side = new Vector3(-tangent.y, tangent.x, 0).normalize();
   if (side.lengthSq() < 0.01) side.set(1, 0, 0);
   const up = tangent.clone().cross(side).normalize();
@@ -160,8 +160,8 @@ export function buildSynapseParticles(count: number, random: () => number): Syna
   // They share the local arrival time so the impulse follows the branching anatomy.
   active.slice(0, -1).forEach((fiber, index) => {
     for (const t of [0.27, 0.53, 0.76]) {
-      const start = fiber.curve.getPoint(t);
-      const tangent = fiber.curve.getTangent(t).normalize();
+      const start = fiber.curve.getPointAt(t);
+      const tangent = fiber.curve.getTangentAt(t).normalize();
       const lateral = new Vector3(-tangent.y, tangent.x, (random() - 0.5) * 0.9).normalize();
       const direction = tangent.multiplyScalar(0.30)
         .addScaledVector(lateral, (index + Math.round(t * 10)) % 2 ? 1 : -1).normalize();
@@ -249,26 +249,17 @@ export function buildSynapseParticles(count: number, random: () => number): Syna
       fiber.signalStart + (fiber.signalEnd - fiber.signalStart) * t);
   }
 
-  const gapEnd = Math.floor(total * 0.97);
-  // Short hops at selected junctions make travel between cells visible.
-  const junctions = [active[0], active[2], active[6], active[7]];
-  while (particles.length < gapEnd) {
-    const fiber = junctions[(particles.length - branchEnd) % junctions.length];
-    const t = 0.68 + random() * 0.30;
-    const point = tubePoint(fiber, t, random).point;
-    const release = fiber.curve.getPoint(Math.min(1, t + 0.025));
-    addParticle(particles, point, 2, 0.22 + random() * 0.2,
-      fiber.signalStart + (fiber.signalEnd - fiber.signalStart) * t, release);
-  }
-
+  // Distribute remaining stars along whole paths instead of bright clusters at junctions.
   while (particles.length < total) {
+    let cursor = random() * activeTotalWeight;
+    let fiber = active[active.length - 1];
+    for (const candidate of active) {
+      cursor -= candidate.weight;
+      if (cursor <= 0) { fiber = candidate; break; }
+    }
     const t = random();
-    const fiber = active[active.length - 1];
-    const point = fiber.curve.getPoint(t);
-    point.x += (random() - 0.5) * 0.019;
-    point.y += (random() - 0.5) * 0.024;
-    point.z += (random() - 0.5) * 0.019;
-    addParticle(particles, point, 3, 0.48 + random() * 0.35,
+    const sample = tubePoint(fiber, t, random);
+    addParticle(particles, sample.point, 0, sample.light,
       fiber.signalStart + (fiber.signalEnd - fiber.signalStart) * t);
   }
 

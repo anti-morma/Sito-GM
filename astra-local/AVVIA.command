@@ -28,4 +28,4 @@ echo ""
 echo "Avvio del server..."
 echo "Apri nel browser: http://localhost:3000"
 echo "========================================"
-npm run dev -- --host 127.0.0.1
+npm run dev -- -H 127.0.0.1

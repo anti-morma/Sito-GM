@@ -4,10 +4,16 @@ import { useEffect, useRef } from 'react';
 import {
   AdditiveBlending,
   BufferGeometry,
+  ClampToEdgeWrapping,
+  DataTexture,
+  DynamicDrawUsage,
   Float32BufferAttribute,
+  FloatType,
   Group,
+  NearestFilter,
   PerspectiveCamera,
   Points,
+  RGBAFormat,
   Scene,
   ShaderMaterial,
   Vector2,
@@ -56,6 +62,8 @@ const vertexShader = `
  uniform float uReduced;
  uniform float uScroll;
  uniform float uVideoReady;
+ uniform sampler2D uSpringField;
+ uniform vec2 uFieldSize;
  varying vec3 vColor;
  varying float vLight;
  varying float vStar;
@@ -75,7 +83,7 @@ const vertexShader = `
    float gather = smoothstep(0.28, 0.42, uScroll);
    float zoomIn = smoothstep(0.47, 0.56, uScroll);
    float synapseMix = smoothstep(0.48, 0.58, uScroll);
-   float projectMix = smoothstep(0.745, 0.770, uScroll);
+   float projectMix = smoothstep(0.775, 0.815, uScroll);
    float brainScale = min(1.18, uAspect * 0.65);
    vec3 brain = aBrain * brainScale;
    vec2 center = vec2(-0.235 * uAspect, 0.015);
@@ -90,29 +98,26 @@ const vertexShader = `
    if (aKind > 1.5 && aKind < 2.5) {
      synapse = mix(synapse, aRelease * synapseScale, releaseProgress);
    }
-   float finalFrame = smoothstep(0.89, 0.975, uScroll);
    // A small scroll-driven camera arc reveals the depth of the same particle volume.
    float neuralTurn = (smoothstep(0.54, 0.75, uScroll) - 0.5) * 0.30 * motion;
    synapse.xz = mat2(cos(neuralTurn), -sin(neuralTurn), sin(neuralTurn), cos(neuralTurn)) * synapse.xz;
-   vec2 finalOffset = mix(vec2(-uAspect * 0.225, -0.045), vec2(0.0, 0.15), uCompact);
-   float rise = smoothstep(0.86 + aPlan.w * 0.045, 0.935 + aPlan.w * 0.06, uScroll);
-   vec3 architecture = mix(aPlan.xyz, aBuilding.xyz, rise);
-   float viewTilt = smoothstep(0.84, 0.975, uScroll) * 0.94;
-   float viewYaw = smoothstep(0.84, 0.975, uScroll) * 0.15;
-   architecture.xz = mat2(cos(viewYaw), -sin(viewYaw), sin(viewYaw), cos(viewYaw)) * architecture.xz;
-   vec3 project = vec3(architecture.x,
-     architecture.y * sin(viewTilt) - architecture.z * cos(viewTilt),
-     architecture.y * cos(viewTilt) + architecture.z * sin(viewTilt));
-   float overviewScale = min(0.88, uAspect * 0.62);
-   float builtScale = mix(min(0.82, uAspect * 0.36), uAspect * 0.60, uCompact);
-   project *= mix(overviewScale, builtScale, finalFrame);
-   project.xy += finalOffset * finalFrame;
-   float assemble = smoothstep(0.745 + aPhase * 0.0006, 0.770 + aPhase * 0.0006, uScroll);
+   // Match the CSS video rectangle exactly, with no tilt during the crossfade.
+   float videoSettle = smoothstep(0.87, 0.94, uScroll);
+   float frameWidth = mix(0.80 - videoSettle * 0.28, 0.92, uCompact);
+   vec3 project = vec3(aPlan.x, -aPlan.z, 0.0) * uAspect * frameWidth;
+   project.xy += vec2(mix(-uAspect * videoSettle * 0.20, 0.0, uCompact), 0.16 * uCompact);
+   // Scatter first, then gather each group of stars into the progressive drawing.
+   float scatter = smoothstep(0.745, 0.775, uScroll) * motion;
+   vec3 loose = vec3(aOrigin.x * uAspect, aOrigin.y - 0.18, aOrigin.z * 0.35);
+   loose.xy += vec2(sin(aPhase * 2.7), cos(aPhase * 1.9)) * 0.13 * motion;
+   synapse = mix(synapse, loose, scatter);
+   float assemble = smoothstep(0.775 + aDrawOrder * 0.037, 0.797 + aDrawOrder * 0.037, uScroll);
    synapse = mix(synapse, project, assemble);
    vec3 logo = position * uLogoScale;
-   logo.y += smoothstep(0.08, 0.20, uScroll) * 0.75 * travel;
+   // The story spans six viewport heights: respond one-to-one from the first scroll pixel.
+   logo.y += uScroll * 6.0 * travel;
    vec3 dispersed = vec3(aOrigin.x * uAspect, aOrigin.y + 0.15, aOrigin.z * 0.35);
-   vec3 target = mix(logo, dispersed, smoothstep(0.08, 0.20, uScroll) * travel);
+   vec3 target = mix(logo, dispersed, smoothstep(0.0, 0.20, uScroll) * travel);
    target = mix(target, brain, gather);
    target = mix(target, synapse, synapseMix);
    if (uReduced > 0.5 && uScroll < 0.025) target = position * uLogoScale;
@@ -152,7 +157,25 @@ const vertexShader = `
    vec4 mv = aFree > 0.5
      ? viewMatrix * vec4(p, 1.0)
      : modelViewMatrix * vec4(p, 1.0);
-   vec2 displacement = aOffset * (1.0 - aFree) * (1.0 - smoothstep(0.0, 0.12, uScroll));
+   // The spring texture stores screen-space offsets; sample it after the
+   // complete morph and rotation so it follows the particles actually drawn.
+   vec2 screenPoint = mv.xy * (2.0 / max(0.1, -mv.z));
+   vec2 uv = vec2((screenPoint.x + uAspect * 0.5 + 0.1) / (uAspect + 0.2),
+     (screenPoint.y + 0.6) / 1.2);
+   vec2 fieldOffset = vec2(0.0);
+   if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
+     vec2 grid = clamp(uv * uFieldSize - 0.5, vec2(0.0), uFieldSize - 1.0);
+     vec2 base = floor(grid);
+     vec2 blend = grid - base;
+     vec2 a = texture2D(uSpringField, (base + vec2(0.5, 0.5)) / uFieldSize).xy;
+     vec2 b = texture2D(uSpringField, (base + vec2(1.5, 0.5)) / uFieldSize).xy;
+     vec2 c = texture2D(uSpringField, (base + vec2(0.5, 1.5)) / uFieldSize).xy;
+     vec2 d = texture2D(uSpringField, (base + vec2(1.5, 1.5)) / uFieldSize).xy;
+     fieldOffset = mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y);
+   }
+   float fieldBlend = smoothstep(0.020, 0.025, uScroll);
+   vec2 displacement = mix(aOffset, fieldOffset, fieldBlend) * (1.0 - aFree)
+     * (1.0 - smoothstep(0.83, 0.84, uScroll) * uVideoReady);
    float influence = min(length(displacement) * 3.0, 0.2);
    mv.xy += displacement * (-mv.z / 2.0);
 
@@ -188,11 +211,11 @@ const vertexShader = `
    vLight = aLight * mix(shimmer, 1.0, uReduced) + influence * 0.12;
    vLight = mix(vLight, 0.035 + aBrainShade * aBrainShade * 1.6, anatomy);
    vLight *= mix(1.0, clamp(pow(brainScale / 1.18, 0.8), 0.30, 1.0), anatomy);
-   float shellLight = (0.12 + 0.38 * aShade) * mix(0.38, 1.0, depthLayer);
+   float shellLight = (0.26 + 0.10 * aShade) * mix(0.72, 1.0, depthLayer);
    shellLight += aKind > 0.5 && aKind < 1.5 ? 0.06 : 0.0;
-   shellLight += aKind > 1.5 ? 0.12 : 0.0;
+
    if (aKind > 1.5 && aKind < 2.5) shellLight *= mix(0.18, 0.65, reached);
-   shellLight *= mix(1.0, mix(0.55, 0.85, reached), activeRoute);
+
    vLight = mix(vLight, shellLight, synapseMix * (1.0 - aFree));
    vLight *= mix(1.0, 0.24, gather * aFree);
    float pulseStrength = aKind > 0.5 && aKind < 1.5 ? 0.28 : 0.46;
@@ -201,30 +224,24 @@ const vertexShader = `
    vLight *= mix(1.0, synapseDensity, synapseMix * (1.0 - aFree));
    vLight *= mix(1.0, 0.42, step(2.5, aKind) * synapseMix * (1.0 - aFree));
    vLight *= 1.0 - min(aDetail, 1.0) * (1.0 - gather);
-   vec3 fiberColor = mix(vec3(0.055, 0.18, 0.48), vec3(0.24, 0.74, 1.0), aShade);
+   vec3 fiberColor = mix(vec3(0.055, 0.18, 0.48), vec3(0.24, 0.74, 1.0), 0.55 + aShade * 0.25);
    vec3 somaColor = mix(vec3(0.12, 0.25, 0.54), vec3(0.37, 0.72, 0.94), aShade);
-   vec3 gapColor = vec3(0.46, 0.87, 1.0);
-   vec3 outputColor = vec3(0.63, 0.80, 1.0);
+   vec3 gapColor = fiberColor;
+   vec3 outputColor = fiberColor;
    vec3 synapseColor = aKind < 0.5 ? fiberColor :
      (aKind < 1.5 ? somaColor : (aKind < 2.5 ? gapColor : outputColor));
-   synapseColor = mix(synapseColor, vec3(1.0, 0.67, 0.30), pulse * 0.82 + lit * 0.04);
    vColor = mix(aColor, synapseColor, synapseMix * (1.0 - aFree));
-   vStar = max(aFree, synapseMix * (pulse * 0.36 + (aKind > 1.5 && aKind < 2.5 ? 0.22 : 0.0)));
+   vStar = max(aFree, synapseMix * (pulse * 0.36));
    vSparkle = aFree * smoothstep(22.0, 34.0, aSize);
    vSynapse = synapseMix * (1.0 - aFree);
    vNeuralFocus = smoothstep(0.02, 0.28, abs(aSynapse.z - 0.07));
    vPulse = pulse;
    float constructed = projectMix * (1.0 - aFree);
    vConstruction = constructed;
-   float blueprintLight = 0.12 + aBuilding.w * 0.46;
-   if (aBuildingKind > 0.5 && aBuildingKind < 1.5) blueprintLight *= mix(0.16, 0.85, rise);
-   if (aBuildingKind > 2.5 && aBuildingKind < 3.5) blueprintLight *= mix(0.20, 0.55, rise);
-   vec3 architecturalColor = mix(vec3(0.30, 0.63, 0.94), vec3(0.91, 0.86, 0.73), rise);
-   if (aBuildingKind < 0.5) architecturalColor = vec3(0.22, 0.48, 0.72);
-   if (aBuildingKind > 3.5) architecturalColor = vec3(0.16, 0.66, 0.81);
+   float blueprintLight = (0.20 + aBuilding.w * 0.42) * clamp(uAspect * frameWidth / 1.4, 0.28, 1.0);
+   vec3 architecturalColor = vec3(0.94, 0.97, 1.0);
    vLight = mix(vLight, blueprintLight, constructed);
-   float drawing = smoothstep(aDrawOrder - 0.012, aDrawOrder + 0.012, clamp((uScroll - 0.775) / 0.060, 0.0, 1.0));
-   vLight *= mix(1.0, drawing, constructed);
+   // Unassembled particles remain visible: the drawing is made by their arrival.
    vColor = mix(vColor, architecturalColor, constructed);
    vNeuralFocus *= 1.0 - constructed;
    vPulse *= 1.0 - constructed;
@@ -270,16 +287,11 @@ function getAmbientStarCount(width: number, height: number) {
   return Math.round(count * 0.77);
 }
 
-export default function AstraField({ paused, scrollProgress = 0, videoReady = false }: { paused: boolean; scrollProgress?: number; videoReady?: boolean }) {
+export default function AstraField({ scrollProgress = 0, videoReady = false }: { scrollProgress?: number; videoReady?: boolean }) {
   const hostRef = useRef<HTMLButtonElement>(null);
-  const pausedRef = useRef(paused);
   const scrollRef = useRef(scrollProgress);
   const videoReadyRef = useRef(videoReady);
   useEffect(() => { videoReadyRef.current = videoReady; }, [videoReady]);
-
-  useEffect(() => {
-    pausedRef.current = paused;
-  }, [paused]);
 
   useEffect(() => {
     scrollRef.current = scrollProgress;
@@ -435,9 +447,26 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
     }
 
     const offsets = new Float32Array(totalCount * 2);
-    const velocities = new Float32Array(totalCount * 2);
+    const velocities = new Float32Array(logoPoints.length * 2);
     const offsetAttribute = new Float32BufferAttribute(offsets, 2);
+    offsetAttribute.setUsage(DynamicDrawUsage);
     geometry.setAttribute('aOffset', offsetAttribute);
+
+    let fieldWidth = 64;
+    const fieldHeight = 40;
+    let fieldData = new Float32Array(fieldWidth * fieldHeight * 4);
+    let fieldVelocity = new Float32Array(fieldWidth * fieldHeight * 2);
+    const makeFieldTexture = (data: Float32Array, width: number) => {
+      const texture = new DataTexture(data, width, fieldHeight, RGBAFormat, FloatType);
+      texture.magFilter = NearestFilter;
+      texture.minFilter = NearestFilter;
+      texture.wrapS = ClampToEdgeWrapping;
+      texture.wrapT = ClampToEdgeWrapping;
+      texture.generateMipmaps = false;
+      texture.needsUpdate = true;
+      return texture;
+    };
+    let springTexture = makeFieldTexture(fieldData, fieldWidth);
 
     const material = new ShaderMaterial({
       vertexShader,
@@ -452,6 +481,8 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
         uReduced: { value: media.matches ? 1 : 0 },
         uScroll: { value: 0 },
         uVideoReady: { value: 0 },
+        uSpringField: { value: springTexture },
+        uFieldSize: { value: new Vector2(fieldWidth, fieldHeight) },
       },
       transparent: true,
       depthWrite: false,
@@ -476,14 +507,26 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
     let vy = 0;
     let lastMove = 0;
     let pointerActive = false;
+    let springsMoving = false;
+    let fieldMoving = false;
     const pointer = new Vector2(-10, -10);
     const smoothPointer = new Vector2(-10, -10);
     const previousPointer = new Vector2(-10, -10);
+    const interactionAvailable = () =>
+      !(videoReadyRef.current && scrollRef.current >= 0.84);
 
     const locate = (event: PointerEvent) => {
+      const bounds = host.getBoundingClientRect();
+      if (
+        event.clientX < bounds.left || event.clientX > bounds.right ||
+        event.clientY < bounds.top || event.clientY > bounds.bottom
+      ) {
+        pointerActive = false;
+        return;
+      }
       pointer.set(
-        (event.clientX / Math.max(1, window.innerWidth) - 0.5) * camera.aspect,
-        0.5 - event.clientY / Math.max(1, window.innerHeight),
+        ((event.clientX - bounds.left) / Math.max(1, bounds.width) - 0.5) * camera.aspect,
+        0.5 - (event.clientY - bounds.top) / Math.max(1, bounds.height),
       );
       if (!pointerActive) {
         smoothPointer.copy(pointer);
@@ -502,6 +545,17 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
       renderer.setSize(width, height);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      const nextFieldWidth = Math.min(96, Math.max(32, Math.round((camera.aspect + 0.2) * 40)));
+      if (nextFieldWidth !== fieldWidth) {
+        springTexture.dispose();
+        fieldWidth = nextFieldWidth;
+        fieldData = new Float32Array(fieldWidth * fieldHeight * 4);
+        fieldVelocity = new Float32Array(fieldWidth * fieldHeight * 2);
+        springTexture = makeFieldTexture(fieldData, fieldWidth);
+        material.uniforms.uSpringField.value = springTexture;
+        material.uniforms.uFieldSize.value.set(fieldWidth, fieldHeight);
+        fieldMoving = false;
+      }
       material.uniforms.uAspect.value = camera.aspect;
       material.uniforms.uCompact.value = width <= 600 ? 1 : 0;
       material.uniforms.uLogoScale.value = Math.min(
@@ -523,7 +577,7 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
       last = now;
       if (document.hidden) return;
 
-      if (!pausedRef.current) time += dt * ANIMATION_SPEED;
+      time += dt * ANIMATION_SPEED;
       // Once the visitor enters the story, returning to the top must restore
       // the completed monogram even if the opening assembly was interrupted.
       if (scrollRef.current > 0.025) time = Math.max(time, 10);
@@ -531,10 +585,21 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
       material.uniforms.uReduced.value = media.matches ? 1 : 0;
       material.uniforms.uScroll.value = scrollRef.current;
       material.uniforms.uVideoReady.value = videoReadyRef.current ? 1 : 0;
+      if (!interactionAvailable()) {
+        pointerActive = false;
+        if (dragging) {
+          dragging = false;
+          if (pointerId !== null && host.hasPointerCapture(pointerId))
+            host.releasePointerCapture(pointerId);
+          pointerId = null;
+          host.dataset.dragging = 'false';
+          vx = vy = 0;
+        }
+      }
       const damping = 1 - Math.exp(-14 * dt);
       smoothPointer.lerp(pointer, damping);
 
-      if (!dragging && !pausedRef.current) {
+      if (!dragging) {
         targetY += vx * dt;
         targetX += vy * dt;
         vx *= Math.exp(-3.2 * dt);
@@ -543,14 +608,21 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
         targetX += -targetX * returnDamping;
         targetY += -targetY * returnDamping;
       }
-      targetX = Math.max(-1.2, Math.min(1.2, targetX));
-      targetY = Math.max(-2.4, Math.min(2.4, targetY));
+      const videoSettle = videoReadyRef.current
+        ? Math.max(0, Math.min(1, (scrollRef.current - 0.83) / 0.01))
+        : 0;
+      const xLimit = 1.20 * (1 - videoSettle);
+      const yLimit = 2.40 * (1 - videoSettle);
+      targetX = Math.max(-xLimit, Math.min(xLimit, targetX));
+      targetY = Math.max(-yLimit, Math.min(yLimit, targetY));
 
       const follow = media.matches ? 1 : 1 - Math.exp(-10 * dt);
-      const interactive = Math.max(0, 1 - scrollRef.current / 0.12);
       const idle = media.matches ? 0 : Math.sin(time * 0.32) * 0.028;
-      galaxy.rotation.y += ((targetY + idle) * interactive - galaxy.rotation.y) * follow;
-      galaxy.rotation.x += (targetX * interactive - galaxy.rotation.x) * follow;
+      galaxy.rotation.y += ((targetY + idle * (1 - videoSettle)) - galaxy.rotation.y) * follow;
+      galaxy.rotation.x += (targetX - galaxy.rotation.x) * follow;
+      // Complete the return even on a fast scroll into the aligned video frame.
+      galaxy.rotation.x *= 1 - videoSettle;
+      galaxy.rotation.y *= 1 - videoSettle;
       galaxy.updateMatrixWorld();
 
       const matrix = galaxy.matrixWorld.elements;
@@ -558,58 +630,127 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
       const my = (smoothPointer.y - previousPointer.y) / Math.max(dt, 0.001);
       const speed = Math.hypot(mx, my);
       const limit = Math.min(1, 1.5 / Math.max(speed, 0.001));
-      const strength = media.matches ? 0.25 : 1;
+      const strength = (media.matches ? 0.25 : 1) * (1 - videoSettle);
       const scale = material.uniforms.uLogoScale.value;
 
-      for (let i = 0; i < logoPoints.length; i++) {
-        const j = i * 2;
-        const k = i * 3;
-        const wx = positions[k] * scale;
-        const wy = positions[k + 1] * scale;
-        const wz = positions[k + 2] * scale;
-        const rx = matrix[0] * wx + matrix[4] * wy + matrix[8] * wz;
-        const ry = matrix[1] * wx + matrix[5] * wy + matrix[9] * wz;
-        const rz = matrix[2] * wx + matrix[6] * wy + matrix[10] * wz;
-        const depth = 2 / (2 - rz);
-        const dx = rx * depth + offsets[j] - smoothPointer.x;
-        const dy = ry * depth + offsets[j + 1] - smoothPointer.y;
-        const radius = Math.hypot(dx, dy);
-        const weight =
-          pointerActive && scrollRef.current < 0.02 && !pausedRef.current && (time > 4 || media.matches)
-            ? Math.pow(Math.max(0, 1 - radius / 0.17), 2) * strength
-            : 0;
-        const radial = dragging ? -18 : 0.6 / Math.max(radius, 0.008);
-        const fx = (mx * limit * 14 + dx * radial) * weight;
-        const fy = (my * limit * 14 + dy * radial) * weight;
+      // Keep the original GM particles on their individual CPU springs.
+      const scroll = scrollRef.current;
+      let gmDirty = false;
+      if (scroll >= 0.025 && springsMoving) {
+        offsets.fill(0, 0, logoPoints.length * 2);
+        velocities.fill(0);
+        springsMoving = false;
+        gmDirty = true;
+      }
+      if (scroll < 0.025 && (pointerActive || springsMoving)) {
+        let nextSpringsMoving = false;
         const steps = Math.max(1, Math.ceil(dt * 120));
         const stepTime = dt / steps;
-
-        for (let step = 0; step < steps; step++) {
-          velocities[j] +=
-            (fx - offsets[j] * 32 - velocities[j] * 8) * stepTime;
-          velocities[j + 1] +=
-            (fy - offsets[j + 1] * 32 - velocities[j + 1] * 8) * stepTime;
-          offsets[j] += velocities[j] * stepTime;
-          offsets[j + 1] += velocities[j + 1] * stepTime;
+        for (let i = 0; i < logoPoints.length; i++) {
+          const j = i * 2;
+          const k = i * 3;
+          const wx = positions[k] * scale;
+          const wy = positions[k + 1] * scale;
+          const wz = positions[k + 2] * scale;
+          const rx = matrix[0] * wx + matrix[4] * wy + matrix[8] * wz;
+          const ry = matrix[1] * wx + matrix[5] * wy + matrix[9] * wz;
+          const rz = matrix[2] * wx + matrix[6] * wy + matrix[10] * wz;
+          const depth = 2 / (2 - rz);
+          const dx = rx * depth + offsets[j] - smoothPointer.x;
+          const dy = ry * depth + offsets[j + 1] - smoothPointer.y;
+          const radius = Math.hypot(dx, dy);
+          const weight = pointerActive && scroll < 0.02 && (time > 4 || media.matches)
+            ? Math.pow(Math.max(0, 1 - radius / 0.17), 2) * strength
+            : 0;
+          const radial = dragging ? -18 : 0.6 / Math.max(radius, 0.008);
+          const fx = (mx * limit * 14 + dx * radial) * weight;
+          const fy = (my * limit * 14 + dy * radial) * weight;
+          for (let step = 0; step < steps; step++) {
+            velocities[j] += (fx - offsets[j] * 32 - velocities[j] * 8) * stepTime;
+            velocities[j + 1] += (fy - offsets[j + 1] * 32 - velocities[j + 1] * 8) * stepTime;
+            offsets[j] += velocities[j] * stepTime;
+            offsets[j + 1] += velocities[j + 1] * stepTime;
+          }
+          const excursion = Math.hypot(offsets[j], offsets[j + 1]);
+          if (excursion > 0.085) {
+            offsets[j] *= 0.085 / excursion;
+            offsets[j + 1] *= 0.085 / excursion;
+            velocities[j] *= 0.8;
+            velocities[j + 1] *= 0.8;
+          }
+          if (Math.abs(offsets[j]) + Math.abs(offsets[j + 1]) +
+            Math.abs(velocities[j]) + Math.abs(velocities[j + 1]) > 0.0001) {
+            nextSpringsMoving = true;
+          } else {
+            offsets[j] = offsets[j + 1] = velocities[j] = velocities[j + 1] = 0;
+          }
         }
-
-        const excursion = Math.hypot(offsets[j], offsets[j + 1]);
-        if (excursion > 0.085) {
-          offsets[j] *= 0.085 / excursion;
-          offsets[j + 1] *= 0.085 / excursion;
-          velocities[j] *= 0.8;
-          velocities[j + 1] *= 0.8;
-        }
+        gmDirty = true;
+        springsMoving = nextSpringsMoving;
+      }
+      if (gmDirty) {
+        offsetAttribute.array.set(offsets.subarray(0, logoPoints.length * 2));
+        offsetAttribute.addUpdateRange(0, logoPoints.length * 2);
+        offsetAttribute.needsUpdate = true;
       }
 
+      // A compact screen-space spring field drives all later constructions.
+      // The shader samples this at each star's current projected position.
+      const fieldForces = pointerActive && interactionAvailable() && scroll >= 0.02;
+      let nextFieldMoving = false;
+      if (fieldForces || fieldMoving) {
+        const steps = Math.max(1, Math.ceil(dt * 120));
+        const stepTime = dt / steps;
+        const fieldStrength = strength;
+        for (let y = 0; y < fieldHeight; y++) {
+          const cellY = ((y + 0.5) / fieldHeight) * 1.2 - 0.6;
+          for (let x = 0; x < fieldWidth; x++) {
+            const cell = y * fieldWidth + x;
+            const j = cell * 2;
+            const k = cell * 4;
+            if (!fieldForces && fieldData[k] === 0 && fieldData[k + 1] === 0 &&
+              fieldVelocity[j] === 0 && fieldVelocity[j + 1] === 0) continue;
+            const cellX = ((x + 0.5) / fieldWidth) * (camera.aspect + 0.2)
+              - camera.aspect * 0.5 - 0.1;
+            const dx = cellX + fieldData[k] - smoothPointer.x;
+            const dy = cellY + fieldData[k + 1] - smoothPointer.y;
+            const radius = Math.hypot(dx, dy);
+            const weight = fieldForces
+              ? Math.pow(Math.max(0, 1 - radius / 0.17), 2) * fieldStrength
+              : 0;
+            const radial = dragging ? -18 : 0.6 / Math.max(radius, 0.008);
+            const fx = (mx * limit * 14 + dx * radial) * weight;
+            const fy = (my * limit * 14 + dy * radial) * weight;
+            for (let step = 0; step < steps; step++) {
+              fieldVelocity[j] += (fx - fieldData[k] * 32 - fieldVelocity[j] * 8) * stepTime;
+              fieldVelocity[j + 1] += (fy - fieldData[k + 1] * 32 - fieldVelocity[j + 1] * 8) * stepTime;
+              fieldData[k] += fieldVelocity[j] * stepTime;
+              fieldData[k + 1] += fieldVelocity[j + 1] * stepTime;
+            }
+            const excursion = Math.hypot(fieldData[k], fieldData[k + 1]);
+            if (excursion > 0.085) {
+              fieldData[k] *= 0.085 / excursion;
+              fieldData[k + 1] *= 0.085 / excursion;
+              fieldVelocity[j] *= 0.8;
+              fieldVelocity[j + 1] *= 0.8;
+            }
+            if (Math.abs(fieldData[k]) + Math.abs(fieldData[k + 1]) +
+              Math.abs(fieldVelocity[j]) + Math.abs(fieldVelocity[j + 1]) > 0.0001) {
+              nextFieldMoving = true;
+            } else {
+              fieldData[k] = fieldData[k + 1] = fieldVelocity[j] = fieldVelocity[j + 1] = 0;
+            }
+          }
+        }
+        springTexture.needsUpdate = true;
+      }
+      fieldMoving = nextFieldMoving;
       previousPointer.copy(smoothPointer);
-      offsetAttribute.copyArray(offsets);
-      offsetAttribute.needsUpdate = true;
       renderer.render(scene, camera);
     };
 
     const down = (event: PointerEvent) => {
-      if (scrollRef.current > 0.02 || event.pointerType === 'touch' || pausedRef.current) return;
+      if (!interactionAvailable() || event.pointerType === 'touch') return;
       if (!event.isPrimary || event.button !== 0 || pointerId !== null) return;
       locate(event);
       dragging = true;
@@ -623,7 +764,7 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
     };
 
     const move = (event: PointerEvent) => {
-      if (scrollRef.current > 0.02) return;
+      if (!interactionAvailable() || event.pointerType === 'touch') return;
       if (!event.isPrimary || (pointerId !== null && event.pointerId !== pointerId))
         return;
       locate(event);
@@ -664,7 +805,7 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
     };
 
     const key = (event: KeyboardEvent) => {
-      if (scrollRef.current > 0.02 || !['ArrowLeft', 'ArrowRight', 'r', 'R'].includes(event.key))
+      if (!interactionAvailable() || !['ArrowLeft', 'ArrowRight', 'r', 'R'].includes(event.key))
         return;
       event.preventDefault();
       vx = vy = 0;
@@ -673,6 +814,14 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
         targetX = targetY = 0;
         offsets.fill(0);
         velocities.fill(0);
+        springsMoving = false;
+        offsetAttribute.array.fill(0, 0, logoPoints.length * 2);
+        offsetAttribute.addUpdateRange(0, logoPoints.length * 2);
+        offsetAttribute.needsUpdate = true;
+        fieldData.fill(0);
+        fieldVelocity.fill(0);
+        fieldMoving = false;
+        springTexture.needsUpdate = true;
       }
       if (event.key === 'ArrowRight') targetY += 0.06;
       if (event.key === 'ArrowLeft') targetY -= 0.06;
@@ -710,6 +859,7 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
       renderer.domElement.removeEventListener('webglcontextlost', contextLost);
       geometry.dispose();
       material.dispose();
+      springTexture.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
@@ -720,7 +870,7 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
       ref={hostRef}
       className="starfield"
       type="button"
-      aria-label="Stelle GM interattive. Scorri per trasformarle in un cervello e nelle sue connessioni. Sul logo: trascina o usa le frecce laterali per ruotare, R per ripristinare."
+      aria-label="Costruzioni di particelle GM, cervello, connessioni neurali e progetto interattive. Trascina o usa le frecce laterali per ruotarle, R per ripristinare. Scorri per seguire la trasformazione."
       data-dragging="false"
     >
       <span className="webgl-error">
@@ -730,3 +880,4 @@ export default function AstraField({ paused, scrollProgress = 0, videoReady = fa
     </button>
   );
 }
+

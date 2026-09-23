@@ -1,6 +1,5 @@
 'use client';
 
-import { Pause, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AstraField from './astra-field';
 import ConstructionVideo from './construction-video';
@@ -20,7 +19,6 @@ const slide = (enter: number, exit: number, distance = 72) =>
   `translateY(${(1 - enter) * distance - exit * distance}px)`;
 
 export default function Home() {
-  const [paused, setPaused] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
 
@@ -38,7 +36,7 @@ export default function Home() {
     return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); if (frame) cancelAnimationFrame(frame); };
   }, []);
 
-  const gmExit = smoothStep((scrollProgress - 0.08) / 0.12);
+  const gmExit = smoothStep(scrollProgress / 0.20);
   const product = windowProgress(scrollProgress, 0.10, 0.14, 0.27, 0.32);
   const idea = windowProgress(scrollProgress, 0.34, 0.42, 0.47, 0.53);
   const firstCue = windowProgress(scrollProgress, 0.58, 0.61, 0.65, 0.68);
@@ -47,16 +45,16 @@ export default function Home() {
   const finalEnter = smoothStep((scrollProgress - 0.91) / 0.07);
   const videoEnter = smoothStep((scrollProgress - 0.84) / 0.025);
   const videoSettle = smoothStep((scrollProgress - 0.87) / 0.07);
-  const videoProgress = Math.max(0, Math.min(1, (scrollProgress - 0.855) / 0.145));
+  const videoProgress = Math.max(0, Math.min(1, (scrollProgress - 0.865) / 0.135));
 
   return (
     <main className="gm-site">
       <section className="gm-story" aria-label="Dalle idee al sito su misura">
         <div className="gm-stage">
-          <AstraField paused={paused} scrollProgress={scrollProgress} videoReady={videoReady} />
+          <AstraField scrollProgress={scrollProgress} videoReady={videoReady} />
           <div className="gm-neural-atmosphere" aria-hidden="true" style={{ opacity: smoothStep((scrollProgress - 0.48) / 0.10), backgroundPosition: `${50 - finalEnter * 22}% 50%` }} />
 
-          <div className="gm-intro" aria-hidden={gmExit > 0.99} style={{ opacity: 1 - gmExit, transform: `translateY(${-gmExit * 72}px)` }}>
+          <div className="gm-intro" aria-hidden={gmExit > 0.99} style={{ opacity: 1 - gmExit, transform: `translateY(${-scrollProgress * 600}svh)` }}>
             <span className="gm-status">DESIGN DIGITALE PER L’OSPITALITÀ</span>
           </div>
           <div className="gm-hero-side" aria-hidden={gmExit > 0.99} style={{ opacity: 1 - gmExit }}>
@@ -93,10 +91,7 @@ export default function Home() {
             <p>E le trasformiamo in un sito su misura.</p>
           </div>
 
-          <button className="gm-motion" type="button" onClick={() => setPaused(!paused)} aria-label={paused ? 'Riprendi animazioni' : 'Metti in pausa le animazioni'} aria-pressed={paused}>
-            {paused ? <Play size={14} /> : <Pause size={14} />}
-            <span>{paused ? 'Riprendi' : 'Pausa'}</span>
-          </button>
+
         </div>
       </section>
     </main>
