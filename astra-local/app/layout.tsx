@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Cormorant_Garamond, Instrument_Sans } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 export const metadata: Metadata = {
   icons: { icon: '/favicon.svg' },
@@ -8,18 +8,19 @@ export const metadata: Metadata = {
     'Siti web ed esperienze digitali su misura: strategia, web design, sviluppo, UX, 3D, motion e AI per far percepire il tuo progetto per ciò che vale.',
 };
 // Hero typography: a clean contemporary sans against an editorial italic serif.
-const heroSans = Instrument_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500'],
+// Self-hosted (latin subset, OFL) so the build never depends on Google Fonts:
+// a failed download there silently swaps in a fallback and shifts the titles.
+const heroSans = localFont({
+  src: [{ path: './fonts/instrument-sans-latin.woff2', weight: '400 500', style: 'normal' }],
   variable: '--font-hero-sans',
   display: 'swap',
+  fallback: ['Arial', 'sans-serif'],
 });
-const heroSerif = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['500'],
-  style: ['italic'],
+const heroSerif = localFont({
+  src: [{ path: './fonts/cormorant-garamond-500-italic-latin.woff2', weight: '500', style: 'italic' }],
   variable: '--font-hero-serif',
   display: 'swap',
+  fallback: ['Georgia', 'serif'],
 });
 
 export default function RootLayout({
