@@ -46,15 +46,15 @@ function frame(curve: CatmullRomCurve3, t: number) {
   return { tangent, side, up };
 }
 
-/** Beaded, glassy tube: stars sit on the membrane so edges read brighter. */
+/** Fine tapered fibres with subtle organic variation. */
 function tubeRadius(fiber: Fiber, t: number) {
   const phase = fiber.curve.points[0].x * 41 + fiber.curve.points[0].y * 29;
   const taper = Math.pow(1 - t, 1.35);
   const radius = fiber.radiusEnd + (fiber.radiusStart - fiber.radiusEnd) * taper;
   // Varicosities: soft swellings spaced along the fibre, like the reference beads.
-  const beads = 1 + 0.32 * Math.pow(Math.max(0, Math.sin(t * 46 + phase)), 6)
+  const beads = 1 + 0.22 * Math.pow(Math.max(0, Math.sin(t * 46 + phase)), 6)
     + 0.06 * Math.sin(t * 17 + phase * 0.7);
-  return radius * beads;
+  return radius * beads * 0.69;
 }
 
 function tubePoint(fiber: Fiber, t: number, random: () => number) {
@@ -62,13 +62,15 @@ function tubePoint(fiber: Fiber, t: number, random: () => number) {
   const { side, up } = frame(fiber.curve, t);
   const angle = random() * TAU;
   const normal = side.multiplyScalar(Math.cos(angle)).addScaledVector(up, Math.sin(angle));
-  const radius = tubeRadius(fiber, t) * (0.82 + 0.18 * Math.sqrt(random()));
-  // Glass: silhouette edges and the lit side catch the light, the face stays dark.
+  // A soft, partly filled membrane: halfway between the original glassy
+  // branches and the thinner filaments, without two hard tubular edges.
+  const spread = random();
+  const radius = tubeRadius(fiber, t) * (0.5 * Math.pow(spread, 0.8) + 0.5 * (0.82 + 0.18 * Math.sqrt(spread)));
   const rim = 1 - Math.abs(normal.dot(VIEW));
   const key = Math.max(0, normal.dot(KEY_LIGHT));
   return {
     point: point.addScaledVector(normal, radius),
-    shade: 0.12 + 0.55 * Math.pow(rim, 1.6) + 0.3 * key,
+    shade: 0.26 + 0.275 * Math.pow(rim, 1.6) + 0.27 * key + 0.06 * random(),
   };
 }
 
@@ -100,7 +102,7 @@ function curveThrough(a: Vector3, b: Vector3, bend: number, lift: number, random
 /**
  * A close-up of living neurons after the reference photograph: one large cell in
  * focus at the centre, four neighbours receding into soft focus at the corners,
- * thick translucent dendrites linking them and warm light travelling along them.
+ * fine branching dendrites linking them and warm light travelling along them.
  * z > 0 is nearer the camera; the focal plane is z = 0.
  * signal 0..1 is the moment the impulse reaches a star; 2 means never.
  */

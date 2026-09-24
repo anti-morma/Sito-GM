@@ -21,6 +21,7 @@ export type BrainVolume = {
 };
 
 const MID_PLANE = -0.12;
+const DEPTH_SCALE = 1.3;
 const GRID = 160;
 const MIN_X = -0.4, MIN_Y = -0.36, SPAN = 0.8;
 const CELL = SPAN / GRID;
@@ -129,6 +130,23 @@ export function buildBrainVolume(points: BrainPoint[], random: () => number): Br
     inside[y * GRID + x] = hit;
   }
 
+  // Bridge narrow clefts between lobes before inflating the silhouette. Keep
+  // the outer contour, but avoid carrying the image's dark divide through 3D.
+  for (let y = 1; y < GRID - 1; y++) {
+    let previous = -1;
+    for (let x = 0; x < GRID; x++) {
+      if (!inside[y * GRID + x]) continue;
+      if (previous >= 0 && x - previous <= 14) {
+        for (let k = previous + 1; k < x; k++) inside[y * GRID + k] = 1;
+      }
+      previous = x;
+    }
+  }
+  const referenceDistance = new Float32Array(GRID * GRID);
+  for (let i = 0; i < hits.length; i++) referenceDistance[i] = hits[i] ? 0 : 1e6;
+  chamfer(referenceDistance);
+  const referenceGap = sampler(referenceDistance);
+
   // Signed distance to the outline (positive inside), in world units.
   const toOutside = new Float32Array(GRID * GRID);
   const toInside = new Float32Array(GRID * GRID);
@@ -165,7 +183,7 @@ export function buildBrainVolume(points: BrainPoint[], random: () => number): Br
   const field = (x: number, y: number, z: number) => {
     const r = R(x, y);
     const inward = Math.max(0, r - sd(x, y));
-    return Math.hypot(inward, z - MID_PLANE) - r;
+    return Math.hypot(inward, (z - MID_PLANE) / DEPTH_SCALE) - r;
   };
   const H = 0.003;
   const gradient = (x: number, y: number, z: number) => {
@@ -183,7 +201,7 @@ export function buildBrainVolume(points: BrainPoint[], random: () => number): Br
   points.forEach(([x, y], index) => {
     const r = R(x, y);
     const inward = Math.max(0, r - Math.max(0, sd(x, y)));
-    const depth = Math.sqrt(Math.max(0, r * r - inward * inward));
+    const depth = Math.sqrt(Math.max(0, r * r - inward * inward)) * DEPTH_SCALE;
     const [nx, ny, nz] = gradient(x, y, MID_PLANE + depth);
     front.set([MID_PLANE + depth, nx, ny, nz], index * 4);
     far.set([MID_PLANE - depth, nx, ny, -nz], index * 4);
@@ -197,7 +215,7 @@ export function buildBrainVolume(points: BrainPoint[], random: () => number): Br
   while (made < points.length) {
     let x = MIN_X + 0.03 + random() * (SPAN - 0.06);
     let y = MIN_Y + 0.03 + random() * (SPAN - 0.06);
-    let z = MID_PLANE + (random() - 0.5) * 0.5;
+    let z = MID_PLANE + (random() - 0.5) * 0.65;
     for (let step = 0; step < 8; step++) {
       const f = field(x, y, z);
       const [gx, gy, gz] = gradient(x, y, z);
@@ -205,14 +223,16 @@ export function buildBrainVolume(points: BrainPoint[], random: () => number): Br
     }
     if (Math.abs(field(x, y, z)) > 0.002) continue;
     const [nx, ny, nz] = gradient(x, y, z);
-    if (Math.abs(nz) > 0.55) continue;
+    // Include face samples inside reference gaps as well as the entire rounded
+    // edge. This closes the former dark seam on both hemispheres.
+    if (Math.abs(nz) > 0.72 && referenceGap(x, y) < 1.6) continue;
     // Gyri: warped ridged noise, stars gather on the crests, grooves stay dark.
     const w = noise(x * 9, y * 9, z * 9) * 0.9;
     const ridge = Math.abs(noise(x * 24 + w, y * 24 - w, z * 24 + w));
     const gyrus = Math.min(1, Math.max(0, (ridge - 0.04) / 0.3));
     if (random() > 0.12 + 0.88 * gyrus) continue;
     // Towards the faces, blend into the reference shading so there is no seam.
-    const blend = Math.min(1, Math.abs(nz) / 0.55);
+    const blend = Math.min(1, Math.abs(nz) / 0.72) * (referenceGap(x, y) < 1.6 ? 1 : 0.35);
     const value = Math.min(1, Math.max(0.06, (0.1 + 0.8 * gyrus) * (1 - blend) + shadeAt(x, y) * blend));
     rim.set([x, y, z, value, nx, ny, nz], made * 7);
     made++;

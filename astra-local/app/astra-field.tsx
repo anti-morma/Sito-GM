@@ -25,6 +25,7 @@ import brainPoints from './brain-points.json';
 import { buildSynapseParticles } from './synapse-geometry';
 import { buildBlueprintParticles } from './blueprint-geometry';
 import { buildBrainVolume } from './brain-volume';
+import { springStep } from './gesture-spring';
 
 const ANIMATION_SPEED = 1.25;
 const MAX_AMBIENT_STARS = 1386;
@@ -56,6 +57,7 @@ const vertexShader = `
  #define aSignal aMorph.w
  #define aShade aSynapse.w
  uniform float uTime;
+ uniform float uBrainTurn;
  uniform float uDpr;
  uniform float uPixelScale;
  uniform float uLogoScale;
@@ -78,7 +80,7 @@ const vertexShader = `
  varying float vConstruction;
 
  void main() {
-   float t = clamp((uTime - 0.8 - aPhase * 0.12) / 4.8, 0.0, 1.0);
+   float t = clamp((uTime * 1.33 - 0.8 - aPhase * 0.12) / 4.8, 0.0, 1.0);
    float ordered = t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
    ordered = mix(ordered, 1.0, max(uReduced, smoothstep(0.0, 0.025, uScroll)));
    float motion = 1.0 - uReduced;
@@ -97,8 +99,16 @@ const vertexShader = `
    // Front stars stay on the camera ray through their reference position, so
    // the resting view matches the original drawing exactly.
    brainOverview *= (2.0 - brain.z) / (2.0 - aBrainNormal.w * brainScale);
+   mat3 brainRotation = mat3(
+     cos(uBrainTurn), 0.0, -sin(uBrainTurn),
+     0.0, 1.0, 0.0,
+     sin(uBrainTurn), 0.0, cos(uBrainTurn)
+   );
+   vec3 brainPivot = vec3(center, -0.12 * brainScale);
+   vec3 turnedBrain = brainPivot + brainRotation * (vec3(brainOverview, brain.z) - brainPivot);
    vec2 brainCloseup = (aBrain.xy - vec2(0.21, 0.055)) * brainScale * 4.0;
-   brain.xy = mix(brainOverview, brainCloseup, zoomIn);
+   brain.xy = mix(turnedBrain.xy, brainCloseup, zoomIn);
+   brain.z = mix(turnedBrain.z, brain.z, zoomIn);
    brain.y -= (1.0 - smoothstep(0.28, 0.42, uScroll)) * 0.90 * travel;
    float synapseScale = min(0.82, uAspect * 0.70);
    float signalHead = clamp((uScroll - 0.58) / 0.17, 0.0, 1.0) * 1.06;
@@ -201,25 +211,25 @@ const vertexShader = `
    // Opaque-looking brain: hide the surface turned away from the camera.
    float brainShell = step(0.25, dot(aBrainNormal.xyz, aBrainNormal.xyz));
    float brainBack = step(1.5, aDetail) * brainShell;
-   vec3 brainNormal = normalize(mat3(modelViewMatrix) * (aBrainNormal.xyz + vec3(0.0, 0.0, 1e-4)));
+   vec3 brainNormal = normalize(mat3(modelViewMatrix) * brainRotation * (aBrainNormal.xyz + vec3(0.0, 0.0, 1e-4)));
    float facing = dot(brainNormal, normalize(-mv.xyz));
    // Reference stars on the near rim crowd into a seam when seen edge-on: soften
    // them only once rotation turns them towards the camera (never at rest).
-   float rimSeam = smoothstep(0.35, 0.0, abs(aBrainNormal.z)) * smoothstep(0.2, 0.7, facing);
+   float rimSeam = (1.0 - smoothstep(0.0, 0.35, abs(aBrainNormal.z))) * smoothstep(0.2, 0.7, facing);
    // Seen edge-on the near face collapses into a bright line; fade it only while
    // the brain is turned away from its resting pose.
-   float brainTurned = smoothstep(0.02, 0.25, 1.0 - normalize(mat3(modelViewMatrix) * vec3(0.0, 0.0, 1.0)).z);
+   float brainTurned = smoothstep(0.02, 0.25, 1.0 - normalize(mat3(modelViewMatrix) * brainRotation * vec3(0.0, 0.0, 1.0)).z);
    float nearVisible = mix(smoothstep(-0.3, 0.0, facing), smoothstep(-0.05, 0.3, facing), brainTurned);
-   float brainVisible = mix(nearVisible * (1.0 - 0.7 * rimSeam), smoothstep(0.35, 0.6, facing), brainBack);
+   float brainVisible = mix(nearVisible * (1.0 - 0.25 * rimSeam), smoothstep(-0.08, 0.22, facing), brainBack);
    float renderedSize = mix(aSize, 7.5 + aBrainShade * 6.5, anatomy);
    // Neural close-up roles (see NEURAL_KIND): membrane, cell body, warm light, far network.
    float isSoma = step(0.5, aKind) * step(aKind, 1.5);
    float isGlow = step(1.5, aKind) * step(aKind, 2.5);
    float isDistant = step(2.5, aKind);
    // Shallow depth of field: the central cell is sharp, the rest melts into bokeh.
-   float focusBlur = smoothstep(0.05, 0.4, abs(aSynapse.z));
+   float focusBlur = smoothstep(0.125, 0.575, abs(aSynapse.z));
    float synapseSize = mix(mix(mix(7.0, 8.0, isSoma), 12.0, isGlow), 7.5, isDistant);
-   synapseSize *= mix(1.0, 2.1, focusBlur);
+   synapseSize *= mix(1.0, 1.725, focusBlur);
    synapseSize *= clamp(pow(synapseScale / 0.84, 0.2), 0.8, 1.0);
    renderedSize = mix(renderedSize, synapseSize, synapseMix * (1.0 - aFree));
    renderedSize = mix(renderedSize, 6.5, projectMix * (1.0 - aFree));
@@ -415,7 +425,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
       buildingKinds.push(project?.kind ?? 0, project?.draw ?? 0);
       const sourceIndex = i % logoPoints.length;
       const point = ambient ? [0, 0, 0] : logoPoints[sourceIndex];
-      const scatter = ambient ? 0 : random() < 0.28 ? 0.12 : 0.035;
+      const scatter = ambient ? 0 : random() < 0.20 ? 0.075 : 0.022;
       positions.push(
         point[0] + (random() - 0.5) * scatter,
         point[1] + (random() - 0.5) * scatter,
@@ -547,6 +557,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
       fragmentShader,
       uniforms: {
         uTime: { value: 0 },
+        uBrainTurn: { value: 0 },
         uDpr: { value: renderer.getPixelRatio() },
         uPixelScale: { value: 1 },
         uLogoScale: { value: 1 },
@@ -573,11 +584,15 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
     let frame = 0;
     let time = 0;
     let last = 0;
-    const dragging = false; // no drag any more; the spring maths keep their hover branch
+    let dragging = false;
     let targetX = 0;
     let targetY = 0;
     let vx = 0;
     let vy = 0;
+    let targetZ = 0;
+    let vz = 0;
+    let zoomVelocity = 0;
+    let wheelUntil = 0;
     let pointerActive = false;
     let springsMoving = false;
     let fieldMoving = false;
@@ -587,6 +602,10 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
     const pointer = new Vector2(-10, -10);
     const smoothPointer = new Vector2(-10, -10);
     const previousPointer = new Vector2(-10, -10);
+    const gesture = host.querySelector<HTMLDivElement>('.starfield-gesture')!;
+    const contacts = new Map<number, Vector2>();
+    const pivot = new Vector3();
+    const rotatedPivot = new Vector3();
     const interactionAvailable = () =>
       !(videoReadyRef.current && scrollRef.current >= 0.84);
 
@@ -655,6 +674,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
         material.uniforms.uLogoScale.value = Math.max(0.35, Math.min(fullScale, fit) * 0.84);
         heroOffset.set(((textRight + rightEdge) / 2 - 0.5) * camera.aspect, 0.02);
       }
+      material.uniforms.uLogoScale.value *= 1.10;
       material.uniforms.uPixelScale.value = Math.max(
         0.65,
         Math.min(1.3, height / 720),
@@ -682,6 +702,13 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
       // the completed monogram even if the opening assembly was interrupted.
       if (scrollRef.current > 0.025) time = Math.max(time, 10);
       material.uniforms.uTime.value = media.matches ? 10 : time;
+      // One full revolution every 18 seconds, independent of the logo timing.
+      // Pause while the visitor drags; resume from the same orientation.
+      if (media.matches || scrollRef.current < 0.28 || scrollRef.current >= 0.58) {
+        material.uniforms.uBrainTurn.value = 0;
+      } else if (!dragging && scrollRef.current >= 0.36 && scrollRef.current < 0.48) {
+        material.uniforms.uBrainTurn.value = (material.uniforms.uBrainTurn.value + dt * Math.PI * 2 / 18) % (Math.PI * 2);
+      }
       material.uniforms.uReduced.value = media.matches ? 1 : 0;
       material.uniforms.uScroll.value = scrollRef.current;
       material.uniforms.uVideoReady.value = videoReadyRef.current ? 1 : 0;
@@ -689,14 +716,15 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
       const damping = 1 - Math.exp(-14 * dt);
       smoothPointer.lerp(pointer, damping);
 
-      if (!dragging) {
-        targetY += vx * dt;
-        targetX += vy * dt;
-        vx *= Math.exp(-3.2 * dt);
-        vy *= Math.exp(-3.2 * dt);
-        const returnDamping = 1 - Math.exp(-1.6 * dt);
-        targetX += -targetX * returnDamping;
-        targetY += -targetY * returnDamping;
+      if (!dragging && now >= wheelUntil) {
+        [targetY, vx] = springStep(targetY, vx, 0, dt);
+        [targetX, vy] = springStep(targetX, vy, 0, dt);
+        [targetZ, vz] = springStep(targetZ, vz, 0, dt);
+        [zoomTarget, zoomVelocity] = springStep(zoomTarget, zoomVelocity, REST_DISTANCE, dt);
+        if (media.matches) {
+          targetX = targetY = targetZ = vx = vy = vz = zoomVelocity = 0;
+          zoomTarget = REST_DISTANCE;
+        }
       }
       const videoSettle = videoReadyRef.current
         ? Math.max(0, Math.min(1, (scrollRef.current - 0.83) / 0.01))
@@ -710,10 +738,30 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
       const idle = media.matches ? 0 : Math.sin(time * 0.32) * 0.028;
       galaxy.rotation.y += ((targetY + idle * (1 - videoSettle)) - galaxy.rotation.y) * follow;
       galaxy.rotation.x += (targetX - galaxy.rotation.x) * follow;
+      galaxy.rotation.z += (targetZ - galaxy.rotation.z) * follow;
       // Complete the return even on a fast scroll into the aligned video frame.
       galaxy.rotation.x *= 1 - videoSettle;
       galaxy.rotation.y *= 1 - videoSettle;
+      galaxy.rotation.z *= 1 - videoSettle;
+      // Rotate the monogram around its own centre, not around the page centre.
+      const heroWeight = 1 - Math.min(1, scrollRef.current / 0.20);
+      const logoCenter = material.uniforms.uHeroOffset.value as Vector2;
+      pivot.set(logoCenter.x * heroWeight, logoCenter.y * heroWeight, 0);
+      rotatedPivot.copy(pivot).applyEuler(galaxy.rotation);
+      galaxy.position.copy(pivot).sub(rotatedPivot);
       galaxy.updateMatrixWorld();
+
+      const s = scrollRef.current;
+      const canGesture = s < 0.025 || (s >= 0.36 && s < 0.745);
+      gesture.style.display = canGesture ? 'block' : 'none';
+      if (!canGesture && dragging) leave();
+      const isLogo = s < 0.025;
+      const zoneWidth = isLogo ? Math.min(0.9, material.uniforms.uLogoScale.value * 0.9 / camera.aspect) : 0.70;
+      const zoneHeight = isLogo ? Math.min(0.65, material.uniforms.uLogoScale.value * 0.65) : 0.62;
+      gesture.style.width = `${zoneWidth * 100}%`;
+      gesture.style.height = `${zoneHeight * 100}%`;
+      gesture.style.left = `${(0.5 + (isLogo ? logoCenter.x / camera.aspect : 0)) * 100}%`;
+      gesture.style.top = `${(0.5 - (isLogo ? logoCenter.y : 0.035)) * 100}%`;
 
       if (!interactionAvailable()) {
         zoomTarget = REST_DISTANCE;
@@ -755,14 +803,14 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
           const wx = positions[k] * scale + heroOffset.x;
           const wy = positions[k + 1] * scale + heroOffset.y;
           const wz = positions[k + 2] * scale;
-          const rx = matrix[0] * wx + matrix[4] * wy + matrix[8] * wz;
-          const ry = matrix[1] * wx + matrix[5] * wy + matrix[9] * wz;
-          const rz = matrix[2] * wx + matrix[6] * wy + matrix[10] * wz;
+          const rx = matrix[0] * wx + matrix[4] * wy + matrix[8] * wz + matrix[12];
+          const ry = matrix[1] * wx + matrix[5] * wy + matrix[9] * wz + matrix[13];
+          const rz = matrix[2] * wx + matrix[6] * wy + matrix[10] * wz + matrix[14];
           const depth = 2 / Math.max(0.05, camera.position.z - rz);
           const dx = (rx - camera.position.x) * depth + offsets[j] - smoothPointer.x;
           const dy = (ry - camera.position.y) * depth + offsets[j + 1] - smoothPointer.y;
           const radius = Math.hypot(dx, dy);
-          const weight = pointerActive && scroll < 0.02 && (time > 4 || media.matches)
+          const weight = pointerActive && !dragging && scroll < 0.02 && (time > 4 || media.matches)
             ? Math.pow(Math.max(0, 1 - radius / 0.17), 2) * strength
             : 0;
           const radial = dragging ? -18 : 0.6 / Math.max(radius, 0.008);
@@ -799,7 +847,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
 
       // A compact screen-space spring field drives all later constructions.
       // The shader samples this at each star's current projected position.
-      const fieldForces = pointerActive && interactionAvailable() && scroll >= 0.02;
+      const fieldForces = pointerActive && !dragging && interactionAvailable() && scroll >= 0.02;
       let nextFieldMoving = false;
       if (fieldForces || fieldMoving) {
         const steps = Math.max(1, Math.ceil(dt * 120));
@@ -852,13 +900,67 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
       renderer.render(scene, camera);
     };
 
-    // Scroll is the only gesture: the pointer merely ripples the stars it
-    // passes over (fine pointers only). No drag, no pinch, no key capture.
-    const move = (event: PointerEvent) => {
-      if (!interactionAvailable() || event.pointerType !== 'mouse') return;
+    // Only the form's interaction area owns touch gestures; the rest of the
+    // stage remains available for scrolling and the overlaid links keep working.
+    const down = (event: PointerEvent) => {
+      if (!interactionAvailable() || event.button !== 0 || contacts.size >= 2) return;
+      contacts.set(event.pointerId, new Vector2(event.clientX, event.clientY));
+      gesture.setPointerCapture(event.pointerId);
+      dragging = true;
+      gesture.dataset.dragging = 'true';
+      vx = vy = vz = zoomVelocity = 0;
       locate(event);
     };
-    const leave = () => { pointerActive = false; };
+    const wheel = (event: WheelEvent) => {
+      // Browsers expose trackpad pinch as Ctrl+wheel. Ordinary wheel scrolling
+      // still belongs to the page; zoom returns once the pinch stream ends.
+      if (!event.ctrlKey || !interactionAvailable() || dragging) return;
+      event.preventDefault();
+      const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? host.clientHeight : 1);
+      zoomTarget = Math.max(1.35, Math.min(2.75, zoomTarget * Math.exp(Math.max(-0.2, Math.min(0.2, delta * 0.006)))));
+      zoomVelocity = 0;
+      wheelUntil = performance.now() + 160;
+    };
+    const move = (event: PointerEvent) => {
+      const previous = contacts.get(event.pointerId);
+      if (previous) {
+        const before = [...contacts.values()].map(p => p.clone());
+        const dx = event.clientX - previous.x, dy = event.clientY - previous.y;
+        previous.set(event.clientX, event.clientY);
+        const sensitivity = 3.2 / Math.max(320, host.clientHeight);
+        if (contacts.size === 1) {
+          targetY += dx * sensitivity;
+          targetX += dy * sensitivity;
+        } else {
+          const after = [...contacts.values()];
+          const a = before[1].clone().sub(before[0]);
+          const b = after[1].clone().sub(after[0]);
+          if (a.length() > 8 && b.length() > 8) {
+            zoomTarget = Math.max(1.35, Math.min(2.75, zoomTarget * a.length() / b.length()));
+            const angle = Math.atan2(b.y, b.x) - Math.atan2(a.y, a.x);
+            targetZ -= Math.atan2(Math.sin(angle), Math.cos(angle));
+          }
+          targetY += dx * sensitivity * 0.5;
+          targetX += dy * sensitivity * 0.5;
+        }
+        locate(event);
+      } else if (interactionAvailable() && event.pointerType === 'mouse') locate(event);
+    };
+    const up = (event: PointerEvent) => {
+      contacts.delete(event.pointerId);
+      if (gesture.hasPointerCapture(event.pointerId)) gesture.releasePointerCapture(event.pointerId);
+      dragging = contacts.size > 0;
+      gesture.dataset.dragging = String(dragging);
+      pointerActive = false;
+    };
+    const leave = () => {
+      for (const id of contacts.keys()) if (gesture.hasPointerCapture(id)) gesture.releasePointerCapture(id);
+      contacts.clear();
+      dragging = false;
+      wheelUntil = 0;
+      gesture.dataset.dragging = 'false';
+      pointerActive = false;
+    };
 
     const contextLost = (event: Event) => {
       event.preventDefault();
@@ -867,6 +969,11 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
     };
 
     window.addEventListener('pointermove', move, { passive: true });
+    gesture.addEventListener('pointerdown', down);
+    gesture.addEventListener('wheel', wheel, { passive: false });
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    gesture.addEventListener('lostpointercapture', up);
     document.addEventListener('pointerleave', leave);
     window.addEventListener('blur', leave);
     renderer.domElement.addEventListener('webglcontextlost', contextLost);
@@ -877,6 +984,11 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
       visibility.disconnect();
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', move);
+      gesture.removeEventListener('pointerdown', down);
+      gesture.removeEventListener('wheel', wheel);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      gesture.removeEventListener('lostpointercapture', up);
       document.removeEventListener('pointerleave', leave);
       window.removeEventListener('blur', leave);
       renderer.domElement.removeEventListener('webglcontextlost', contextLost);
@@ -890,6 +1002,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
 
   return (
     <div ref={hostRef} className="starfield" aria-hidden="true">
+      <div className="starfield-gesture" />
       <span className="webgl-error">WebGL non disponibile.</span>
     </div>
   );
