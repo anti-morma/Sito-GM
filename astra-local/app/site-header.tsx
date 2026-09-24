@@ -8,9 +8,9 @@ import { site } from './content';
 const NAV = [
   { id: 'inizio', label: 'Studio' },
   { id: 'pensiero', label: 'Pensiero' },
+  { id: 'progetti', label: 'Progetti' },
   { id: 'metodo', label: 'Metodo' },
   { id: 'servizi', label: 'Servizi' },
-  { id: 'progetti', label: 'Progetti' },
   { id: 'contatti', label: 'Parliamo del progetto' },
 ];
 
@@ -53,8 +53,7 @@ export default function SiteHeader() {
       for (const item of NAV) {
         const section = document.getElementById(item.id);
         if (!section) continue;
-        // Sections count once they fill 60% of the screen; the brain and the
-        // method live inside the sticky story, so their anchors must be reached.
+        // The thought anchor lives inside the sticky opening.
         const line = innerHeight * (section.classList.contains('gm-story-anchor') ? 0.1 : 0.4);
         if (section.getBoundingClientRect().top <= line) next = item.id;
       }
@@ -146,7 +145,7 @@ export default function SiteHeader() {
 
   return (
     <>
-      <a className="gm-skip" href="#servizi">Salta l’introduzione animata</a>
+      <a className="gm-skip" href="#progetti">Salta l’introduzione animata</a>
       <header className="gm-header" data-solid={solid} data-menu={menuOpen ? 'open' : 'closed'}>
         <a className="gm-logo" href="#inizio" onClick={(event) => go(event, 'inizio')} aria-label={`${site.name} — torna all’inizio`} />
 

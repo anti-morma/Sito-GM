@@ -116,7 +116,17 @@ const vertexShader = `
    brain.z = mix(turnedBrain.z, brain.z, zoomIn);
    brain.y -= (1.0 - gather) * 0.12 * travel;
    float synapseScale = min(0.82, uAspect * 0.70);
-   float signalHead = clamp((uScroll - 0.58) / 0.17, 0.0, 1.0) * 1.06;
+   // The impulse bursts out of the central soma, then eases through the
+   // outer dendrites. Its position still follows scroll in both directions.
+   float impulseTime = clamp((uScroll - 0.58) / 0.17, 0.0, 1.0);
+   float signalHead = 1.02 * (1.0 - pow(1.0 - impulseTime, 2.4));
+   float activeRoute = 1.0 - step(1.5, aSignal);
+   float pulseDistance = signalHead - aSignal;
+   float pulseFront = exp(-pow(pulseDistance * 18.0, 2.0));
+   float pulseTail = exp(-max(pulseDistance, 0.0) * 6.0)
+     * smoothstep(0.0, 0.04, pulseDistance);
+   float pulse = (pulseFront * 1.1 + pulseTail * 0.3)
+     * activeRoute * synapseMix * (1.0 - aFree);
    vec3 synapse = aSynapse.xyz * synapseScale;
    float releaseProgress = smoothstep(aSignal - 0.015, aSignal + 0.11, signalHead);
    if (aKind > 1.5 && aKind < 2.5) {
@@ -126,7 +136,7 @@ const vertexShader = `
    float neuralTurn = (smoothstep(0.54, 0.75, uScroll) - 0.5) * 0.30 * motion;
    synapse.xz = mat2(cos(neuralTurn), -sin(neuralTurn), sin(neuralTurn), cos(neuralTurn)) * synapse.xz;
    // Match the CSS video rectangle exactly, with no tilt during the crossfade.
-   float videoSettle = smoothstep(0.862, 0.888, uScroll); // keep in sync with story.tsx
+   float videoSettle = smoothstep(0.862, 0.888, uScroll); // keep in sync with method-story.tsx
    float frameWidth = mix(0.80 - videoSettle * 0.28, 0.92, uCompact);
    vec3 project = vec3(aPlan.x, -aPlan.z, 0.0) * uAspect * frameWidth;
    project.xy += vec2(mix(-uAspect * videoSettle * 0.20, 0.0, uCompact), 0.08 * uCompact);
@@ -134,8 +144,8 @@ const vertexShader = `
    project.z = aOrigin.z * 0.12 * (1.0 - smoothstep(0.815, 0.845, uScroll));
    // Scatter first, then gather each group of stars into the progressive drawing.
    float scatter = smoothstep(0.745, 0.775, uScroll) * motion;
-   vec3 loose = vec3(aOrigin.x * uAspect, aOrigin.y - 0.18, aOrigin.z * 0.35);
-   loose.xy += vec2(sin(aPhase * 2.7), cos(aPhase * 1.9)) * 0.13 * motion;
+   vec3 loose = vec3(aOrigin.x * uAspect * 1.45, aOrigin.y * 1.35 - 0.18, aOrigin.z * 0.6);
+   loose.xy += vec2(sin(aPhase * 2.7), cos(aPhase * 1.9)) * 0.18 * motion;
    synapse = mix(synapse, loose, scatter);
    float assemble = smoothstep(0.775 + aDrawOrder * 0.037, 0.797 + aDrawOrder * 0.037, uScroll);
    synapse = mix(synapse, project, assemble);
@@ -244,6 +254,7 @@ const vertexShader = `
    synapseSize *= clamp(pow(synapseScale / 0.84, 0.2), 0.8, 1.0);
    renderedSize = mix(renderedSize, synapseSize, synapseMix * (1.0 - aFree));
    renderedSize = mix(renderedSize, 6.5, projectMix * (1.0 - aFree));
+   renderedSize *= 1.0 + pulse * 0.18 * (1.0 - isGlow) * (1.0 - isDistant);
    // Hero only: a quieter sky so no background star competes with the copy.
    // It lifts before the brain arrives, leaving the later sections untouched.
    float heroCalm = (1.0 - smoothstep(0.03, 0.14, uScroll)) * aFree;
@@ -263,12 +274,8 @@ const vertexShader = `
      uTime * (0.65 + aPhase * 0.065) + aPhase * 3.0
    );
    shimmer = mix(shimmer, starShimmer, aFree);
-   float activeRoute = 1.0 - step(1.5, aSignal);
    float reached = smoothstep(aSignal - 0.025, aSignal + 0.025, signalHead);
    float lit = activeRoute * reached * synapseMix * (1.0 - aFree);
-   // A soft, unhurried wavefront: each synapse brightens once, deliberately.
-   float pulse = (1.0 - step(1.5, aSignal)) *
-     exp(-pow((signalHead - aSignal) * 11.0, 2.0)) * synapseMix * (1.0 - aFree);
    vLight = aLight * mix(shimmer, 1.0, uReduced) + influence * 0.12;
    vLight = mix(vLight, 0.035 + aBrainShade * aBrainShade * 1.6, anatomy);
    vLight *= mix(1.0, clamp(pow(brainScale / 1.18, 0.8), 0.30, 1.0), anatomy);
@@ -276,12 +283,15 @@ const vertexShader = `
    // ignites inside the cells and along the fibres as the impulse arrives.
    float ignite = smoothstep(aSignal - 0.02, aSignal + 0.09, signalHead) * activeRoute;
    float membrane = mix(0.07 + 1.05 * pow(aShade, 2.2), 0.08 + 1.1 * pow(aShade, 2.0), isSoma);
-   float glowLight = (mix(0.07, 0.56 + 0.26 * aShade, ignite) + pulse * 0.22)
+   float glowLight = (mix(0.07, 0.56 + 0.26 * aShade, ignite) + pulse * 0.34)
      * (0.96 + 0.04 * sin(uTime * 0.9 + aPhase * 5.0) * motion);
-   float shellLight = mix(membrane + lit * 0.04 + pulse * 0.28, glowLight, isGlow);
+   float shellLight = mix(membrane + lit * 0.08 + pulse * 0.43, glowLight, isGlow);
    shellLight = mix(shellLight, 0.05 + 0.1 * aShade, isDistant);
    shellLight *= mix(1.0, 0.42, focusBlur);
    vLight = mix(vLight, shellLight, synapseMix * (1.0 - aFree));
+   // Once the network releases, its points read as individual stars rather
+   // than the deliberately dim fibres and membranes of the neural scene.
+   vLight = mix(vLight, max(0.22, aLight * 0.8), scatter * (1.0 - aFree));
    vLight *= mix(1.0, 0.24, gather * aFree);
    float synapseDensity = clamp(pow(synapseScale / 0.84, 0.60), 0.60, 1.0);
    vLight *= mix(1.0, synapseDensity, synapseMix * (1.0 - aFree));
@@ -296,12 +306,16 @@ const vertexShader = `
    synapseColor = mix(synapseColor, glowColor, isGlow);
    synapseColor = mix(synapseColor, fiberColor * 0.8, isDistant);
    vColor = mix(aColor, synapseColor, synapseMix * (1.0 - aFree));
-   vStar = max(aFree, synapseMix * (1.0 - aFree) * (isGlow * 0.75 + pulse * 0.4));
+   vColor = mix(vColor, vec3(0.78, 0.85, 1.0), scatter * (1.0 - aFree));
+   vStar = max(aFree, synapseMix * (1.0 - aFree) * min(0.95, isGlow * 0.75 + pulse * 0.38));
+   vStar = max(vStar, scatter * (1.0 - aFree) * 0.85);
    vSparkle = aFree * smoothstep(22.0, 34.0, aSize) * (1.0 - 0.9 * heroCalm);
+   vSparkle = max(vSparkle, scatter * (1.0 - aFree) * smoothstep(22.0, 34.0, aSize) * 0.35);
+   vSparkle = max(vSparkle, pulse * isGlow * 0.16);
    // The brightest stars of the GM become four-point sparkles: irregular in
    // size, colour and shape, while the outline carries the letters.
    vSparkle = max(vSparkle, glyph * smoothstep(32.0, 50.0, aSize) * 0.85);
-   vSynapse = synapseMix * (1.0 - aFree) * (1.0 - 0.85 * isGlow);
+   vSynapse = synapseMix * (1.0 - aFree) * (1.0 - 0.85 * isGlow) * (1.0 - scatter);
    vNeuralFocus = focusBlur;
    vPulse = pulse;
    float constructed = projectMix * (1.0 - aFree);
@@ -314,7 +328,7 @@ const vertexShader = `
    vNeuralFocus *= 1.0 - constructed;
    vPulse *= 1.0 - constructed;
    // Extra samples add neural detail only; preserve the original brain and project density.
-   vLight *= mix(1.0, 0.55, synapseMix * (1.0 - projectMix) * (1.0 - aFree));
+   vLight *= mix(1.0, 0.55, synapseMix * (1.0 - projectMix) * (1.0 - aFree) * (1.0 - scatter));
    if (aDetail > 1.5) vLight *= max(synapseMix * (1.0 - projectMix), anatomy * brainBack);
    vLight *= mix(1.0, brainVisible, anatomy * brainShell);
    vLight *= mix(1.0, 0.65, anatomy);
@@ -350,7 +364,7 @@ const fragmentShader = `
      exp(-abs(uv.y) * 170.0 - abs(uv.x) * 13.0)
    ) * 0.18 * vSparkle;
    float neuralCore = exp(-r2 * mix(mix(240.0, 170.0, vConstruction), 85.0, vNeuralFocus));
-   float neuralHalo = exp(-r2 * 28.0) * (0.045 + vPulse * 0.05);
+   float neuralHalo = exp(-r2 * 28.0) * (0.045 + vPulse * 0.06);
    float neuralLight = (neuralCore + neuralHalo) * mix(1.0, 0.42, vNeuralFocus);
    float alpha = mix(core + inner + halo + rays, neuralLight, vSynapse) * vLight;
    if (alpha < 0.0003) discard;
@@ -358,13 +372,15 @@ const fragmentShader = `
  }
 `;
 
-export default function AstraField({ scrollProgress = 0, videoReady = false, onFailed }: { scrollProgress?: number; videoReady?: boolean; onFailed?: () => void }) {
+export default function AstraField({ scrollProgress = 0, videoReady = false, active = true, onFailed }: { scrollProgress?: number; videoReady?: boolean; active?: boolean; onFailed?: () => void }) {
   const onFailedRef = useRef(onFailed);
   onFailedRef.current = onFailed;
   const hostRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(scrollProgress);
   const videoReadyRef = useRef(videoReady);
+  const activeRef = useRef(active);
   useEffect(() => { videoReadyRef.current = videoReady; }, [videoReady]);
+  useEffect(() => { activeRef.current = active; }, [active]);
 
   useEffect(() => {
     scrollRef.current = scrollProgress;
@@ -730,7 +746,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
       frame = requestAnimationFrame(render);
       const dt = Math.min(0.04, (now - last) / 1000);
       last = now;
-      if (document.hidden || !onScreen) return;
+      if (document.hidden || !onScreen || !activeRef.current) return;
 
       time += dt * ANIMATION_SPEED;
       // Once the visitor enters the story, returning to the top must restore

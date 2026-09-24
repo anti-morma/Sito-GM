@@ -1,4 +1,6 @@
 import ContactForm from './contact-form';
+import MethodStory from './method-story';
+import ParticleJourney from './particle-journey';
 import ProjectPreview from './project-preview';
 import Reveal from './reveal';
 import ScrollCue from './scroll-cue';
@@ -44,9 +46,27 @@ export default function Home() {
   return (
     <>
       <SiteHeader />
+      <ParticleJourney />
       <main className="gm-site" id="contenuto">
-        {/* Hero · Brain · Method */}
+        {/* Hero and neural network */}
         <Story />
+
+        {/* Projects: real, live work */}
+        <section id="progetti" className="gm-section gm-projects" aria-labelledby="progetti-title" data-scroll-stop>
+          <div className="gm-wrap">
+            <header className="gm-projects-head" data-reveal>
+              <SectionLabel>Progetti</SectionLabel>
+              <h2 id="progetti-title" className="gm-h2">Siti reali, online adesso.</h2>
+              <p className="gm-lead">Progettati e sviluppati da noi, dall’identità digitale al codice. Guardali dal vivo.</p>
+            </header>
+            <div className="gm-project-list">
+              {projects.map((project, index) => <ProjectCard key={project.name} project={project} index={index} />)}
+            </div>
+          </div>
+        </section>
+
+        {/* The scattered stars assemble into the villa after the live work. */}
+        <MethodStory />
 
         {/* Services */}
         <section id="servizi" className="gm-section gm-services" aria-labelledby="servizi-title" data-scroll-stop>
@@ -66,20 +86,6 @@ export default function Home() {
                 </li>
               ))}
             </ol>
-          </div>
-        </section>
-
-        {/* Projects: real, live work */}
-        <section id="progetti" className="gm-section gm-projects" aria-labelledby="progetti-title" data-scroll-stop>
-          <div className="gm-wrap">
-            <header className="gm-projects-head" data-reveal>
-              <SectionLabel>Progetti</SectionLabel>
-              <h2 id="progetti-title" className="gm-h2">Siti reali, online adesso.</h2>
-              <p className="gm-lead">Progettati e sviluppati da noi, dall’identità digitale al codice. Guardali dal vivo.</p>
-            </header>
-            <div className="gm-project-list">
-              {projects.map((project, index) => <ProjectCard key={project.name} project={project} index={index} />)}
-            </div>
           </div>
         </section>
 

@@ -17,8 +17,9 @@ Su macOS usa `AVVIA.command`. Al primo avvio vengono installate le dipendenze.
 
 ## File principali
 
-- `app/page.tsx`: ordine della pagina — storia (hero, cervello, metodo), servizi, progetti, contatti.
-- `app/story.tsx`: hero con CTA, capitoli del cervello ("Il pensiero"), metodo della casa sincronizzato con lo scroll. Le tappe `data-scroll-stop` indicano dove si ferma l'indicatore di scroll.
+- `app/page.tsx`: ordine della pagina — storia (hero e cervello), progetti, metodo della casa, servizi, contatti.
+- `app/story.tsx`: hero con CTA e capitoli del cervello ("Il pensiero"); le reti neurali si disperdono prima dei progetti.
+- `app/method-story.tsx`: dopo i progetti le stelle disegnano la villa, poi il video ne mostra la costruzione seguendo lo scroll. Le tappe `data-scroll-stop` indicano dove si ferma l'indicatore di scroll.
 - `app/scroll-cue.tsx`: indicatore di scroll unico per tutta la pagina, centrato in basso: grande in apertura, poi una pillola che sparisce mentre si scorre e ricompare appena ci si ferma, fino ai contatti. Al clic porta alla tappa successiva.
 - `app/section-label.tsx`: etichetta "GM · Nome" che apre ogni sezione.
 - `app/content.ts`: testi, progetti e **dati dello studio da completare** (`email`, `legalName`, `vat`, `address`): finché sono vuoti non vengono mostrati.

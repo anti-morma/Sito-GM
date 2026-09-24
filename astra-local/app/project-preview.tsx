@@ -64,7 +64,7 @@ export default function ProjectPreview({ src, name }: { src: string; name: strin
     const load = () => {
       if (loaded || !motionAllowed()) return;
       loaded = true;
-      // Phones get the real mobile homepage in a portrait frame: readable at a glance.
+      // Phones get the real mobile homepage, cropped to the square preview frame.
       const variant = matchMedia(MOBILE).matches
         ? 'm-720'
         : video.clientWidth * Math.min(devicePixelRatio || 1, 2) > 900 ? '1280' : '720';
