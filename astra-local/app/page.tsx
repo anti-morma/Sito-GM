@@ -15,6 +15,19 @@ const windowProgress = (progress: number, enterStart: number, enterEnd: number, 
   return { enter, exit, opacity: enter * (1 - exit) };
 };
 
+// The empty stretch between the GM hero and the brain (0.10–0.28 of the
+// story) is crossed quickly; the rest keeps its original one-to-one pace.
+const GAP_START = 0.10;
+const GAP_END = 0.28;
+const GAP_SCROLL = 0.04;
+const STORY_SCALE = 1 - (GAP_END - GAP_START - GAP_SCROLL);
+const storyProgress = (scroll: number) => {
+  const t = scroll * STORY_SCALE;
+  if (t < GAP_START) return t;
+  if (t < GAP_START + GAP_SCROLL) return GAP_START + ((t - GAP_START) / GAP_SCROLL) * (GAP_END - GAP_START);
+  return t + (GAP_END - GAP_START - GAP_SCROLL);
+};
+
 const slide = (enter: number, exit: number, distance = 72) =>
   `translateY(${(1 - enter) * distance - exit * distance}px)`;
 
@@ -27,7 +40,7 @@ export default function Home() {
     const update = () => {
       frame = 0;
       const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      setScrollProgress(Math.min(1, Math.max(0, window.scrollY / max)));
+      setScrollProgress(storyProgress(Math.min(1, Math.max(0, window.scrollY / max))));
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
     update();
@@ -37,7 +50,6 @@ export default function Home() {
   }, []);
 
   const gmExit = smoothStep(scrollProgress / 0.20);
-  const product = windowProgress(scrollProgress, 0.10, 0.14, 0.27, 0.32);
   const idea = windowProgress(scrollProgress, 0.34, 0.42, 0.47, 0.53);
   const firstCue = windowProgress(scrollProgress, 0.58, 0.61, 0.65, 0.68);
   const secondCue = windowProgress(scrollProgress, 0.69, 0.71, 0.74, 0.76);
@@ -54,18 +66,17 @@ export default function Home() {
           <AstraField scrollProgress={scrollProgress} videoReady={videoReady} />
           <div className="gm-neural-atmosphere" aria-hidden="true" style={{ opacity: smoothStep((scrollProgress - 0.48) / 0.10), backgroundPosition: `${50 - finalEnter * 22}% 50%` }} />
 
-          <div className="gm-intro" aria-hidden={gmExit > 0.99} style={{ opacity: 1 - gmExit, transform: `translateY(${-scrollProgress * 600}svh)` }}>
-            <span className="gm-status">DESIGN DIGITALE PER L’OSPITALITÀ</span>
+          <div className="gm-hero-copy" aria-hidden={gmExit > 0.99} style={{ opacity: 1 - gmExit, '--hero-lift': `${-scrollProgress * 600}svh` } as React.CSSProperties}>
+            <p className="gm-hero-eyebrow">Design digitale su misura</p>
+            <h1>
+              <span className="gm-hero-title">Non creiamo solo siti web.</span>
+              <span className="gm-hero-subtitle">Diamo forma a ciò che ti distingue.</span>
+            </h1>
+            <p className="gm-hero-description">Siti web su misura per valorizzare la tua identità, raccontare ciò che fai e trasformare la tua presenza online in un’opportunità concreta.</p>
+            <p className="gm-hero-services">Web design · Sviluppo · 3D · AI</p>
           </div>
           <div className="gm-hero-side" aria-hidden={gmExit > 0.99} style={{ opacity: 1 - gmExit }}>
             <span className="gm-edition">INDIPENDENT STUDIO · ITALIA</span>
-          </div>
-
-          <div className="gm-product-shade" aria-hidden="true" style={{ opacity: product.opacity }} />
-          <div className="gm-product-copy" aria-hidden={product.opacity < 0.01} style={{ opacity: product.opacity, transform: `translateY(calc(-50% + ${(1 - product.enter) * 86 - product.exit * 86}px))` }}>
-            <span className="gm-status">DESIGN DIGITALE PER L’OSPITALITÀ</span>
-            <h1>Siti web su misura.<br /><em>Per la tua ospitalità.</em></h1>
-            <p>Per case vacanza, boutique hotel e property manager.</p>
           </div>
 
           <div className="gm-construction-video" aria-hidden={!videoReady || videoEnter < 0.01} style={{ opacity: videoReady ? videoEnter : 0, '--video-settle': videoSettle } as React.CSSProperties}>

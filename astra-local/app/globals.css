@@ -53,11 +53,11 @@ em {
 }
 
 .gm-site {
-  min-height: 700svh;
+  min-height: 616svh;
   background: #040506;
 }
 
-.gm-story { position: relative; height: 700svh; }
+.gm-story { position: relative; height: 616svh; }
 .gm-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; }
 
 .gm-neural-atmosphere {
@@ -65,7 +65,7 @@ em {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background-image: radial-gradient(ellipse at center, rgb(15 48 76 / 17%), rgb(8 22 39 / 7%) 42%, transparent 68%);
+  background-image: radial-gradient(ellipse at center, rgb(58 44 36 / 14%), rgb(24 20 26 / 6%) 42%, transparent 68%);
   background-size: 85% 90%;
   background-repeat: no-repeat;
 }
@@ -107,44 +107,20 @@ em {
   background: #040506 url('/gm-logo.png') center/220px auto no-repeat;
 }
 
-.gm-intro,
-.gm-product-copy {
-  position: absolute;
-  z-index: 3;
-  left: 5%;
-  bottom: 64px;
-  pointer-events: none;
-  text-shadow: 0 2px 24px #040506;
-}
 
-.gm-product-copy { top: 50%; bottom: auto; left: 10%; max-width: min(900px, 80vw); }
-.gm-product-shade { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(90deg, rgb(4 5 6 / 88%), rgb(4 5 6 / 45%) 65%, transparent); }
+
+
+
+
+
+
 .gm-construction-video { position: absolute; z-index: 2; top: 50%; transform: translateY(-50%); left: calc(10% - var(--video-settle) * 6%); width: calc(80% - var(--video-settle) * 28%); pointer-events: none; }
 .gm-construction-video video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; border-radius: 3px; }
 
-.gm-status,
 .gm-edition {
   color: #bdc7c1;
   font-size: 12px;
   letter-spacing: 1.8px;
-}
-
-.gm-product-copy h1 {
-  margin: 20px 0;
-  font-size: clamp(38px, 5.2vw, 76px);
-  font-weight: 400;
-  line-height: 1.08;
-  letter-spacing: -1.8px;
-}
-
-.gm-product-copy h1 em {
-  color: var(--accent);
-}
-
-.gm-product-copy p {
-  color: #bdc7c1;
-  font-size: 14px;
-  line-height: 1.5;
 }
 
 .gm-hero-side {
@@ -223,6 +199,136 @@ em {
   line-height: 1.48;
 }
 
+/* ---------- Hero ---------- */
+.gm-hero-copy {
+  --hero-ink: #f2f0eb;
+  --hero-accent: #d9d1b8; /* champagne, used only as an identity detail */
+  --hero-muted: #b7b7b2;
+  --hero-quiet: #a9aaa4;
+  position: absolute;
+  z-index: 3;
+  /* Upper-left third: editorial, deliberately not centred. */
+  top: clamp(104px, 22vh, 230px);
+  left: clamp(32px, 7.5vw, 136px);
+  width: min(40vw, 600px);
+  pointer-events: none;
+  transform: translateY(var(--hero-lift, 0svh));
+  font-family: var(--font-hero-sans), 'GM Sans', Arial, sans-serif;
+}
+
+/* A faint pool of darkness keeps every star quieter than the words. */
+.gm-hero-copy::before {
+  content: '';
+  position: absolute;
+  inset: -18% -28% -18% -40%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgb(4 5 6 / 62%), rgb(4 5 6 / 28%) 55%, transparent);
+}
+
+.gm-hero-eyebrow {
+  margin: 0 0 clamp(28px, 4.2vh, 44px);
+  color: var(--hero-quiet);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.gm-hero-copy h1 {
+  margin: 0;
+  font-weight: 400;
+}
+
+.gm-hero-title,
+.gm-hero-subtitle {
+  display: block;
+  text-wrap: balance;
+}
+
+.gm-hero-title {
+  max-width: 12ch;
+  color: var(--hero-ink);
+  font-size: clamp(42px, 4.3vw, 74px);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.038em;
+}
+
+.gm-hero-subtitle {
+  max-width: 15ch;
+  margin-top: clamp(14px, 2vh, 22px);
+  color: var(--hero-accent);
+  font-family: var(--font-hero-serif), Georgia, serif;
+  font-size: clamp(40px, 4.1vw, 70px);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.012em;
+}
+
+.gm-hero-description {
+  max-width: 36ch;
+  margin: clamp(30px, 4.6vh, 48px) 0 0;
+  color: var(--hero-muted);
+  font-size: clamp(14px, 1.05vw, 16px);
+  line-height: 1.65;
+  letter-spacing: 0.005em;
+}
+
+.gm-hero-services {
+  margin: clamp(30px, 4.8vh, 52px) 0 0;
+  color: color-mix(in srgb, var(--hero-accent) 62%, transparent);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* Arrival follows the reading order while the GM assembles. */
+.gm-hero-copy > * { animation: gm-hero-in 1.3s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.gm-hero-copy > .gm-hero-eyebrow { animation-delay: 1.1s; }
+.gm-hero-copy > h1 { animation-delay: 1.3s; }
+.gm-hero-copy > .gm-hero-description { animation-delay: 1.75s; }
+.gm-hero-copy > .gm-hero-services { animation-delay: 2s; }
+
+@keyframes gm-hero-in {
+  from { opacity: 0; transform: translateY(14px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+/* Tall screens and tablets in portrait: the GM rises, the copy sits below it. */
+@media (max-aspect-ratio: 21/20) {
+  .gm-hero-copy {
+    top: auto;
+    bottom: clamp(56px, 8vh, 96px);
+    width: min(84vw, 620px);
+  }
+  .gm-hero-copy::before { inset: -14% -20%; }
+}
+
+/* A dedicated phone composition, not a scaled-down desktop. */
+@media (max-width: 600px) {
+  .gm-hero-copy {
+    top: auto;
+    bottom: max(40px, 5.5svh);
+    left: 24px;
+    width: calc(100vw - 48px);
+  }
+  .gm-hero-eyebrow { margin-bottom: 20px; font-size: 10px; letter-spacing: 0.24em; }
+  .gm-hero-title { max-width: 11ch; font-size: clamp(33px, 9.4vw, 42px); letter-spacing: -0.034em; }
+  .gm-hero-subtitle { max-width: 19ch; margin-top: 10px; font-size: clamp(33px, 9.6vw, 43px); }
+  .gm-hero-description { max-width: 34ch; margin-top: 22px; font-size: 14px; line-height: 1.6; }
+  .gm-hero-services { margin-top: 22px; font-size: 9.5px; letter-spacing: 0.24em; }
+}
+
+@media (max-width: 600px) and (max-height: 700px) {
+  .gm-hero-eyebrow { margin-bottom: 14px; }
+  .gm-hero-title { font-size: 30px; }
+  .gm-hero-subtitle { margin-top: 6px; font-size: 31px; }
+  .gm-hero-description { margin-top: 16px; font-size: 13px; }
+  .gm-hero-services { margin-top: 16px; }
+}
+
 @media (max-width: 600px) {
   .gm-idea-copy { left: 53%; right: auto; width: 43vw; }
 
@@ -233,29 +339,8 @@ em {
   .gm-final-copy h2 { margin-bottom: 11px; font-size: clamp(30px, 9vw, 43px); letter-spacing: -1.2px; }
   .gm-final-copy p { font-size: 14px; }
 
-  .gm-intro {
-    left: 6%;
-    bottom: 125px;
-  }
 
-  .gm-product-copy {
-    left: 6%;
-    top: 50%;
-    bottom: auto;
-    max-width: 88vw;
-  }
   .gm-construction-video { left: 4%; width: 92%; top: 34%; }
-
-  .gm-status {
-    font-size: 10px;
-    letter-spacing: 1px;
-  }
-
-  .gm-product-copy h1 {
-    margin: 16px 0;
-    font-size: clamp(30px, 8.5vw, 46px);
-    letter-spacing: -1.5px;
-  }
 
   .gm-idea-copy h2 { font-size: clamp(23px, 7vw, 34px); letter-spacing: -1px; }
 
@@ -268,11 +353,11 @@ em {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gm-intro,
+  .gm-hero-copy > * { animation: none; }
+  .gm-hero-copy { --hero-lift: 0svh !important; }
   .gm-synapse-copy,
   .gm-final-copy { transform: translateY(0) !important; }
   .gm-idea-copy { transform: translateY(-50%) !important; }
-  .gm-product-copy { transform: translateY(-50%) !important; }
   .gm-motion {
     display: none;
   }

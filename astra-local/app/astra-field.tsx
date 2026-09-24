@@ -24,6 +24,7 @@ import logoPoints from './gm-points.json';
 import brainPoints from './brain-points.json';
 import { buildSynapseParticles } from './synapse-geometry';
 import { buildBlueprintParticles } from './blueprint-geometry';
+import { buildBrainVolume } from './brain-volume';
 
 const ANIMATION_SPEED = 1.25;
 const MAX_AMBIENT_STARS = 1386;
@@ -36,6 +37,7 @@ const vertexShader = `
  attribute vec4 aStyle;
  attribute vec4 aMorph;
  attribute vec3 aBrain;
+ attribute vec4 aBrainNormal;
  attribute vec4 aSynapse;
  attribute vec3 aRelease;
  attribute vec4 aPlan;
@@ -57,11 +59,13 @@ const vertexShader = `
  uniform float uDpr;
  uniform float uPixelScale;
  uniform float uLogoScale;
+ uniform vec2 uHeroOffset;
  uniform float uAspect;
  uniform float uCompact;
  uniform float uReduced;
  uniform float uScroll;
  uniform float uVideoReady;
+ uniform float uCamDist;
  uniform sampler2D uSpringField;
  uniform vec2 uFieldSize;
  varying vec3 vColor;
@@ -88,6 +92,9 @@ const vertexShader = `
    vec3 brain = aBrain * brainScale;
    vec2 center = vec2(-0.235 * uAspect, 0.015);
    vec2 brainOverview = brain.xy + center;
+   // Front stars stay on the camera ray through their reference position, so
+   // the resting view matches the original drawing exactly.
+   brainOverview *= (2.0 - brain.z) / (2.0 - aBrainNormal.w * brainScale);
    vec2 brainCloseup = (aBrain.xy - vec2(0.21, 0.055)) * brainScale * 4.0;
    brain.xy = mix(brainOverview, brainCloseup, zoomIn);
    brain.y -= (1.0 - smoothstep(0.28, 0.42, uScroll)) * 0.90 * travel;
@@ -106,6 +113,8 @@ const vertexShader = `
    float frameWidth = mix(0.80 - videoSettle * 0.28, 0.92, uCompact);
    vec3 project = vec3(aPlan.x, -aPlan.z, 0.0) * uAspect * frameWidth;
    project.xy += vec2(mix(-uAspect * videoSettle * 0.20, 0.0, uCompact), 0.16 * uCompact);
+   // Layered relief while drawing; flattens before the video so the crossfade stays exact.
+   project.z = aOrigin.z * 0.12 * (1.0 - smoothstep(0.815, 0.845, uScroll));
    // Scatter first, then gather each group of stars into the progressive drawing.
    float scatter = smoothstep(0.745, 0.775, uScroll) * motion;
    vec3 loose = vec3(aOrigin.x * uAspect, aOrigin.y - 0.18, aOrigin.z * 0.35);
@@ -114,13 +123,14 @@ const vertexShader = `
    float assemble = smoothstep(0.775 + aDrawOrder * 0.037, 0.797 + aDrawOrder * 0.037, uScroll);
    synapse = mix(synapse, project, assemble);
    vec3 logo = position * uLogoScale;
+   logo.xy += uHeroOffset;
    // The story spans six viewport heights: respond one-to-one from the first scroll pixel.
    logo.y += uScroll * 6.0 * travel;
    vec3 dispersed = vec3(aOrigin.x * uAspect, aOrigin.y + 0.15, aOrigin.z * 0.35);
    vec3 target = mix(logo, dispersed, smoothstep(0.0, 0.20, uScroll) * travel);
    target = mix(target, brain, gather);
    target = mix(target, synapse, synapseMix);
-   if (uReduced > 0.5 && uScroll < 0.025) target = position * uLogoScale;
+   if (uReduced > 0.5 && uScroll < 0.025) target = position * uLogoScale + vec3(uHeroOffset, 0.0);
    float orbit = mix(0.015, 0.0012, gather) * motion * (1.0 - projectMix);
    target += vec3(
      sin(uTime * 0.7 + aPhase),
@@ -180,15 +190,42 @@ const vertexShader = `
    mv.xy += displacement * (-mv.z / 2.0);
 
    gl_Position = projectionMatrix * mv;
+   // Aerial perspective relative to the camera focus: nearer stars brighter, farther dimmer.
+   float viewDist = max(0.001, -mv.z);
+   float depthCue = clamp(pow(uCamDist / viewDist, mix(1.6, 0.8, aFree)), 0.4, 1.8);
+   float nearFade = smoothstep(0.12, 0.45, viewDist);
    float depth = clamp(2.0 / -mv.z, 0.35, 2.5);
    float anatomy = gather * (1.0 - synapseMix) * (1.0 - aFree);
+   // Opaque-looking brain: hide the surface turned away from the camera.
+   float brainShell = step(0.25, dot(aBrainNormal.xyz, aBrainNormal.xyz));
+   float brainBack = step(1.5, aDetail) * brainShell;
+   vec3 brainNormal = normalize(mat3(modelViewMatrix) * (aBrainNormal.xyz + vec3(0.0, 0.0, 1e-4)));
+   float facing = dot(brainNormal, normalize(-mv.xyz));
+   // Reference stars on the near rim crowd into a seam when seen edge-on: soften
+   // them only once rotation turns them towards the camera (never at rest).
+   float rimSeam = smoothstep(0.35, 0.0, abs(aBrainNormal.z)) * smoothstep(0.2, 0.7, facing);
+   // Seen edge-on the near face collapses into a bright line; fade it only while
+   // the brain is turned away from its resting pose.
+   float brainTurned = smoothstep(0.02, 0.25, 1.0 - normalize(mat3(modelViewMatrix) * vec3(0.0, 0.0, 1.0)).z);
+   float nearVisible = mix(smoothstep(-0.3, 0.0, facing), smoothstep(-0.05, 0.3, facing), brainTurned);
+   float brainVisible = mix(nearVisible * (1.0 - 0.7 * rimSeam), smoothstep(0.35, 0.6, facing), brainBack);
    float renderedSize = mix(aSize, 7.5 + aBrainShade * 6.5, anatomy);
-   float synapseSize = aKind < 0.5 ? 9.0 : (aKind < 1.5 ? 10.5 : 7.0);
-   float depthLayer = smoothstep(-0.23, 0.23, aSynapse.z);
-   synapseSize *= mix(0.73, 1.12, depthLayer);
+   // Neural close-up roles (see NEURAL_KIND): membrane, cell body, warm light, far network.
+   float isSoma = step(0.5, aKind) * step(aKind, 1.5);
+   float isGlow = step(1.5, aKind) * step(aKind, 2.5);
+   float isDistant = step(2.5, aKind);
+   // Shallow depth of field: the central cell is sharp, the rest melts into bokeh.
+   float focusBlur = smoothstep(0.05, 0.4, abs(aSynapse.z));
+   float synapseSize = mix(mix(mix(7.0, 8.0, isSoma), 12.0, isGlow), 7.5, isDistant);
+   synapseSize *= mix(1.0, 2.1, focusBlur);
    synapseSize *= clamp(pow(synapseScale / 0.84, 0.2), 0.8, 1.0);
    renderedSize = mix(renderedSize, synapseSize, synapseMix * (1.0 - aFree));
    renderedSize = mix(renderedSize, 6.5, projectMix * (1.0 - aFree));
+   // Hero only: a quieter sky so no background star competes with the copy.
+   // It lifts before the brain arrives, leaving the later sections untouched.
+   float heroCalm = (1.0 - smoothstep(0.03, 0.14, uScroll)) * aFree;
+   float heroHidden = heroCalm * step(fract(aPhase * 7.13), 0.42);
+   renderedSize *= mix(1.0, 0.68 - 0.18 * smoothstep(20.0, 30.0, aSize), heroCalm);
    gl_PointSize = clamp(
      renderedSize * uDpr * uPixelScale * depth * (1.0 + influence * 0.12),
      2.0,
@@ -211,30 +248,33 @@ const vertexShader = `
    vLight = aLight * mix(shimmer, 1.0, uReduced) + influence * 0.12;
    vLight = mix(vLight, 0.035 + aBrainShade * aBrainShade * 1.6, anatomy);
    vLight *= mix(1.0, clamp(pow(brainScale / 1.18, 0.8), 0.30, 1.0), anatomy);
-   float shellLight = (0.26 + 0.10 * aShade) * mix(0.72, 1.0, depthLayer);
-   shellLight += aKind > 0.5 && aKind < 1.5 ? 0.06 : 0.0;
-
-   if (aKind > 1.5 && aKind < 2.5) shellLight *= mix(0.18, 0.65, reached);
-
+   // Dark translucent membranes catch light only at their edges; warm light
+   // ignites inside the cells and along the fibres as the impulse arrives.
+   float ignite = smoothstep(aSignal - 0.02, aSignal + 0.06, signalHead) * activeRoute;
+   float membrane = mix(0.07 + 1.05 * pow(aShade, 2.2), 0.08 + 1.1 * pow(aShade, 2.0), isSoma);
+   float glowLight = (mix(0.07, 0.62 + 0.3 * aShade, ignite) + pulse * 0.35)
+     * (0.86 + 0.14 * sin(uTime * 1.7 + aPhase * 5.0) * motion);
+   float shellLight = mix(membrane + lit * 0.04 + pulse * 0.4, glowLight, isGlow);
+   shellLight = mix(shellLight, 0.05 + 0.1 * aShade, isDistant);
+   shellLight *= mix(1.0, 0.42, focusBlur);
    vLight = mix(vLight, shellLight, synapseMix * (1.0 - aFree));
    vLight *= mix(1.0, 0.24, gather * aFree);
-   float pulseStrength = aKind > 0.5 && aKind < 1.5 ? 0.28 : 0.46;
-   vLight += lit * (aKind < 0.5 ? 0.07 : 0.10) + pulse * pulseStrength;
    float synapseDensity = clamp(pow(synapseScale / 0.84, 0.60), 0.60, 1.0);
    vLight *= mix(1.0, synapseDensity, synapseMix * (1.0 - aFree));
-   vLight *= mix(1.0, 0.42, step(2.5, aKind) * synapseMix * (1.0 - aFree));
    vLight *= 1.0 - min(aDetail, 1.0) * (1.0 - gather);
-   vec3 fiberColor = mix(vec3(0.055, 0.18, 0.48), vec3(0.24, 0.74, 1.0), 0.55 + aShade * 0.25);
-   vec3 somaColor = mix(vec3(0.12, 0.25, 0.54), vec3(0.37, 0.72, 0.94), aShade);
-   vec3 gapColor = fiberColor;
-   vec3 outputColor = fiberColor;
-   vec3 synapseColor = aKind < 0.5 ? fiberColor :
-     (aKind < 1.5 ? somaColor : (aKind < 2.5 ? gapColor : outputColor));
+   vec3 fiberColor = mix(vec3(0.34, 0.33, 0.44), vec3(0.8, 0.82, 0.94), aShade);
+   vec3 somaColor = mix(vec3(0.24, 0.2, 0.32), vec3(0.86, 0.84, 0.96), aShade);
+   vec3 warmLight = vec3(1.0, 0.64, 0.28);
+   vec3 glowColor = mix(warmLight, vec3(1.0, 0.86, 0.62), aShade * 0.6);
+   vec3 synapseColor = mix(fiberColor, somaColor, isSoma);
+   synapseColor = mix(synapseColor, warmLight, min(1.0, lit * 0.16 + pulse * 0.85));
+   synapseColor = mix(synapseColor, glowColor, isGlow);
+   synapseColor = mix(synapseColor, fiberColor * 0.8, isDistant);
    vColor = mix(aColor, synapseColor, synapseMix * (1.0 - aFree));
-   vStar = max(aFree, synapseMix * (pulse * 0.36));
-   vSparkle = aFree * smoothstep(22.0, 34.0, aSize);
-   vSynapse = synapseMix * (1.0 - aFree);
-   vNeuralFocus = smoothstep(0.02, 0.28, abs(aSynapse.z - 0.07));
+   vStar = max(aFree, synapseMix * (1.0 - aFree) * (isGlow * 0.75 + pulse * 0.4));
+   vSparkle = aFree * smoothstep(22.0, 34.0, aSize) * (1.0 - 0.9 * heroCalm);
+   vSynapse = synapseMix * (1.0 - aFree) * (1.0 - 0.85 * isGlow);
+   vNeuralFocus = focusBlur;
    vPulse = pulse;
    float constructed = projectMix * (1.0 - aFree);
    vConstruction = constructed;
@@ -247,8 +287,11 @@ const vertexShader = `
    vPulse *= 1.0 - constructed;
    // Extra samples add neural detail only; preserve the original brain and project density.
    vLight *= mix(1.0, 0.55, synapseMix * (1.0 - projectMix) * (1.0 - aFree));
-   if (aDetail > 1.5) vLight *= synapseMix * (1.0 - projectMix);
+   if (aDetail > 1.5) vLight *= max(synapseMix * (1.0 - projectMix), anatomy * brainBack);
+   vLight *= mix(1.0, brainVisible, anatomy * brainShell);
    vLight *= 1.0 - smoothstep(0.84, 0.865, uScroll) * uVideoReady * (1.0 - aFree);
+   vLight *= depthCue * nearFade;
+   vLight *= mix(1.0, min(0.55, 0.9 / max(depthCue, 0.001)), heroCalm) * (1.0 - heroHidden);
  }
 `;
 
@@ -342,6 +385,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
     const details: number[] = [];
     const brains: number[] = [];
     const brainShades: number[] = [];
+    const brainNormals: number[] = [];
     const synapses: number[] = [];
     const releases: number[] = [];
     const plans: number[] = [];
@@ -352,6 +396,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
     const totalCount = MORPH_COUNT + MAX_AMBIENT_STARS;
     const synapseParticles = buildSynapseParticles(MORPH_COUNT, random);
     const projectParticles = buildBlueprintParticles(BASE_MORPH_COUNT, random);
+    const brainVolume = buildBrainVolume(brainPoints, random);
 
     for (let i = 0; i < totalCount; i++) {
       const ambient = i >= MORPH_COUNT;
@@ -366,7 +411,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       positions.push(
         point[0] + (random() - 0.5) * scatter,
         point[1] + (random() - 0.5) * scatter,
-        (random() - 0.5) * 0.09,
+        (random() - 0.5) * (ambient ? 0.09 : 0.16),
       );
       origins.push(
         (random() - 0.5) * (ambient ? 1.1 : 1.7),
@@ -403,10 +448,30 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       if (ambient) {
         brains.push(0, 0, 0);
         brainShades.push(0);
+        brainNormals.push(0, 0, 0, 0);
       } else {
         const brain = brainPoints[i % BASE_MORPH_COUNT];
-        brains.push(brain[0], brain[1], brain[2]);
-        brainShades.push(brain[3]);
+        if (i < BASE_MORPH_COUNT) {
+          // Reference star on the solid's front face; w keeps its original depth.
+          const [z, nx, ny, nz] = brainVolume.front.subarray(i * 4, i * 4 + 4);
+          brains.push(brain[0], brain[1], z);
+          brainShades.push(brain[3]);
+          brainNormals.push(nx, ny, nz, brain[2]);
+        } else if (i < BASE_MORPH_COUNT * 2) {
+          // Rim of the solid (top, bottom, poles), revealed by rotation.
+          const k = (i - BASE_MORPH_COUNT) * 7;
+          const [x, y, z, shade, nx, ny, nz] = brainVolume.rim.subarray(k, k + 7);
+          brains.push(x, y, z);
+          brainShades.push(shade);
+          brainNormals.push(nx, ny, nz, z);
+        } else {
+          // Far hemisphere, carrying the same reference drawing.
+          const j = i - BASE_MORPH_COUNT * 2;
+          const [z, nx, ny, nz] = brainVolume.far.subarray(j * 4, j * 4 + 4);
+          brains.push(brain[0], brain[1], z);
+          brainShades.push(brain[3]);
+          brainNormals.push(nx, ny, nz, z);
+        }
       }
       if (ambient) {
         synapses.push(0, 0, 0, 0);
@@ -437,6 +502,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       ['aStyle', styles, 4],
       ['aMorph', morphs, 4],
       ['aBrain', brains, 3],
+      ['aBrainNormal', brainNormals, 4],
       ['aSynapse', synapses, 4],
       ['aRelease', releases, 3],
       ['aPlan', plans, 4],
@@ -476,11 +542,13 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
         uDpr: { value: renderer.getPixelRatio() },
         uPixelScale: { value: 1 },
         uLogoScale: { value: 1 },
+        uHeroOffset: { value: new Vector2() },
         uAspect: { value: 1 },
         uCompact: { value: 0 },
         uReduced: { value: media.matches ? 1 : 0 },
         uScroll: { value: 0 },
         uVideoReady: { value: 0 },
+        uCamDist: { value: 2 },
         uSpringField: { value: springTexture },
         uFieldSize: { value: new Vector2(fieldWidth, fieldHeight) },
       },
@@ -509,6 +577,15 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
     let pointerActive = false;
     let springsMoving = false;
     let fieldMoving = false;
+    // Pinch dollies the camera into the volume instead of scaling the page.
+    const REST_DISTANCE = 2;
+    let zoomTarget = REST_DISTANCE;
+    const panTarget = new Vector2();
+    const clampPan = (distance: number) => {
+      const room = Math.max(0, REST_DISTANCE - distance) / 4;
+      panTarget.x = Math.max(-camera.aspect * room, Math.min(camera.aspect * room, panTarget.x));
+      panTarget.y = Math.max(-room, Math.min(room, panTarget.y));
+    };
     const pointer = new Vector2(-10, -10);
     const smoothPointer = new Vector2(-10, -10);
     const previousPointer = new Vector2(-10, -10);
@@ -558,10 +635,20 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       }
       material.uniforms.uAspect.value = camera.aspect;
       material.uniforms.uCompact.value = width <= 600 ? 1 : 0;
-      material.uniforms.uLogoScale.value = Math.min(
-        1,
-        (camera.aspect * 0.84) / 0.82,
-      );
+      const fullScale = Math.min(1, (camera.aspect * 0.84) / 0.82);
+      // Leave room for the hero copy. On wide screens the GM fills the space to
+      // the right of the text column (mirrors .gm-hero-copy left + width in CSS);
+      // on tall screens it rises and the copy sits below it.
+      const heroOffset = material.uniforms.uHeroOffset.value as Vector2;
+      if (width <= 600 || camera.aspect < 1.05) {
+        material.uniforms.uLogoScale.value = fullScale;
+        heroOffset.set(0, 0.16);
+      } else {
+        const textRight = (Math.min(136, Math.max(32, width * 0.075)) + Math.min(width * 0.4, 600) + 24) / width;
+        const rightEdge = 0.965;
+        material.uniforms.uLogoScale.value = Math.min(fullScale, ((rightEdge - textRight) * camera.aspect) / 0.84);
+        heroOffset.set(((textRight + rightEdge) / 2 - 0.5) * camera.aspect, 0);
+      }
       material.uniforms.uPixelScale.value = Math.max(
         0.65,
         Math.min(1.3, height / 720),
@@ -625,6 +712,18 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       galaxy.rotation.y *= 1 - videoSettle;
       galaxy.updateMatrixWorld();
 
+      if (!interactionAvailable()) {
+        zoomTarget = REST_DISTANCE;
+        panTarget.set(0, 0);
+      }
+      const distanceGoal = zoomTarget + (REST_DISTANCE - zoomTarget) * videoSettle;
+      const zoomFollow = media.matches ? 1 : 1 - Math.exp(-9 * dt);
+      camera.position.z += (distanceGoal - camera.position.z) * zoomFollow;
+      camera.position.x += (panTarget.x * (1 - videoSettle) - camera.position.x) * zoomFollow;
+      camera.position.y += (panTarget.y * (1 - videoSettle) - camera.position.y) * zoomFollow;
+      camera.updateMatrixWorld();
+      material.uniforms.uCamDist.value = camera.position.z;
+
       const matrix = galaxy.matrixWorld.elements;
       const mx = (smoothPointer.x - previousPointer.x) / Math.max(dt, 0.001);
       const my = (smoothPointer.y - previousPointer.y) / Math.max(dt, 0.001);
@@ -632,6 +731,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       const limit = Math.min(1, 1.5 / Math.max(speed, 0.001));
       const strength = (media.matches ? 0.25 : 1) * (1 - videoSettle);
       const scale = material.uniforms.uLogoScale.value;
+      const heroOffset = material.uniforms.uHeroOffset.value as Vector2;
 
       // Keep the original GM particles on their individual CPU springs.
       const scroll = scrollRef.current;
@@ -649,15 +749,15 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
         for (let i = 0; i < logoPoints.length; i++) {
           const j = i * 2;
           const k = i * 3;
-          const wx = positions[k] * scale;
-          const wy = positions[k + 1] * scale;
+          const wx = positions[k] * scale + heroOffset.x;
+          const wy = positions[k + 1] * scale + heroOffset.y;
           const wz = positions[k + 2] * scale;
           const rx = matrix[0] * wx + matrix[4] * wy + matrix[8] * wz;
           const ry = matrix[1] * wx + matrix[5] * wy + matrix[9] * wz;
           const rz = matrix[2] * wx + matrix[6] * wy + matrix[10] * wz;
-          const depth = 2 / (2 - rz);
-          const dx = rx * depth + offsets[j] - smoothPointer.x;
-          const dy = ry * depth + offsets[j + 1] - smoothPointer.y;
+          const depth = 2 / Math.max(0.05, camera.position.z - rz);
+          const dx = (rx - camera.position.x) * depth + offsets[j] - smoothPointer.x;
+          const dy = (ry - camera.position.y) * depth + offsets[j + 1] - smoothPointer.y;
           const radius = Math.hypot(dx, dy);
           const weight = pointerActive && scroll < 0.02 && (time > 4 || media.matches)
             ? Math.pow(Math.max(0, 1 - radius / 0.17), 2) * strength
@@ -812,6 +912,8 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       pointerActive = false;
       if (event.key.toLowerCase() === 'r') {
         targetX = targetY = 0;
+        zoomTarget = REST_DISTANCE;
+        panTarget.set(0, 0);
         offsets.fill(0);
         velocities.fill(0);
         springsMoving = false;
@@ -827,6 +929,41 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       if (event.key === 'ArrowLeft') targetY -= 0.06;
     };
 
+    const zoomAt = (clientX: number, clientY: number, distance: number) => {
+      const next = Math.max(0.7, Math.min(2.6, distance));
+      const bounds = host.getBoundingClientRect();
+      const sx = ((clientX - bounds.left) / Math.max(1, bounds.width) - 0.5) * camera.aspect;
+      const sy = 0.5 - (clientY - bounds.top) / Math.max(1, bounds.height);
+      // Keep the point under the cursor fixed on the construction plane.
+      panTarget.x += sx * (zoomTarget - next) / 2;
+      panTarget.y += sy * (zoomTarget - next) / 2;
+      zoomTarget = next;
+      clampPan(zoomTarget);
+    };
+
+    // Trackpad pinch arrives as ctrl+wheel in Chrome, Firefox and Edge.
+    const wheel = (event: WheelEvent) => {
+      if (!event.ctrlKey) return;
+      event.preventDefault();
+      if (!interactionAvailable()) return;
+      const delta = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
+      zoomAt(event.clientX, event.clientY, zoomTarget * Math.exp(delta * 0.01));
+    };
+
+    // Safari reports trackpad pinch through its proprietary gesture events.
+    type GestureEvent = UIEvent & { scale: number; clientX: number; clientY: number };
+    let gestureStart = REST_DISTANCE;
+    const gestureStartHandler = (event: Event) => {
+      event.preventDefault();
+      gestureStart = zoomTarget;
+    };
+    const gestureChange = (event: Event) => {
+      event.preventDefault();
+      if (!interactionAvailable()) return;
+      const gesture = event as GestureEvent;
+      zoomAt(gesture.clientX, gesture.clientY, gestureStart / Math.max(0.1, gesture.scale));
+    };
+
     const contextLost = (event: Event) => {
       event.preventDefault();
       host.dataset.failed = 'true';
@@ -839,6 +976,9 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
     host.addEventListener('lostpointercapture', up);
     host.addEventListener('pointerleave', leave);
     host.addEventListener('keydown', key);
+    window.addEventListener('wheel', wheel, { passive: false });
+    window.addEventListener('gesturestart', gestureStartHandler);
+    window.addEventListener('gesturechange', gestureChange);
     host.addEventListener('blur', blur);
     window.addEventListener('blur', blur);
     renderer.domElement.addEventListener('webglcontextlost', contextLost);
@@ -854,6 +994,9 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       host.removeEventListener('lostpointercapture', up);
       host.removeEventListener('pointerleave', leave);
       host.removeEventListener('keydown', key);
+      window.removeEventListener('wheel', wheel);
+      window.removeEventListener('gesturestart', gestureStartHandler);
+      window.removeEventListener('gesturechange', gestureChange);
       host.removeEventListener('blur', blur);
       window.removeEventListener('blur', blur);
       renderer.domElement.removeEventListener('webglcontextlost', contextLost);
@@ -870,7 +1013,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       ref={hostRef}
       className="starfield"
       type="button"
-      aria-label="Costruzioni di particelle GM, cervello, connessioni neurali e progetto interattive. Trascina o usa le frecce laterali per ruotarle, R per ripristinare. Scorri per seguire la trasformazione."
+      aria-label="Costruzioni di particelle GM, cervello, connessioni neurali e progetto interattive. Trascina o usa le frecce laterali per ruotarle, pizzica il trackpad per entrare nella profondità, R per ripristinare. Scorri per seguire la trasformazione."
       data-dragging="false"
     >
       <span className="webgl-error">
