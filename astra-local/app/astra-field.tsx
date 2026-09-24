@@ -334,8 +334,10 @@ function getAmbientStarCount(width: number, height: number) {
   return Math.round(count * 0.77);
 }
 
-export default function AstraField({ scrollProgress = 0, videoReady = false }: { scrollProgress?: number; videoReady?: boolean }) {
-  const hostRef = useRef<HTMLButtonElement>(null);
+export default function AstraField({ scrollProgress = 0, videoReady = false, onFailed }: { scrollProgress?: number; videoReady?: boolean; onFailed?: () => void }) {
+  const onFailedRef = useRef(onFailed);
+  onFailedRef.current = onFailed;
+  const hostRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef(scrollProgress);
   const videoReadyRef = useRef(videoReady);
   useEffect(() => { videoReadyRef.current = videoReady; }, [videoReady]);
@@ -358,12 +360,14 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       });
     } catch {
       host.dataset.failed = 'true';
+      onFailedRef.current?.();
       return;
     }
 
     host.dataset.failed = 'false';
     renderer.setClearColor(0, 0);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    // Phones draw at 1.5× at most: indistinguishable for points, far lighter.
+    renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth <= 760 ? 1.5 : 2));
     renderer.domElement.setAttribute('aria-hidden', 'true');
     host.appendChild(renderer.domElement);
 
@@ -569,27 +573,17 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
     let frame = 0;
     let time = 0;
     let last = 0;
-    let dragging = false;
-    let pointerId: number | null = null;
-    let lastX = 0;
-    let lastY = 0;
+    const dragging = false; // no drag any more; the spring maths keep their hover branch
     let targetX = 0;
     let targetY = 0;
     let vx = 0;
     let vy = 0;
-    let lastMove = 0;
     let pointerActive = false;
     let springsMoving = false;
     let fieldMoving = false;
-    // Pinch dollies the camera into the volume instead of scaling the page.
     const REST_DISTANCE = 2;
     let zoomTarget = REST_DISTANCE;
     const panTarget = new Vector2();
-    const clampPan = (distance: number) => {
-      const room = Math.max(0, REST_DISTANCE - distance) / 4;
-      panTarget.x = Math.max(-camera.aspect * room, Math.min(camera.aspect * room, panTarget.x));
-      panTarget.y = Math.max(-room, Math.min(room, panTarget.y));
-    };
     const pointer = new Vector2(-10, -10);
     const smoothPointer = new Vector2(-10, -10);
     const previousPointer = new Vector2(-10, -10);
@@ -641,19 +635,25 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       // Mirrors the CSS stacked layout: (max-width: 600px), (max-aspect-ratio: 9/10).
       material.uniforms.uCompact.value = width <= 600 || camera.aspect <= 0.9 ? 1 : 0;
       const fullScale = Math.min(1, (camera.aspect * 0.84) / 0.82);
-      // Leave room for the hero copy. On wide screens the GM fills the space to
-      // the right of the text column (mirrors .gm-hero-copy left + width in CSS);
-      // on tall screens it rises and the copy sits below it.
+      // The headline leads; the GM fills the space the copy leaves free,
+      // measured from the rendered hero copy rather than guessed.
       const heroOffset = material.uniforms.uHeroOffset.value as Vector2;
+      const copy = document.querySelector<HTMLElement>('.gm-hero-copy');
       if (width <= 600 || camera.aspect < 1.05) {
-        material.uniforms.uLogoScale.value = fullScale;
-        // Phones: lift the GM clear of the copy and the scroll cue below it.
-        heroOffset.set(0, width <= 600 ? 0.19 : 0.16);
+        // Stacked: the GM sits between the header and the copy.
+        const top = 76;
+        const bottom = copy ? copy.offsetTop - 24 : height * 0.45;
+        const room = Math.max(90, bottom - top);
+        material.uniforms.uLogoScale.value = Math.min(fullScale * 0.92, room / height / 0.62);
+        heroOffset.set(0, 0.5 - (top + room / 2) / height);
       } else {
-        const textRight = (Math.min(136, Math.max(32, width * 0.075)) + Math.min(width * 0.4, 600) + 24) / width;
-        const rightEdge = 0.965;
-        material.uniforms.uLogoScale.value = Math.min(fullScale, ((rightEdge - textRight) * camera.aspect) / 0.84);
-        heroOffset.set(((textRight + rightEdge) / 2 - 0.5) * camera.aspect, 0);
+        const textRight = copy
+          ? (copy.offsetLeft + copy.offsetWidth + 40) / width
+          : (Math.min(136, Math.max(32, width * 0.075)) + Math.min(width * 0.5, 780) + 40) / width;
+        const rightEdge = 0.95;
+        const fit = Math.min(((rightEdge - textRight) * camera.aspect) / 0.84, 0.72 / 0.58);
+        material.uniforms.uLogoScale.value = Math.max(0.35, Math.min(fullScale, fit) * 0.84);
+        heroOffset.set(((textRight + rightEdge) / 2 - 0.5) * camera.aspect, 0.02);
       }
       material.uniforms.uPixelScale.value = Math.max(
         0.65,
@@ -663,6 +663,8 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
 
     window.addEventListener('resize', resize);
     resize();
+    // Web fonts change the copy's height: place the GM again once they land.
+    document.fonts?.ready.then(() => resize());
 
     // Nothing to draw once the story has scrolled away: skip the GPU work.
     let onScreen = true;
@@ -683,17 +685,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       material.uniforms.uReduced.value = media.matches ? 1 : 0;
       material.uniforms.uScroll.value = scrollRef.current;
       material.uniforms.uVideoReady.value = videoReadyRef.current ? 1 : 0;
-      if (!interactionAvailable()) {
-        pointerActive = false;
-        if (dragging) {
-          dragging = false;
-          if (pointerId !== null && host.hasPointerCapture(pointerId))
-            host.releasePointerCapture(pointerId);
-          pointerId = null;
-          host.dataset.dragging = 'false';
-          vx = vy = 0;
-        }
-      }
+      if (!interactionAvailable()) pointerActive = false;
       const damping = 1 - Math.exp(-14 * dt);
       smoothPointer.lerp(pointer, damping);
 
@@ -860,138 +852,23 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       renderer.render(scene, camera);
     };
 
-    const down = (event: PointerEvent) => {
-      if (!interactionAvailable() || event.pointerType === 'touch') return;
-      if (!event.isPrimary || event.button !== 0 || pointerId !== null) return;
-      locate(event);
-      dragging = true;
-      pointerId = event.pointerId;
-      lastX = event.clientX;
-      lastY = event.clientY;
-      lastMove = event.timeStamp;
-      vx = vy = 0;
-      host.dataset.dragging = 'true';
-      host.setPointerCapture(event.pointerId);
-    };
-
+    // Scroll is the only gesture: the pointer merely ripples the stars it
+    // passes over (fine pointers only). No drag, no pinch, no key capture.
     const move = (event: PointerEvent) => {
-      if (!interactionAvailable() || event.pointerType === 'touch') return;
-      if (!event.isPrimary || (pointerId !== null && event.pointerId !== pointerId))
-        return;
+      if (!interactionAvailable() || event.pointerType !== 'mouse') return;
       locate(event);
-      if (!dragging) return;
-      const dx = event.clientX - lastX;
-      const dy = event.clientY - lastY;
-      const dt = Math.max(0.008, (event.timeStamp - lastMove) / 1000);
-      targetY += dx * 0.0016;
-      targetX += dy * 0.0016;
-      vx = Math.max(-1, Math.min(1, (dx * 0.0016) / dt));
-      vy = Math.max(-0.7, Math.min(0.7, (dy * 0.0016) / dt));
-      lastX = event.clientX;
-      lastY = event.clientY;
-      lastMove = event.timeStamp;
     };
-
-    const up = (event: PointerEvent) => {
-      if (event.pointerId !== pointerId) return;
-      dragging = false;
-      pointerId = null;
-      host.dataset.dragging = 'false';
-      if (event.type !== 'pointerup' || event.timeStamp - lastMove > 80) vx = vy = 0;
-      if (event.pointerType !== 'mouse') pointerActive = false;
-      if (host.hasPointerCapture(event.pointerId))
-        host.releasePointerCapture(event.pointerId);
-    };
-
-    const leave = () => {
-      if (!dragging) pointerActive = false;
-    };
-
-    const blur = () => {
-      dragging = false;
-      pointerId = null;
-      vx = vy = 0;
-      pointerActive = false;
-      host.dataset.dragging = 'false';
-    };
-
-    const key = (event: KeyboardEvent) => {
-      if (!interactionAvailable() || !['ArrowLeft', 'ArrowRight', 'r', 'R'].includes(event.key))
-        return;
-      event.preventDefault();
-      vx = vy = 0;
-      pointerActive = false;
-      if (event.key.toLowerCase() === 'r') {
-        targetX = targetY = 0;
-        zoomTarget = REST_DISTANCE;
-        panTarget.set(0, 0);
-        offsets.fill(0);
-        velocities.fill(0);
-        springsMoving = false;
-        offsetAttribute.array.fill(0, 0, logoPoints.length * 2);
-        offsetAttribute.addUpdateRange(0, logoPoints.length * 2);
-        offsetAttribute.needsUpdate = true;
-        fieldData.fill(0);
-        fieldVelocity.fill(0);
-        fieldMoving = false;
-        springTexture.needsUpdate = true;
-      }
-      if (event.key === 'ArrowRight') targetY += 0.06;
-      if (event.key === 'ArrowLeft') targetY -= 0.06;
-    };
-
-    const zoomAt = (clientX: number, clientY: number, distance: number) => {
-      const next = Math.max(0.7, Math.min(2.6, distance));
-      const bounds = host.getBoundingClientRect();
-      const sx = ((clientX - bounds.left) / Math.max(1, bounds.width) - 0.5) * camera.aspect;
-      const sy = 0.5 - (clientY - bounds.top) / Math.max(1, bounds.height);
-      // Keep the point under the cursor fixed on the construction plane.
-      panTarget.x += sx * (zoomTarget - next) / 2;
-      panTarget.y += sy * (zoomTarget - next) / 2;
-      zoomTarget = next;
-      clampPan(zoomTarget);
-    };
-
-    // Trackpad pinch arrives as ctrl+wheel in Chrome, Firefox and Edge.
-    const wheel = (event: WheelEvent) => {
-      if (!event.ctrlKey) return;
-      event.preventDefault();
-      if (!interactionAvailable()) return;
-      const delta = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
-      zoomAt(event.clientX, event.clientY, zoomTarget * Math.exp(delta * 0.01));
-    };
-
-    // Safari reports trackpad pinch through its proprietary gesture events.
-    type GestureEvent = UIEvent & { scale: number; clientX: number; clientY: number };
-    let gestureStart = REST_DISTANCE;
-    const gestureStartHandler = (event: Event) => {
-      event.preventDefault();
-      gestureStart = zoomTarget;
-    };
-    const gestureChange = (event: Event) => {
-      event.preventDefault();
-      if (!interactionAvailable()) return;
-      const gesture = event as GestureEvent;
-      zoomAt(gesture.clientX, gesture.clientY, gestureStart / Math.max(0.1, gesture.scale));
-    };
+    const leave = () => { pointerActive = false; };
 
     const contextLost = (event: Event) => {
       event.preventDefault();
       host.dataset.failed = 'true';
+      onFailedRef.current?.();
     };
 
-    host.addEventListener('pointerdown', down);
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-    window.addEventListener('pointercancel', up);
-    host.addEventListener('lostpointercapture', up);
-    host.addEventListener('pointerleave', leave);
-    host.addEventListener('keydown', key);
-    window.addEventListener('wheel', wheel, { passive: false });
-    window.addEventListener('gesturestart', gestureStartHandler);
-    window.addEventListener('gesturechange', gestureChange);
-    host.addEventListener('blur', blur);
-    window.addEventListener('blur', blur);
+    window.addEventListener('pointermove', move, { passive: true });
+    document.addEventListener('pointerleave', leave);
+    window.addEventListener('blur', leave);
     renderer.domElement.addEventListener('webglcontextlost', contextLost);
     frame = requestAnimationFrame(render);
 
@@ -999,18 +876,9 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       cancelAnimationFrame(frame);
       visibility.disconnect();
       window.removeEventListener('resize', resize);
-      host.removeEventListener('pointerdown', down);
       window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-      window.removeEventListener('pointercancel', up);
-      host.removeEventListener('lostpointercapture', up);
-      host.removeEventListener('pointerleave', leave);
-      host.removeEventListener('keydown', key);
-      window.removeEventListener('wheel', wheel);
-      window.removeEventListener('gesturestart', gestureStartHandler);
-      window.removeEventListener('gesturechange', gestureChange);
-      host.removeEventListener('blur', blur);
-      window.removeEventListener('blur', blur);
+      document.removeEventListener('pointerleave', leave);
+      window.removeEventListener('blur', leave);
       renderer.domElement.removeEventListener('webglcontextlost', contextLost);
       geometry.dispose();
       material.dispose();
@@ -1021,18 +889,9 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
   }, []);
 
   return (
-    <button
-      ref={hostRef}
-      className="starfield"
-      type="button"
-      aria-label="Costruzioni di particelle GM, cervello, connessioni neurali e progetto interattive. Trascina o usa le frecce laterali per ruotarle, pizzica il trackpad per entrare nella profondità, R per ripristinare. Scorri per seguire la trasformazione."
-      data-dragging="false"
-    >
-      <span className="webgl-error">
-        WebGL non disponibile. Abilita l’accelerazione grafica del browser per
-        vedere il monogramma stellare.
-      </span>
-    </button>
+    <div ref={hostRef} className="starfield" aria-hidden="true">
+      <span className="webgl-error">WebGL non disponibile.</span>
+    </div>
   );
 }
 

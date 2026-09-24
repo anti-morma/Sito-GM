@@ -1,25 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { site } from './content';
 
 const NAV = [
+  { id: 'metodo', label: 'Metodo' },
   { id: 'servizi', label: 'Servizi' },
   { id: 'progetti', label: 'Progetti' },
-  { id: 'chi-siamo', label: 'Chi siamo' },
-  { id: 'contatti', label: 'Contatti' },
-];
-
-const STEPS = [
-  { label: 'Idea', target: 'inizio' },
-  { label: 'Costruzione', target: 'metodo' },
-  { label: 'Servizi', target: 'servizi' },
-  { label: 'Progetti', target: 'progetti' },
-  { label: 'Contatto', target: 'contatti' },
 ];
 
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export const scrollToSection = (id: string) => {
+const scrollToSection = (id: string) => {
   const target = document.getElementById(id);
   if (!target) return;
   target.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
@@ -27,32 +19,27 @@ export const scrollToSection = (id: string) => {
 };
 
 export default function SiteHeader() {
-  const [step, setStep] = useState(0);
   const [active, setActive] = useState('');
-  const [pressed, setPressed] = useState('');
-  const [inHero, setInHero] = useState(true);
   const [solid, setSolid] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const barRef = useRef<HTMLSpanElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let frame = 0;
     const update = () => {
       frame = 0;
-      const line = innerHeight * 0.35;
-      let nextStep = 0;
-      document.querySelectorAll<HTMLElement>('[data-progress-step]').forEach((marker) => {
-        if (marker.getBoundingClientRect().top <= line) nextStep = Math.max(nextStep, Number(marker.dataset.progressStep) - 1);
-      });
-      let nextActive = '';
-      for (const item of NAV) {
+      const line = innerHeight * 0.4;
+      let next = '';
+      for (const item of [...NAV, { id: 'contatti' }]) {
         const section = document.getElementById(item.id);
-        if (section && section.getBoundingClientRect().top <= line) nextActive = item.id;
+        if (section && section.getBoundingClientRect().top <= line) next = item.id;
       }
-      setStep(nextStep);
-      setActive(nextActive);
-      setInHero(scrollY < innerHeight * 0.45);
+      setActive(next);
       const story = document.getElementById('inizio');
       setSolid(!!story && story.getBoundingClientRect().bottom < 80);
+      const max = document.documentElement.scrollHeight - innerHeight;
+      barRef.current?.style.setProperty('transform', `scaleX(${max > 0 ? scrollY / max : 0})`);
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
     update();
@@ -63,54 +50,49 @@ export default function SiteHeader() {
 
   useEffect(() => {
     if (!menuOpen) return;
-    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setMenuOpen(false); };
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') { setMenuOpen(false); toggleRef.current?.focus(); } };
+    const wide = matchMedia('(min-width: 761px)');
+    const onWide = () => { if (wide.matches) setMenuOpen(false); };
     addEventListener('keydown', close);
+    wide.addEventListener('change', onWide);
     document.documentElement.classList.add('gm-menu-open');
-    return () => { removeEventListener('keydown', close); document.documentElement.classList.remove('gm-menu-open'); };
+    return () => {
+      removeEventListener('keydown', close);
+      wide.removeEventListener('change', onWide);
+      document.documentElement.classList.remove('gm-menu-open');
+    };
   }, [menuOpen]);
-
-  useEffect(() => {
-    if (!pressed) return;
-    const timer = setTimeout(() => setPressed(''), 700);
-    return () => clearTimeout(timer);
-  }, [pressed]);
 
   const go = (event: React.MouseEvent, id: string) => {
     event.preventDefault();
-    setPressed(id);
     setMenuOpen(false);
-    scrollToSection(id);
+    // Let the page unlock (menu closed) before scrolling.
+    requestAnimationFrame(() => scrollToSection(id));
   };
 
   return (
     <>
-      <header className="gm-header" data-menu={menuOpen ? 'open' : 'closed'} data-solid={solid}>
-        <a className="gm-logo" href="#inizio" onClick={(event) => go(event, 'inizio')} aria-label="GoMore — torna all’inizio" />
-
-        <p className="gm-step-mini" aria-hidden="true" data-visible={!inHero}>
-          <span>{String(step + 1).padStart(2, '0')}</span>
-          {STEPS[step].label}
-        </p>
+      <a className="gm-skip" href="#approccio">Salta l’introduzione animata</a>
+      <header className="gm-header" data-solid={solid} data-menu={menuOpen ? 'open' : 'closed'}>
+        <span className="gm-header-progress" aria-hidden="true"><span ref={barRef} /></span>
+        <a className="gm-logo" href="#inizio" onClick={(event) => go(event, 'inizio')} aria-label={`${site.name} — torna all’inizio`} />
 
         <nav className="gm-nav" aria-label="Navigazione principale">
           <ul>
             {NAV.map((item) => (
               <li key={item.id}>
-                <a
-                  href={`#${item.id}`}
-                  onClick={(event) => go(event, item.id)}
-                  aria-current={active === item.id ? 'location' : undefined}
-                  data-pressed={pressed === item.id || undefined}
-                  className={item.id === 'contatti' ? 'gm-nav-contact' : undefined}
-                >
+                <a href={`#${item.id}`} onClick={(event) => go(event, item.id)} aria-current={active === item.id ? 'location' : undefined}>
                   {item.label}
                 </a>
               </li>
             ))}
           </ul>
+          <a className="gm-btn gm-btn--primary gm-btn--small" href="#contatti" onClick={(event) => go(event, 'contatti')} aria-current={active === 'contatti' ? 'location' : undefined}>
+            Parliamo del progetto
+          </a>
         </nav>
 
-        <button className="gm-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="gm-mobile-menu" onClick={() => setMenuOpen((open) => !open)}>
+        <button ref={toggleRef} className="gm-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="gm-mobile-menu" onClick={() => setMenuOpen((open) => !open)}>
           <span>{menuOpen ? 'Chiudi' : 'Menu'}</span>
           <i aria-hidden="true" />
         </button>
@@ -128,21 +110,12 @@ export default function SiteHeader() {
               </li>
             ))}
           </ol>
+          <a className="gm-btn gm-btn--primary gm-btn--large gm-btn--block" href="#contatti" onClick={(event) => go(event, 'contatti')}>
+            Parliamo del tuo progetto <span className="gm-btn-arrow" aria-hidden="true">→</span>
+          </a>
+          {site.email && <a className="gm-mobile-menu-mail" href={`mailto:${site.email}`}>{site.email}</a>}
         </nav>
       </div>
-
-      <nav className="gm-progress" aria-label="Avanzamento nella pagina" data-visible={!inHero}>
-        <ol>
-          {STEPS.map((item, index) => (
-            <li key={item.label}>
-              <a href={`#${item.target}`} onClick={(event) => go(event, item.target)} aria-current={index === step ? 'step' : undefined}>
-                <span>{String(index + 1).padStart(2, '0')}</span>
-                <em>{item.label}</em>
-              </a>
-            </li>
-          ))}
-        </ol>
-      </nav>
     </>
   );
 }

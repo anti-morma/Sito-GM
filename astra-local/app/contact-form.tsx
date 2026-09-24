@@ -97,12 +97,13 @@ export default function ContactForm() {
       </div>
 
       <div className="gm-form-actions">
-        <button className="gm-submit" type="submit" data-status={status} disabled={status === 'sending'}>
-          <span className="gm-submit-label">{status === 'sending' ? 'Invio' : 'Parliamo del progetto'}</span>
+        <button className="gm-btn gm-btn--primary gm-btn--large gm-submit" type="submit" data-status={status} disabled={status === 'sending'}>
+          <span className="gm-submit-label">{status === 'sending' ? 'Invio' : 'Invia il messaggio'}</span>
           {status === 'sending'
             ? <span className="gm-submit-dots" aria-hidden="true"><i /><i /><i /></span>
-            : <span className="gm-submit-arrow" aria-hidden="true">→</span>}
+            : <span className="gm-btn-arrow" aria-hidden="true">→</span>}
         </button>
+        <p className="gm-form-note">Usiamo i tuoi dati solo per risponderti. <a href="/privacy">Informativa privacy</a></p>
         <p className="gm-form-status" role="alert">
           {status === 'failed' ? 'Qualcosa non ha funzionato. Controlla i dati inseriti e riprova.' : ''}
         </p>

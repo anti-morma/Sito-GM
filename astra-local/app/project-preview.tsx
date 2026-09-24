@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 // Videos are not tied to page scroll; they only play, pause and resume.
 const FOCUS = 0.6; // share of the preview that must be on screen
 const START_DELAY = 550; // ms between arriving and the site starting to move
+export const MOBILE = '(max-width: 760px)';
 
 type Entry = { video: HTMLVideoElement; ratio: number; load: () => void };
 const previews = new Set<Entry>();
@@ -63,10 +64,13 @@ export default function ProjectPreview({ src, name }: { src: string; name: strin
     const load = () => {
       if (loaded || !motionAllowed()) return;
       loaded = true;
-      const size = video.clientWidth * Math.min(devicePixelRatio || 1, 2) > 900 ? 1280 : 720;
+      // Phones get the real mobile homepage in a portrait frame: readable at a glance.
+      const variant = matchMedia(MOBILE).matches
+        ? 'm-720'
+        : video.clientWidth * Math.min(devicePixelRatio || 1, 2) > 900 ? '1280' : '720';
       for (const [type, ext] of [['video/webm; codecs=vp9', 'webm'], ['video/mp4', 'mp4']]) {
         const source = document.createElement('source');
-        source.src = `${src}-${size}.${ext}`;
+        source.src = `${src}-${variant}.${ext}`;
         source.type = type;
         if (ext === 'webm') source.addEventListener('error', fallback);
         video.appendChild(source);
@@ -74,6 +78,9 @@ export default function ProjectPreview({ src, name }: { src: string; name: strin
       video.preload = 'auto';
       video.load();
     };
+    // The poster underneath stays until the first frame is actually playing.
+    const shown = () => video.classList.add('is-playing');
+    video.addEventListener('playing', shown);
     const entry: Entry = { video, ratio: 0, load };
     previews.add(entry);
     // Some hardware decoders reject VP9: fall back to the H.264 file.
@@ -95,6 +102,7 @@ export default function ProjectPreview({ src, name }: { src: string; name: strin
     return () => {
       focus.disconnect();
       video.removeEventListener('error', fallback);
+      video.removeEventListener('playing', shown);
       previews.delete(entry);
       if (active === entry) { active = null; clearTimeout(timer); timer = 0; }
       video.pause();
@@ -102,18 +110,23 @@ export default function ProjectPreview({ src, name }: { src: string; name: strin
   }, [src]);
 
   return (
-    <video
-      ref={ref}
-      className="gm-project-video"
-      poster={`${src}-poster.jpg`}
-      muted
-      loop
-      playsInline
-      preload="none"
-      disablePictureInPicture
-      disableRemotePlayback
-      tabIndex={-1}
-      aria-label={`Anteprima della homepage di ${name} che scorre lentamente`}
-    />
+    <>
+      <picture className="gm-project-poster">
+        <source media={MOBILE} srcSet={`${src}-m-poster.jpg`} />
+        <img src={`${src}-poster.jpg`} alt={`Homepage di ${name}`} loading="lazy" decoding="async" />
+      </picture>
+      <video
+        ref={ref}
+        className="gm-project-video"
+        muted
+        loop
+        playsInline
+        preload="none"
+        disablePictureInPicture
+        disableRemotePlayback
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+    </>
   );
 }

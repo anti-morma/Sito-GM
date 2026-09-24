@@ -1,5 +1,16 @@
-// Every piece of copy that still needs real content lives here.
-// Replace the bracketed placeholders; nothing below is invented client data.
+// All site copy and the few details only the studio can provide.
+// Empty strings are simply not rendered: fill them in to show them.
+
+export const site = {
+  name: 'GoMore',
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://sito-gm-one.vercel.app',
+  /** Public contact e-mail, shown in the contact section and footer. */
+  email: '',
+  /** Legal details for the footer and the privacy policy (Italian law requires P.IVA). */
+  legalName: '',
+  vat: '',
+  address: '',
+};
 
 export const brainMessages = [
   "Un'idea",
@@ -14,15 +25,15 @@ export const housePhases = [
   { title: 'Struttura', text: "Architettura, UX e percorso dell'utente." },
   { title: 'Forma', text: 'Design, identità e linguaggio visivo.' },
   { title: 'Dettagli', text: 'Interazioni, 3D, motion e AI.' },
-  { title: 'Risultato', text: "Un'esperienza digitale progettata intorno al progetto e alle persone che vuoi raggiungere." },
+  { title: 'Risultato', text: 'Un sito che lavora per te: chiaro, veloce, riconoscibile.' },
 ];
 
 export const services = [
-  { title: 'Consulenza & strategia', text: 'Prima di progettare, definiamo direzione, obiettivi, pubblico e priorità del progetto.' },
-  { title: 'Web design & sviluppo', text: 'Progettiamo e sviluppiamo siti su misura, chiari, performanti e costruiti intorno al tuo progetto.' },
-  { title: 'UX & conversione', text: "Strutturiamo contenuti, percorsi e interazioni per guidare l'utente verso l'azione." },
-  { title: '3D · motion & AI', text: "Introduciamo 3D, animazioni, motion e AI quando possono rendere l'esperienza realmente più distintiva." },
-  { title: 'Evoluzione & manutenzione', text: 'Continuiamo a supportare il progetto dopo la pubblicazione, quando servono interventi, aggiornamenti o evoluzioni.' },
+  { title: 'Strategia', text: 'Obiettivi, pubblico e priorità, chiariti prima di disegnare una sola pagina.' },
+  { title: 'Web design & sviluppo', text: 'Siti su misura, veloci e curati in ogni dettaglio, dal primo schizzo al codice.' },
+  { title: 'UX & conversione', text: 'Contenuti e percorsi pensati per portare chi visita a contattarti.' },
+  { title: '3D, motion & AI', text: 'Solo dove rendono l’esperienza più chiara e memorabile, mai come effetto.' },
+  { title: 'Evoluzione & supporto', text: 'Aggiornamenti, manutenzione e nuove funzioni anche dopo il lancio.' },
 ];
 
 export type Project = {
@@ -32,7 +43,8 @@ export type Project = {
   /** Live site or case study, opened in a new tab. */
   href?: string;
   /** Base path of the scrolling homepage preview under /public:
-   *  `${preview}-poster.jpg`, `${preview}-{720,1280}.{webm,mp4}`. */
+   *  `${preview}-poster.jpg`, `${preview}-{720,1280}.{webm,mp4}`, and the portrait
+   *  mobile recording `${preview}-m-poster.jpg`, `${preview}-m-720.{webm,mp4}`. */
   preview?: string;
   /** Static image under /public, used when there is no preview video. */
   image?: string;
@@ -43,26 +55,15 @@ export const projects: Project[] = [
   {
     name: 'Lalinga Oro',
     category: 'Gioielleria · Brand experience · Web design',
-    description: 'Il sito della gioielleria di Taranto, dal 1950: un orologio che si scompone con lo scroll introduce orologi, oreficeria, gioielli, pelletteria, compro oro e laboratorio.',
+    description: 'Una gioielleria di Taranto dal 1950. In apertura un orologio si scompone con lo scroll e introduce i sei servizi della maison.',
     href: 'https://lalingaoro.it',
     preview: '/projects/lalinga',
   },
   {
     name: 'Residenza Vedovelli',
     category: 'Hospitality · Web design · Digital experience',
-    description: 'Il sito della residenza a Torri del Benaco, sul Lago di Garda: la villa intera, i singoli piani, il territorio, le recensioni degli ospiti e i consigli dell’host.',
+    description: 'Una residenza a Torri del Benaco, sul Lago di Garda: la villa, i singoli piani, il territorio, le recensioni degli ospiti e i consigli dell’host.',
     href: 'https://www.residenzavedovelli.it',
     preview: '/projects/vedovelli',
   },
 ];
-
-export type Testimonial = { quote: string; name: string; company: string; role?: string; placeholder?: boolean };
-
-export const testimonials: Testimonial[] = [
-  { quote: '[Citazione del cliente da inserire — testimonianza principale]', name: '[Nome Cognome]', company: '[Azienda / progetto]', role: '[Ruolo]', placeholder: true },
-  { quote: '[Citazione del cliente da inserire]', name: '[Nome Cognome]', company: '[Azienda / progetto]', role: '[Ruolo]', placeholder: true },
-  { quote: '[Citazione del cliente da inserire]', name: '[Nome Cognome]', company: '[Azienda / progetto]', role: '[Ruolo]', placeholder: true },
-];
-
-export const vision = '[TESTO VISION DA INSERIRE]';
-export const mission = '[TESTO MISSION DA INSERIRE]';
