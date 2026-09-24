@@ -88,9 +88,11 @@ const vertexShader = `
    float zoomIn = smoothstep(0.47, 0.56, uScroll);
    float synapseMix = smoothstep(0.48, 0.58, uScroll);
    float projectMix = smoothstep(0.775, 0.815, uScroll);
-   float brainScale = min(1.18, uAspect * 0.65);
+   // The brain is the protagonist: centred and large, a little bigger on
+   // narrow screens where it has the whole width to itself.
+   float brainScale = min(1.12, uAspect * mix(0.65, 0.9, uCompact));
    vec3 brain = aBrain * brainScale;
-   vec2 center = vec2(-0.235 * uAspect, 0.015);
+   vec2 center = vec2(0.0, 0.035);
    vec2 brainOverview = brain.xy + center;
    // Front stars stay on the camera ray through their reference position, so
    // the resting view matches the original drawing exactly.
@@ -109,10 +111,10 @@ const vertexShader = `
    float neuralTurn = (smoothstep(0.54, 0.75, uScroll) - 0.5) * 0.30 * motion;
    synapse.xz = mat2(cos(neuralTurn), -sin(neuralTurn), sin(neuralTurn), cos(neuralTurn)) * synapse.xz;
    // Match the CSS video rectangle exactly, with no tilt during the crossfade.
-   float videoSettle = smoothstep(0.87, 0.94, uScroll);
+   float videoSettle = smoothstep(0.862, 0.888, uScroll); // keep in sync with story.tsx
    float frameWidth = mix(0.80 - videoSettle * 0.28, 0.92, uCompact);
    vec3 project = vec3(aPlan.x, -aPlan.z, 0.0) * uAspect * frameWidth;
-   project.xy += vec2(mix(-uAspect * videoSettle * 0.20, 0.0, uCompact), 0.16 * uCompact);
+   project.xy += vec2(mix(-uAspect * videoSettle * 0.20, 0.0, uCompact), 0.08 * uCompact);
    // Layered relief while drawing; flattens before the video so the crossfade stays exact.
    project.z = aOrigin.z * 0.12 * (1.0 - smoothstep(0.815, 0.845, uScroll));
    // Scatter first, then gather each group of stars into the progressive drawing.
@@ -243,18 +245,19 @@ const vertexShader = `
    float activeRoute = 1.0 - step(1.5, aSignal);
    float reached = smoothstep(aSignal - 0.025, aSignal + 0.025, signalHead);
    float lit = activeRoute * reached * synapseMix * (1.0 - aFree);
+   // A soft, unhurried wavefront: each synapse brightens once, deliberately.
    float pulse = (1.0 - step(1.5, aSignal)) *
-     exp(-pow((signalHead - aSignal) * 15.0, 2.0)) * synapseMix * (1.0 - aFree);
+     exp(-pow((signalHead - aSignal) * 11.0, 2.0)) * synapseMix * (1.0 - aFree);
    vLight = aLight * mix(shimmer, 1.0, uReduced) + influence * 0.12;
    vLight = mix(vLight, 0.035 + aBrainShade * aBrainShade * 1.6, anatomy);
    vLight *= mix(1.0, clamp(pow(brainScale / 1.18, 0.8), 0.30, 1.0), anatomy);
    // Dark translucent membranes catch light only at their edges; warm light
    // ignites inside the cells and along the fibres as the impulse arrives.
-   float ignite = smoothstep(aSignal - 0.02, aSignal + 0.06, signalHead) * activeRoute;
+   float ignite = smoothstep(aSignal - 0.02, aSignal + 0.09, signalHead) * activeRoute;
    float membrane = mix(0.07 + 1.05 * pow(aShade, 2.2), 0.08 + 1.1 * pow(aShade, 2.0), isSoma);
-   float glowLight = (mix(0.07, 0.62 + 0.3 * aShade, ignite) + pulse * 0.35)
-     * (0.86 + 0.14 * sin(uTime * 1.7 + aPhase * 5.0) * motion);
-   float shellLight = mix(membrane + lit * 0.04 + pulse * 0.4, glowLight, isGlow);
+   float glowLight = (mix(0.07, 0.56 + 0.26 * aShade, ignite) + pulse * 0.22)
+     * (0.96 + 0.04 * sin(uTime * 0.9 + aPhase * 5.0) * motion);
+   float shellLight = mix(membrane + lit * 0.04 + pulse * 0.28, glowLight, isGlow);
    shellLight = mix(shellLight, 0.05 + 0.1 * aShade, isDistant);
    shellLight *= mix(1.0, 0.42, focusBlur);
    vLight = mix(vLight, shellLight, synapseMix * (1.0 - aFree));
@@ -264,10 +267,11 @@ const vertexShader = `
    vLight *= 1.0 - min(aDetail, 1.0) * (1.0 - gather);
    vec3 fiberColor = mix(vec3(0.34, 0.33, 0.44), vec3(0.8, 0.82, 0.94), aShade);
    vec3 somaColor = mix(vec3(0.24, 0.2, 0.32), vec3(0.86, 0.84, 0.96), aShade);
-   vec3 warmLight = vec3(1.0, 0.64, 0.28);
-   vec3 glowColor = mix(warmLight, vec3(1.0, 0.86, 0.62), aShade * 0.6);
+   // Brand champagne rather than amber: the light reads as intention, not alarm.
+   vec3 warmLight = vec3(0.9, 0.8, 0.6);
+   vec3 glowColor = mix(warmLight, vec3(1.0, 0.95, 0.84), aShade * 0.6);
    vec3 synapseColor = mix(fiberColor, somaColor, isSoma);
-   synapseColor = mix(synapseColor, warmLight, min(1.0, lit * 0.16 + pulse * 0.85));
+   synapseColor = mix(synapseColor, warmLight, min(1.0, lit * 0.14 + pulse * 0.7));
    synapseColor = mix(synapseColor, glowColor, isGlow);
    synapseColor = mix(synapseColor, fiberColor * 0.8, isDistant);
    vColor = mix(aColor, synapseColor, synapseMix * (1.0 - aFree));
@@ -317,7 +321,7 @@ const fragmentShader = `
      exp(-abs(uv.y) * 170.0 - abs(uv.x) * 13.0)
    ) * 0.18 * vSparkle;
    float neuralCore = exp(-r2 * mix(mix(240.0, 170.0, vConstruction), 85.0, vNeuralFocus));
-   float neuralHalo = exp(-r2 * 28.0) * (0.045 + vPulse * 0.075);
+   float neuralHalo = exp(-r2 * 28.0) * (0.045 + vPulse * 0.05);
    float neuralLight = (neuralCore + neuralHalo) * mix(1.0, 0.42, vNeuralFocus);
    float alpha = mix(core + inner + halo + rays, neuralLight, vSynapse) * vLight;
    if (alpha < 0.0003) discard;
@@ -634,7 +638,8 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
         fieldMoving = false;
       }
       material.uniforms.uAspect.value = camera.aspect;
-      material.uniforms.uCompact.value = width <= 600 ? 1 : 0;
+      // Mirrors the CSS stacked layout: (max-width: 600px), (max-aspect-ratio: 9/10).
+      material.uniforms.uCompact.value = width <= 600 || camera.aspect <= 0.9 ? 1 : 0;
       const fullScale = Math.min(1, (camera.aspect * 0.84) / 0.82);
       // Leave room for the hero copy. On wide screens the GM fills the space to
       // the right of the text column (mirrors .gm-hero-copy left + width in CSS);
@@ -642,7 +647,8 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
       const heroOffset = material.uniforms.uHeroOffset.value as Vector2;
       if (width <= 600 || camera.aspect < 1.05) {
         material.uniforms.uLogoScale.value = fullScale;
-        heroOffset.set(0, 0.16);
+        // Phones: lift the GM clear of the copy and the scroll cue below it.
+        heroOffset.set(0, width <= 600 ? 0.19 : 0.16);
       } else {
         const textRight = (Math.min(136, Math.max(32, width * 0.075)) + Math.min(width * 0.4, 600) + 24) / width;
         const rightEdge = 0.965;
@@ -658,11 +664,16 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
     window.addEventListener('resize', resize);
     resize();
 
+    // Nothing to draw once the story has scrolled away: skip the GPU work.
+    let onScreen = true;
+    const visibility = new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; });
+    visibility.observe(host);
+
     const render = (now: number) => {
       frame = requestAnimationFrame(render);
       const dt = Math.min(0.04, (now - last) / 1000);
       last = now;
-      if (document.hidden) return;
+      if (document.hidden || !onScreen) return;
 
       time += dt * ANIMATION_SPEED;
       // Once the visitor enters the story, returning to the top must restore
@@ -986,6 +997,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false }: {
 
     return () => {
       cancelAnimationFrame(frame);
+      visibility.disconnect();
       window.removeEventListener('resize', resize);
       host.removeEventListener('pointerdown', down);
       window.removeEventListener('pointermove', move);

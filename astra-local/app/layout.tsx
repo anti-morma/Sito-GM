@@ -3,9 +3,9 @@ import { Cormorant_Garamond, Instrument_Sans } from 'next/font/google';
 import './globals.css';
 export const metadata: Metadata = {
   icons: { icon: '/favicon.svg' },
-  title: 'GM Studio — Siti web per host e case vacanza',
+  title: 'GoMore — Creazione siti web su misura',
   description:
-    'Siti web su misura per host Airbnb, case vacanza e property manager. Design, presentazione degli alloggi e percorsi di prenotazione diretta.',
+    'Siti web ed esperienze digitali su misura: strategia, web design, sviluppo, UX, 3D, motion e AI per far percepire il tuo progetto per ciò che vale.',
 };
 // Hero typography: a clean contemporary sans against an editorial italic serif.
 const heroSans = Instrument_Sans({
