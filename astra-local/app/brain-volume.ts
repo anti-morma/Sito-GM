@@ -144,6 +144,26 @@ export function buildBrainVolume(points: BrainPoint[], random: () => number): Br
       previous = x;
     }
   }
+  // Fill enclosed gaps in the sampled silhouette before building the volume.
+  // Only empty cells connected to the outer border remain outside the brain.
+  const exterior = new Uint8Array(GRID * GRID);
+  const queue: number[] = [];
+  const visit = (i: number) => {
+    if (!inside[i] && !exterior[i]) { exterior[i] = 1; queue.push(i); }
+  };
+  for (let i = 0; i < GRID; i++) {
+    visit(i); visit((GRID - 1) * GRID + i);
+    visit(i * GRID); visit(i * GRID + GRID - 1);
+  }
+  for (let head = 0; head < queue.length; head++) {
+    const i = queue[head], x = i % GRID, y = Math.floor(i / GRID);
+    if (x > 0) visit(i - 1);
+    if (x < GRID - 1) visit(i + 1);
+    if (y > 0) visit(i - GRID);
+    if (y < GRID - 1) visit(i + GRID);
+  }
+  for (let i = 0; i < inside.length; i++) if (!exterior[i]) inside[i] = 1;
+
   const referenceDistance = new Float32Array(GRID * GRID);
   for (let i = 0; i < hits.length; i++) referenceDistance[i] = hits[i] ? 0 : 1e6;
   chamfer(referenceDistance);
@@ -219,10 +239,35 @@ export function buildBrainVolume(points: BrainPoint[], random: () => number): Br
     let x = MIN_X + 0.03 + random() * (SPAN - 0.06);
     let y = MIN_Y + 0.03 + random() * (SPAN - 0.06);
     let z = MID_PLANE + (random() - 0.5) * 0.65;
-    for (let step = 0; step < 8; step++) {
-      const f = field(x, y, z);
-      const [gx, gy, gz] = gradient(x, y, z);
-      x -= f * gx; y -= f * gy; z -= f * gz;
+    if (filling) {
+      // Cast from all six directions instead of projecting random volume
+      // points: projection clusters stars on ridges and misses broad hollows.
+      const axis = Math.floor(random() * 3);
+      const direction = random() < 0.5 ? 1 : -1;
+      const low = [MIN_X, MIN_Y, MID_PLANE - 0.34][axis];
+      const high = [MIN_X + SPAN, MIN_Y + SPAN, MID_PLANE + 0.34][axis];
+      const at = (t: number) => field(axis === 0 ? t : x, axis === 1 ? t : y, axis === 2 ? t : z);
+      let outside = direction > 0 ? low : high;
+      let hit: number | undefined;
+      for (let step = 1; step <= 80; step++) {
+        const t = outside + direction * (high - low) / 80;
+        if (at(t) <= 0) { hit = t; break; }
+        outside = t;
+      }
+      if (hit === undefined) continue;
+      let insideHit: number = hit;
+      for (let step = 0; step < 10; step++) {
+        const middle = (outside + insideHit) / 2;
+        if (at(middle) > 0) outside = middle; else insideHit = middle;
+      }
+      const t = (outside + insideHit) / 2;
+      if (axis === 0) x = t; else if (axis === 1) y = t; else z = t;
+    } else {
+      for (let step = 0; step < 8; step++) {
+        const f = field(x, y, z);
+        const [gx, gy, gz] = gradient(x, y, z);
+        x -= f * gx; y -= f * gy; z -= f * gz;
+      }
     }
     if (Math.abs(field(x, y, z)) > 0.002) continue;
     const [nx, ny, nz] = gradient(x, y, z);
@@ -239,7 +284,7 @@ export function buildBrainVolume(points: BrainPoint[], random: () => number): Br
     const value = Math.min(1, Math.max(0.06, (0.1 + 0.8 * gyrus) * (1 - blend) + shadeAt(x, y) * blend));
     // Fill samples never disappear inside a groove: retain the folds through
     // shading rather than holes in the particle coverage.
-    const fillShade = 0.42 + 0.22 * gyrus + 0.12 * shadeAt(x, y);
+    const fillShade = 0.64 + 0.14 * gyrus + 0.10 * shadeAt(x, y);
     surface.set([x, y, z, filling ? fillShade : value, nx, ny, nz], made * 7);
     made++;
   }

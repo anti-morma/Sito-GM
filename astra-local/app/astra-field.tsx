@@ -304,6 +304,7 @@ const vertexShader = `
    vLight *= mix(1.0, 0.55, synapseMix * (1.0 - projectMix) * (1.0 - aFree));
    if (aDetail > 1.5) vLight *= max(synapseMix * (1.0 - projectMix), anatomy * brainBack);
    vLight *= mix(1.0, brainVisible, anatomy * brainShell);
+   vLight *= mix(1.0, 0.65, anatomy);
    // Extra surface stars belong only to the brain, not to the other forms.
    if (aDetail > 2.5) vLight *= anatomy;
    vLight *= 1.0 - smoothstep(0.84, 0.865, uScroll) * uVideoReady * (1.0 - aFree);
