@@ -28,7 +28,8 @@ import { buildBrainVolume } from './brain-volume';
 import { springStep } from './gesture-spring';
 
 const ANIMATION_SPEED = 1.25;
-const MAX_AMBIENT_STARS = 1386;
+// The background stars now live in the site-wide sky (star-sky.tsx).
+const MAX_AMBIENT_STARS = 0;
 const BASE_MORPH_COUNT = brainPoints.length;
 const NEURAL_COUNT = BASE_MORPH_COUNT * 3;
 const MORPH_COUNT = BASE_MORPH_COUNT * 5;
@@ -48,6 +49,8 @@ const vertexShader = `
  #define aBuildingKind aArchitecture.x
  #define aDrawOrder aArchitecture.y
  attribute vec2 aOffset;
+ // Role in the GM monogram: 2 outline, 1 fill, 0 dust, -1 not part of it.
+ attribute float aGlyph;
  #define aSize aStyle.x
  #define aLight aStyle.y
  #define aPhase aStyle.z
@@ -87,7 +90,8 @@ const vertexShader = `
    float motion = 1.0 - uReduced;
 
    float travel = 1.0 - uReduced;
-   float gather = smoothstep(0.28, 0.42, uScroll);
+   // The GM flows straight into the brain from the first scroll: no empty sky between them.
+   float gather = smoothstep(0.02, 0.34, uScroll);
    float zoomIn = smoothstep(0.47, 0.56, uScroll);
    float synapseMix = smoothstep(0.48, 0.58, uScroll);
    float projectMix = smoothstep(0.775, 0.815, uScroll);
@@ -110,7 +114,7 @@ const vertexShader = `
    vec2 brainCloseup = (aBrain.xy - vec2(0.21, 0.055)) * brainScale * 4.0;
    brain.xy = mix(turnedBrain.xy, brainCloseup, zoomIn);
    brain.z = mix(turnedBrain.z, brain.z, zoomIn);
-   brain.y -= (1.0 - smoothstep(0.28, 0.42, uScroll)) * 0.90 * travel;
+   brain.y -= (1.0 - gather) * 0.12 * travel;
    float synapseScale = min(0.82, uAspect * 0.70);
    float signalHead = clamp((uScroll - 0.58) / 0.17, 0.0, 1.0) * 1.06;
    vec3 synapse = aSynapse.xyz * synapseScale;
@@ -137,20 +141,26 @@ const vertexShader = `
    synapse = mix(synapse, project, assemble);
    vec3 logo = position * uLogoScale;
    logo.xy += uHeroOffset;
-   // The story spans six viewport heights: respond one-to-one from the first scroll pixel.
-   logo.y += uScroll * 6.0 * travel;
-   vec3 dispersed = vec3(aOrigin.x * uAspect, aOrigin.y + 0.15, aOrigin.z * 0.35);
-   vec3 target = mix(logo, dispersed, smoothstep(0.0, 0.20, uScroll) * travel);
+   // Respond from the first scroll pixel. The GM's own stars fly into the brain
+   // along a slight arc; every other star of the brain condenses in place from a
+   // loose halo while it fades in, so the brain takes shape right after the GM.
+   logo.y += uScroll * 1.5 * travel;
+   float condense = 1.0 - smoothstep(0.02, 0.22, uScroll);
+   vec3 halo = brain + vec3(aOrigin.x * uAspect, aOrigin.y, aOrigin.z) * 0.14 * condense * travel;
+   vec3 target = mix(halo, logo, step(-0.5, aGlyph));
    target = mix(target, brain, gather);
+   target += vec3(aOrigin.x * uAspect, aOrigin.y, aOrigin.z) * sin(3.14159 * gather) * 0.16 * travel * step(-0.5, aGlyph);
    target = mix(target, synapse, synapseMix);
    if (uReduced > 0.5 && uScroll < 0.025) target = position * uLogoScale + vec3(uHeroOffset, 0.0);
-   float orbit = mix(0.015, 0.0012, gather) * motion * (1.0 - projectMix);
+   // Kept tiny while the GM is formed, so the outline of the letters stays sharp.
+   float glyph = step(-0.5, aGlyph) * (1.0 - smoothstep(0.0, 0.1, uScroll));
+   float orbit = mix(mix(0.015, 0.005, glyph), 0.0012, gather) * motion * (1.0 - projectMix);
    target += vec3(
      sin(uTime * 0.7 + aPhase),
      cos(uTime * 0.55 + aPhase * 1.7),
      sin(uTime * 0.42 + aPhase)
    ) * orbit;
-   target.y += sin(position.x * 18.0 + uTime * 0.65) * 0.006 * motion * (1.0 - gather);
+   target.y += sin(position.x * 18.0 + uTime * 0.65) * mix(0.006, 0.0025, glyph) * motion * (1.0 - gather);
 
    vec3 origin = aOrigin;
    origin.x *= uAspect;
@@ -288,6 +298,9 @@ const vertexShader = `
    vColor = mix(aColor, synapseColor, synapseMix * (1.0 - aFree));
    vStar = max(aFree, synapseMix * (1.0 - aFree) * (isGlow * 0.75 + pulse * 0.4));
    vSparkle = aFree * smoothstep(22.0, 34.0, aSize) * (1.0 - 0.9 * heroCalm);
+   // The brightest stars of the GM become four-point sparkles: irregular in
+   // size, colour and shape, while the outline carries the letters.
+   vSparkle = max(vSparkle, glyph * smoothstep(32.0, 50.0, aSize) * 0.85);
    vSynapse = synapseMix * (1.0 - aFree) * (1.0 - 0.85 * isGlow);
    vNeuralFocus = focusBlur;
    vPulse = pulse;
@@ -310,6 +323,8 @@ const vertexShader = `
    vLight *= 1.0 - smoothstep(0.84, 0.865, uScroll) * uVideoReady * (1.0 - aFree);
    vLight *= depthCue * nearFade;
    vLight *= mix(1.0, min(0.55, 0.9 / max(depthCue, 0.001)), heroCalm) * (1.0 - heroHidden);
+   // Outline stars lead, the fill glows softly behind them, dust barely shows.
+   vLight *= mix(1.0, aGlyph > 1.5 ? 1.04 : aGlyph > 0.5 ? 0.84 : 0.3, glyph);
  }
 `;
 
@@ -342,11 +357,6 @@ const fragmentShader = `
    gl_FragColor = vec4(mix(vColor, vec3(1.0), core * mix(0.6, 0.18, vSynapse)), alpha);
  }
 `;
-
-function getAmbientStarCount(width: number, height: number) {
-  const count = Math.round(Math.min(1800, Math.max(480, (width * height) / 700)));
-  return Math.round(count * 0.77);
-}
 
 export default function AstraField({ scrollProgress = 0, videoReady = false, onFailed }: { scrollProgress?: number; videoReady?: boolean; onFailed?: () => void }) {
   const onFailedRef = useRef(onFailed);
@@ -415,6 +425,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
     const buildingKinds: number[] = [];
     const signals: number[] = [];
     const kinds: number[] = [];
+    const glyphs: number[] = [];
     const totalCount = MORPH_COUNT + MAX_AMBIENT_STARS;
     const synapseParticles = buildSynapseParticles(NEURAL_COUNT, random);
     const projectParticles = buildBlueprintParticles(BASE_MORPH_COUNT, random);
@@ -429,12 +440,19 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
       buildingKinds.push(project?.kind ?? 0, project?.draw ?? 0);
       const sourceIndex = i % logoPoints.length;
       const point = ambient ? [0, 0, 0] : logoPoints[sourceIndex];
-      const scatter = ambient ? 0 : random() < 0.20 ? 0.075 : 0.022;
+      const glyph = !ambient && i < logoPoints.length;
+      // Monogram stars sit exactly on the sampled letters (see scripts/sample-gm.mjs);
+      // the copies used later by the brain keep their looser cloud.
+      // An irregular edge: most monogram stars stay close to the outline, a few stray further.
+      const roll = ambient ? 0 : random();
+      const scatter = ambient ? 0 : glyph ? 0.0075 * (1 + 3 * roll ** 3) : roll < 0.20 ? 0.075 : 0.022;
       positions.push(
         point[0] + (random() - 0.5) * scatter,
         point[1] + (random() - 0.5) * scatter,
-        (random() - 0.5) * (ambient ? 0.09 : 0.16),
+        // Shallow depth: perspective would otherwise smear the off-centre letters.
+        (random() - 0.5) * (ambient ? 0.09 : glyph ? 0.03 : 0.16),
       );
+      glyphs.push(glyph ? point[2] : -1);
       origins.push(
         (random() - 0.5) * (ambient ? 1.1 : 1.7),
         (random() - 0.5) * (ambient ? 1.1 : 1.3),
@@ -536,6 +554,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
       ['aPlan', plans, 4],
       ['aBuilding', buildings, 4],
       ['aArchitecture', buildingKinds, 2],
+      ['aGlyph', glyphs, 1],
     ] as [string, number[], number][]) {
       geometry.setAttribute(name, new Float32BufferAttribute(array, size));
     }
@@ -642,10 +661,6 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
     const resize = () => {
       const width = host.clientWidth;
       const height = host.clientHeight;
-      geometry.setDrawRange(
-        0,
-        MORPH_COUNT + getAmbientStarCount(width, height),
-      );
       renderer.setSize(width, height);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
@@ -673,18 +688,28 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
         const top = 76;
         const bottom = copy ? copy.offsetTop - 24 : height * 0.45;
         const room = Math.max(90, bottom - top);
-        material.uniforms.uLogoScale.value = Math.min(fullScale * 0.92, room / height / 0.62);
+        material.uniforms.uLogoScale.value = Math.min(fullScale * 0.92, room / height / 0.62) * 1.10;
         heroOffset.set(0, 0.5 - (top + room / 2) / height);
       } else {
-        const textRight = copy
-          ? (copy.offsetLeft + copy.offsetWidth + 40) / width
-          : (Math.min(136, Math.max(32, width * 0.075)) + Math.min(width * 0.5, 780) + 40) / width;
-        const rightEdge = 0.95;
-        const fit = Math.min(((rightEdge - textRight) * camera.aspect) / 0.84, 0.72 / 0.58);
-        material.uniforms.uLogoScale.value = Math.max(0.35, Math.min(fullScale, fit) * 0.84);
-        heroOffset.set(((textRight + rightEdge) / 2 - 0.5) * camera.aspect, 0.02);
+        // Side by side: the GM is centred in the space right of the words
+        // actually drawn (not of the copy's box), which brings it towards the
+        // middle of the screen and leaves room for a larger mark.
+        const left = host.getBoundingClientRect().left;
+        let textRight = Math.min(136, Math.max(32, width * 0.075)) + Math.min(width * 0.42, 620);
+        if (copy) {
+          const range = document.createRange();
+          textRight = 0;
+          for (const child of copy.children) {
+            range.selectNodeContents(child);
+            textRight = Math.max(textRight, range.getBoundingClientRect().right - left);
+          }
+        }
+        const start = (textRight + 56) / width;
+        const end = 0.95;
+        const fit = ((end - start) * camera.aspect * 0.74) / 0.82;
+        material.uniforms.uLogoScale.value = Math.max(0.4, Math.min(fit, 0.48 / 0.58));
+        heroOffset.set(((start + end) / 2 - 0.5) * camera.aspect, 0.02);
       }
-      material.uniforms.uLogoScale.value *= 1.10;
       material.uniforms.uPixelScale.value = Math.max(
         0.65,
         Math.min(1.3, height / 720),

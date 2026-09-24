@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AstraField from './astra-field';
 import ConstructionVideo from './construction-video';
+import SectionLabel from './section-label';
 import { brainMessages, housePhases } from './content';
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
@@ -16,11 +17,12 @@ const smoothStep = (value: number) => {
 // the story should pull the visitor forward, never make them wait.
 const KEYS: [number, number][] = [
   [0, 0], // GM hero
-  [45, 0.10], // the monogram disperses into stars
-  [62, 0.28], // the empty sky is crossed quickly
-  [372, 0.865], // brain, neural network, blueprint and crossfade to video
-  [552, 1], // the house is built
-  [566, 1], // a breath on the finished house
+  [34, 0.12], // the monogram dissolves while the brain starts to condense
+  [88, 0.36], // the brain is formed, right after the GM: no empty sky between
+  [92, 0.47], // "Un'idea" holds only briefly: the next scroll enters "Prende forma"
+  [302, 0.865], // neural network, blueprint and crossfade to video
+  [482, 1], // the house is built
+  [496, 1], // a breath on the finished house
 ];
 const STORY_UNITS = KEYS[KEYS.length - 1][0];
 
@@ -54,7 +56,9 @@ const PHASE_STARTS = [0, 0.27, 0.5, 0.72, 0.88];
 const SETTLE_START = 0.862;
 const SETTLE_LENGTH = 0.026;
 
-const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Where the scroll cue stops inside the story: each brain chapter, the method
+// and each of its phases.
+const STOPS = [0.4, 0.525, 0.615, 0.69, 0.75, 0.905, 0.935, 0.965, 0.995];
 
 export default function Story() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -86,19 +90,8 @@ export default function Story() {
     };
   }, []);
 
-  // The scroll cue is a real control: it takes the visitor to the first chapter.
-  const explore = () => {
-    const section = sectionRef.current;
-    const stage = stageRef.current;
-    if (!section || !stage) return;
-    const travel = section.offsetHeight - stage.offsetHeight;
-    const top = section.offsetTop + (unitsAt(0.4) / STORY_UNITS) * travel;
-    window.scrollTo({ top, behavior: reducedMotion() ? 'auto' : 'smooth' });
-  };
-
   const s = scrollProgress;
   const gmExit = smoothStep(s / 0.16);
-  const cue = 1 - smoothStep((s - 0.02) / 0.08);
   const videoEnter = smoothStep((s - 0.84) / 0.025);
   const settle = smoothStep((s - SETTLE_START) / SETTLE_LENGTH);
   // The method appears only once the video has made room for it.
@@ -114,15 +107,19 @@ export default function Story() {
 
   return (
     <section ref={sectionRef} className="gm-story" id="inizio" aria-label="Dall'idea al sito online" style={{ height: `${STORY_UNITS + 100}svh` }}>
+      <span className="gm-story-anchor" id="pensiero" style={{ top: `${unitsAt(0.36)}svh` }} />
       <span className="gm-story-anchor" id="metodo" style={{ top: `${unitsAt(0.9)}svh` }} />
+      {STOPS.map((stop) => <span key={stop} className="gm-story-anchor" data-scroll-stop style={{ top: `${unitsAt(stop)}svh` }} />)}
 
       <div ref={stageRef} className="gm-stage">
+        {/* A night-blue nebula behind the stars: around the GM, drifting to the brain, gone before the video. */}
+        <div className="gm-nebula" aria-hidden="true" style={{ opacity: 1 - smoothStep((s - 0.6) / 0.18), '--nebula-x': `${68 - 18 * smoothStep((s - 0.08) / 0.28)}%` } as React.CSSProperties} />
         <AstraField scrollProgress={s} videoReady={videoReady} onFailed={onWebglFailed} />
         <div className="gm-neural-atmosphere" aria-hidden="true" style={{ opacity: smoothStep((s - 0.48) / 0.10), backgroundPosition: `${50 - settle * 22}% 50%` }} />
 
         {/* 01 — Hero: the headline leads, one clear action, one clear gesture. */}
         <div className="gm-hero-copy" inert={gmExit > 0.6} style={{ opacity: 1 - gmExit, '--hero-lift': `${-s * 420}svh` } as React.CSSProperties}>
-          <p className="gm-hero-eyebrow">Studio digitale · Siti web su misura</p>
+          <SectionLabel className="gm-hero-eyebrow">Studio digitale · Siti web su misura</SectionLabel>
           <h1 className="gm-hero-title">
             Diamo forma a ciò che <em>ti rende unico.</em>
           </h1>
@@ -134,14 +131,10 @@ export default function Story() {
           </div>
         </div>
 
-        <button type="button" className="gm-scroll-cue" onClick={explore} style={{ opacity: cue, visibility: cue < 0.02 ? 'hidden' : undefined }} aria-label="Scorri per esplorare: vai al primo capitolo">
-          <span className="gm-scroll-cue-ring" aria-hidden="true"><i /></span>
-          <span className="gm-scroll-cue-label">Scorri per esplorare</span>
-        </button>
-
-        {/* 02 — Brain: five chapters, one at a time. */}
-        <p className="gm-sr-only">Un’idea prende forma, trova una direzione, diventa esperienza e prende vita.</p>
+        {/* 02 — Thought: the brain, five chapters, one at a time. */}
+        <p className="gm-sr-only">Il pensiero: un’idea prende forma, trova una direzione, diventa esperienza e prende vita.</p>
         <div className="gm-chapters" aria-hidden="true" style={{ opacity: chaptersOn, visibility: chaptersOn < 0.01 ? 'hidden' : undefined }}>
+          <SectionLabel className="gm-chapters-label">Il pensiero</SectionLabel>
           <div className="gm-chapter-stack">
             {brainMessages.map((message, index) => {
               // Sequential hand-over: the previous title leaves before the next arrives.
@@ -162,7 +155,6 @@ export default function Story() {
             <span className="gm-chapter-bars">
               {brainMessages.map((message, index) => <i key={message} className={index <= chapter ? 'is-on' : undefined} />)}
             </span>
-            <span className="gm-chapter-hint">Continua a scorrere <b>↓</b></span>
           </div>
         </div>
 
@@ -173,7 +165,7 @@ export default function Story() {
 
         <div className="gm-house" style={{ opacity: houseEnter, '--house-enter': houseEnter } as React.CSSProperties}>
           <div className="gm-house-intro">
-            <p className="gm-label">Il metodo</p>
+            <SectionLabel>Il metodo</SectionLabel>
             <h2 className="gm-house-title">Una presenza digitale si costruisce.</h2>
             <p className="gm-house-lead">Come una casa: prima le fondamenta, poi la struttura, la forma e i dettagli.</p>
           </div>

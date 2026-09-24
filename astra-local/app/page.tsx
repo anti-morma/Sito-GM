@@ -1,6 +1,8 @@
 import ContactForm from './contact-form';
 import ProjectPreview from './project-preview';
 import Reveal from './reveal';
+import ScrollCue from './scroll-cue';
+import SectionLabel from './section-label';
 import SiteFooter from './site-footer';
 import SiteHeader from './site-header';
 import Story from './story';
@@ -46,21 +48,11 @@ export default function Home() {
         {/* Hero · Brain · Method */}
         <Story />
 
-        {/* Approach: one sentence that sets the tone for everything below. */}
-        <section className="gm-manifesto" id="approccio" aria-labelledby="approccio-title">
-          <div className="gm-wrap">
-            <p className="gm-label" data-reveal>Il nostro approccio</p>
-            <h2 id="approccio-title" className="gm-manifesto-title" data-reveal>
-              Non progettiamo pagine da riempire. <em>Progettiamo il modo in cui vieni percepito.</em>
-            </h2>
-          </div>
-        </section>
-
         {/* Services */}
-        <section id="servizi" className="gm-section gm-services" aria-labelledby="servizi-title">
+        <section id="servizi" className="gm-section gm-services" aria-labelledby="servizi-title" data-scroll-stop>
           <div className="gm-wrap gm-services-grid">
             <header className="gm-services-head" data-reveal>
-              <p className="gm-label">Cosa facciamo</p>
+              <SectionLabel>Cosa facciamo</SectionLabel>
               <h2 id="servizi-title" className="gm-h2">Dall’idea al sito online. E oltre.</h2>
               <p className="gm-lead">Un unico interlocutore per strategia, design, sviluppo e crescita del tuo sito.</p>
               <a className="gm-link" href="#contatti">Raccontaci il tuo progetto <span aria-hidden="true">→</span></a>
@@ -78,10 +70,10 @@ export default function Home() {
         </section>
 
         {/* Projects: real, live work */}
-        <section id="progetti" className="gm-section gm-projects" aria-labelledby="progetti-title">
+        <section id="progetti" className="gm-section gm-projects" aria-labelledby="progetti-title" data-scroll-stop>
           <div className="gm-wrap">
             <header className="gm-projects-head" data-reveal>
-              <p className="gm-label">Progetti</p>
+              <SectionLabel>Progetti</SectionLabel>
               <h2 id="progetti-title" className="gm-h2">Siti reali, online adesso.</h2>
               <p className="gm-lead">Progettati e sviluppati da noi, dall’identità digitale al codice. Guardali dal vivo.</p>
             </header>
@@ -92,10 +84,10 @@ export default function Home() {
         </section>
 
         {/* Contact: the destination of the whole page */}
-        <section id="contatti" className="gm-section gm-contact" aria-labelledby="contatti-title">
+        <section id="contatti" className="gm-section gm-contact" aria-labelledby="contatti-title" data-scroll-stop>
           <div className="gm-wrap gm-contact-grid">
             <header className="gm-contact-head" data-reveal>
-              <p className="gm-label">Contatti</p>
+              <SectionLabel>Contatti</SectionLabel>
               <h2 id="contatti-title" className="gm-h2 gm-h2--xl">Parliamo del tuo progetto.</h2>
               <p className="gm-lead">Il tuo progetto merita di essere percepito per ciò che vale. Raccontaci cosa hai in mente: anche solo un’idea, bastano poche righe.</p>
               {site.email && <p className="gm-contact-mail">Oppure scrivici a <a href={`mailto:${site.email}`}>{site.email}</a></p>}
@@ -107,6 +99,7 @@ export default function Home() {
         </section>
       </main>
       <SiteFooter cta={false} />
+      <ScrollCue />
       <Reveal />
     </>
   );

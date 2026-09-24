@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import SectionLabel from './section-label';
 import SiteFooter from './site-footer';
 import { site } from './content';
 
@@ -17,7 +18,7 @@ export default function LegalPage({ title, updated, children }: { title: string;
         <Link className="gm-link" href="/">← Torna al sito</Link>
       </header>
       <main className="gm-legal gm-wrap">
-        <p className="gm-label">Informazioni legali</p>
+        <SectionLabel>Informazioni legali</SectionLabel>
         <h1 className="gm-h2">{title}</h1>
         <p className="gm-legal-updated">Ultimo aggiornamento: {updated}</p>
         <div className="gm-legal-body">{children}</div>

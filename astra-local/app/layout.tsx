@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import { site } from './content';
+import StarSky from './star-sky';
 import './globals.css';
 
 const description = 'GoMore è uno studio digitale indipendente: progettiamo e sviluppiamo siti web su misura, dalla strategia al design, dallo sviluppo al 3D, perché il tuo progetto venga percepito per ciò che vale.';
@@ -52,7 +53,8 @@ const structuredData = {
   ],
 };
 
-// Hero typography: a clean contemporary sans against an editorial italic serif.
+// Hero typography: a clean contemporary sans against a sharp display italic
+// drawn as its companion (Instrument Serif), bold enough to carry the promise.
 // Self-hosted (latin subset, OFL) so the build never depends on Google Fonts:
 // a failed download there silently swaps in a fallback and shifts the titles.
 const heroSans = localFont({
@@ -62,7 +64,7 @@ const heroSans = localFont({
   fallback: ['Arial', 'sans-serif'],
 });
 const heroSerif = localFont({
-  src: [{ path: './fonts/cormorant-garamond-500-italic-latin.woff2', weight: '500', style: 'italic' }],
+  src: [{ path: './fonts/instrument-serif-latin-400-italic.woff2', weight: '400', style: 'italic' }],
   variable: '--font-hero-serif',
   display: 'swap',
   fallback: ['Georgia', 'serif'],
@@ -74,6 +76,8 @@ export default function RootLayout({
   return (
     <html lang="it" className={`${heroSans.variable} ${heroSerif.variable}`}>
       <body>
+        {/* Moving stars behind every page and section. */}
+        <StarSky />
         {children}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       </body>
