@@ -18,6 +18,8 @@ export type BrainVolume = {
   far: Float32Array;
   /** Rim of the solid (top, bottom, front and back poles): [x, y, z, shade, nx, ny, nz]. */
   rim: Float32Array;
+  /** Additional continuous surface coverage, including the dark folds. */
+  fill: Float32Array;
 };
 
 const MID_PLANE = -0.12;
@@ -210,9 +212,10 @@ export function buildBrainVolume(points: BrainPoint[], random: () => number): Br
   // Rim: project random points onto the solid where the image stars are too
   // sparse (surface seen edge-on in the reference), with their own gyri.
   const noise = makeNoise(random);
-  const rim = new Float32Array(points.length * 7);
+  const surface = new Float32Array(points.length * 3 * 7);
   let made = 0;
-  while (made < points.length) {
+  while (made < points.length * 3) {
+    const filling = made >= points.length;
     let x = MIN_X + 0.03 + random() * (SPAN - 0.06);
     let y = MIN_Y + 0.03 + random() * (SPAN - 0.06);
     let z = MID_PLANE + (random() - 0.5) * 0.65;
@@ -225,17 +228,20 @@ export function buildBrainVolume(points: BrainPoint[], random: () => number): Br
     const [nx, ny, nz] = gradient(x, y, z);
     // Include face samples inside reference gaps as well as the entire rounded
     // edge. This closes the former dark seam on both hemispheres.
-    if (Math.abs(nz) > 0.72 && referenceGap(x, y) < 1.6) continue;
+    if (!filling && Math.abs(nz) > 0.72 && referenceGap(x, y) < 1.6) continue;
     // Gyri: warped ridged noise, stars gather on the crests, grooves stay dark.
     const w = noise(x * 9, y * 9, z * 9) * 0.9;
     const ridge = Math.abs(noise(x * 24 + w, y * 24 - w, z * 24 + w));
     const gyrus = Math.min(1, Math.max(0, (ridge - 0.04) / 0.3));
-    if (random() > 0.12 + 0.88 * gyrus) continue;
+    if (!filling && random() > 0.12 + 0.88 * gyrus) continue;
     // Towards the faces, blend into the reference shading so there is no seam.
     const blend = Math.min(1, Math.abs(nz) / 0.72) * (referenceGap(x, y) < 1.6 ? 1 : 0.35);
     const value = Math.min(1, Math.max(0.06, (0.1 + 0.8 * gyrus) * (1 - blend) + shadeAt(x, y) * blend));
-    rim.set([x, y, z, value, nx, ny, nz], made * 7);
+    // Fill samples never disappear inside a groove: retain the folds through
+    // shading rather than holes in the particle coverage.
+    const fillShade = 0.42 + 0.22 * gyrus + 0.12 * shadeAt(x, y);
+    surface.set([x, y, z, filling ? fillShade : value, nx, ny, nz], made * 7);
     made++;
   }
-  return { front, far, rim };
+  return { front, far, rim: surface.subarray(0, points.length * 7), fill: surface.subarray(points.length * 7) };
 }

@@ -30,7 +30,8 @@ import { springStep } from './gesture-spring';
 const ANIMATION_SPEED = 1.25;
 const MAX_AMBIENT_STARS = 1386;
 const BASE_MORPH_COUNT = brainPoints.length;
-const MORPH_COUNT = BASE_MORPH_COUNT * 3;
+const NEURAL_COUNT = BASE_MORPH_COUNT * 3;
+const MORPH_COUNT = BASE_MORPH_COUNT * 5;
 
 const vertexShader = `
  attribute vec3 aOrigin;
@@ -303,6 +304,8 @@ const vertexShader = `
    vLight *= mix(1.0, 0.55, synapseMix * (1.0 - projectMix) * (1.0 - aFree));
    if (aDetail > 1.5) vLight *= max(synapseMix * (1.0 - projectMix), anatomy * brainBack);
    vLight *= mix(1.0, brainVisible, anatomy * brainShell);
+   // Extra surface stars belong only to the brain, not to the other forms.
+   if (aDetail > 2.5) vLight *= anatomy;
    vLight *= 1.0 - smoothstep(0.84, 0.865, uScroll) * uVideoReady * (1.0 - aFree);
    vLight *= depthCue * nearFade;
    vLight *= mix(1.0, min(0.55, 0.9 / max(depthCue, 0.001)), heroCalm) * (1.0 - heroHidden);
@@ -412,7 +415,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
     const signals: number[] = [];
     const kinds: number[] = [];
     const totalCount = MORPH_COUNT + MAX_AMBIENT_STARS;
-    const synapseParticles = buildSynapseParticles(MORPH_COUNT, random);
+    const synapseParticles = buildSynapseParticles(NEURAL_COUNT, random);
     const projectParticles = buildBlueprintParticles(BASE_MORPH_COUNT, random);
     const brainVolume = buildBrainVolume(brainPoints, random);
 
@@ -462,7 +465,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
       lights.push(ambient ? 0.38 + random() * 0.48 : 0.32 + random() * 0.4);
       phases.push(random() * Math.PI * 2);
       free.push(ambient ? 1 : 0);
-      details.push(!ambient && i >= BASE_MORPH_COUNT ? 2 : detail ? 1 : 0);
+      details.push(!ambient && i >= NEURAL_COUNT ? 3 : !ambient && i >= BASE_MORPH_COUNT ? 2 : detail ? 1 : 0);
       if (ambient) {
         brains.push(0, 0, 0);
         brainShades.push(0);
@@ -482,12 +485,18 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
           brains.push(x, y, z);
           brainShades.push(shade);
           brainNormals.push(nx, ny, nz, z);
-        } else {
+        } else if (i < NEURAL_COUNT) {
           // Far hemisphere, carrying the same reference drawing.
           const j = i - BASE_MORPH_COUNT * 2;
           const [z, nx, ny, nz] = brainVolume.far.subarray(j * 4, j * 4 + 4);
           brains.push(brain[0], brain[1], z);
           brainShades.push(brain[3]);
+          brainNormals.push(nx, ny, nz, z);
+        } else {
+          const k = (i - NEURAL_COUNT) * 7;
+          const [x, y, z, shade, nx, ny, nz] = brainVolume.fill.subarray(k, k + 7);
+          brains.push(x, y, z);
+          brainShades.push(shade);
           brainNormals.push(nx, ny, nz, z);
         }
       }
@@ -497,7 +506,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, onF
         signals.push(2);
         kinds.push(0);
       } else {
-        const synapse = synapseParticles[i];
+        const synapse = synapseParticles[i % NEURAL_COUNT];
         synapses.push(synapse.point.x, synapse.point.y, synapse.point.z, synapse.shade);
         releases.push(synapse.release.x, synapse.release.y, synapse.release.z);
         signals.push(synapse.signal);
