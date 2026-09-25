@@ -2,26 +2,17 @@
 
 import { useEffect, useRef } from 'react';
 import AstraField, { type ParticleFrame } from './astra-field';
+import { METHOD_TRAVEL, methodStoryAt } from './method-timeline';
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const smoothStep = (value: number) => {
   const t = clamp01(value);
   return t * t * (3 - 2 * t);
 };
-const METHOD_KEYS: [number, number][] = [[0, 0.815], [70, 0.865], [250, 1]];
-// Loose stars, ready to draw the villa (see method-story.tsx).
+// Loose stars, ready to draw the villa (see method-timeline.ts).
 const METHOD_START = 0.775;
 // With reduced motion the idea scene holds its whole, still brain.
 const BRIDGE_STILL = 0.5;
-
-function interpolate(keys: [number, number][], units: number) {
-  for (let i = 1; i < keys.length; i++) {
-    const [nextUnit, nextValue] = keys[i];
-    const [unit, value] = keys[i - 1];
-    if (units <= nextUnit) return value + (nextValue - value) * clamp01((units - unit) / (nextUnit - unit));
-  }
-  return keys[keys.length - 1][1];
-}
 
 /**
  * One particle system for the page's two scenes: the hero's GM opens and draws
@@ -64,11 +55,10 @@ export default function ParticleJourney() {
         if (methodBox.top < 0) {
           const stageHeight = method.querySelector<HTMLElement>('.gm-stage')?.offsetHeight ?? vh;
           const travel = Math.max(1, method.offsetHeight - stageHeight);
-          state.progress = interpolate(METHOD_KEYS, clamp01(-methodBox.top / travel) * 250);
+          state.progress = methodStoryAt(clamp01(-methodBox.top / travel) * METHOD_TRAVEL);
         } else {
-          // The GM opens over the first half of the hero's exit; the villa's
-          // drawing starts in the second, as the method arrives.
-          state.progress = METHOD_START + 0.04 * clamp01((state.hero - 0.5) / 0.5);
+          // The GM opens into loose stars; the villa waits for the method's words.
+          state.progress = METHOD_START;
         }
         // The field leaves with the villa: the projects and services keep only the sky.
         opacity = clamp01(methodBox.bottom / vh);

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import ConstructionVideo from './construction-video';
 import SectionLabel from './section-label';
 import { housePhases } from './content';
+import { METHOD_TRAVEL, methodStoryAt, methodUnitsAt } from './method-timeline';
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const smoothStep = (value: number) => {
@@ -11,49 +12,23 @@ const smoothStep = (value: number) => {
   return t * t * (3 - 2 * t);
 };
 
-// The villa starts assembling as this section enters the viewport; continue
-// the drawing and then the construction footage over their own scroll distance.
-const KEYS: [number, number][] = [[0, 0.815], [70, 0.865], [250, 1]];
-const TRAVEL = KEYS[KEYS.length - 1][0];
+// Where each phase starts in the construction footage (share of the film).
 const PHASE_STARTS = [0, 0.27, 0.5, 0.72, 0.88];
-const STOPS = [0.865, 0.905, 0.935, 0.965, 0.995];
-// Phones and portrait tablets (see globals.css): the video does not move aside,
-// so the words can arrive with it and the first phase stays lit for longer.
-const STACKED = '(max-width: 600px), (max-aspect-ratio: 9/10)';
+// The scroll cue's stops: the words read, then each stretch of the film.
+const STOPS = [30, ...[0.865, 0.905, 0.935, 0.965, 0.995].map(methodUnitsAt)];
 
-const storyAt = (units: number) => {
-  for (let i = 1; i < KEYS.length; i++) {
-    const [u1, s1] = KEYS[i];
-    const [u0, s0] = KEYS[i - 1];
-    if (units <= u1) return s0 + ((units - u0) / (u1 - u0)) * (s1 - s0);
-  }
-  return 1;
-};
-
-const unitsAt = (story: number) => {
-  for (let i = 1; i < KEYS.length; i++) {
-    const [u1, s1] = KEYS[i];
-    const [u0, s0] = KEYS[i - 1];
-    if (story <= s1) return u0 + ((story - s0) / (s1 - s0)) * (u1 - u0);
-  }
-  return TRAVEL;
-};
-
+/**
+ * The method, one step at a time as the visitor scrolls (method-timeline.ts):
+ * the kicker, the title and its line appear over loose stars; the stars draw
+ * the villa; the construction footage takes over with the five phases already
+ * listed, and a dot walks down them as the house is built.
+ */
 export default function MethodStory() {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0.815);
+  const [units, setUnits] = useState(0);
   const [near, setNear] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
-  const [stacked, setStacked] = useState(false);
-
-  useEffect(() => {
-    const media = matchMedia(STACKED);
-    const sync = () => setStacked(media.matches);
-    sync();
-    media.addEventListener('change', sync);
-    return () => media.removeEventListener('change', sync);
-  }, []);
 
   useEffect(() => {
     let frame = 0;
@@ -63,10 +38,9 @@ export default function MethodStory() {
       const stage = stageRef.current;
       if (!section || !stage) return;
       const travel = Math.max(1, section.offsetHeight - stage.offsetHeight);
-      const fraction = clamp01(-section.getBoundingClientRect().top / travel);
-      const next = storyAt(fraction * TRAVEL);
+      const next = clamp01(-section.getBoundingClientRect().top / travel) * METHOD_TRAVEL;
       // Finer than a frame of the film: no new render for it.
-      setScrollProgress((previous) => (Math.abs(previous - next) < 1e-4 ? previous : next));
+      setUnits((previous) => (Math.abs(previous - next) < 0.05 ? previous : next));
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
     update();
@@ -88,30 +62,31 @@ export default function MethodStory() {
     };
   }, []);
 
-  const s = scrollProgress;
+  const s = methodStoryAt(units);
+  // The words, one after the other, while the stars are still loose.
+  const reveal = (from: number) => ({ '--in': smoothStep((units - from) / 14) }) as React.CSSProperties;
   const videoEnter = smoothStep((s - 0.84) / 0.025);
-  const settle = smoothStep((s - 0.862) / 0.026);
-  const houseEnter = stacked ? smoothStep((s - 0.848) / 0.02) : smoothStep((s - 0.883) / 0.024);
+  // The phases arrive with the footage, already written.
+  const phasesIn = smoothStep((s - 0.845) / 0.02);
   const videoProgress = clamp01((s - 0.865) / 0.135);
   let phase = 0;
   PHASE_STARTS.forEach((start, index) => { if (videoProgress >= start) phase = index; });
 
   return (
-    <section ref={sectionRef} className="gm-method-story" aria-labelledby="metodo-title" data-video-ready={videoReady} style={{ height: `${TRAVEL + 100}svh` }}>
-      {STOPS.map((stop) => <span key={stop} id={stop === 0.905 ? 'metodo' : undefined} className="gm-story-anchor" data-scroll-stop style={{ top: `${unitsAt(stop)}svh` }} />)}
+    <section ref={sectionRef} className="gm-method-story" aria-labelledby="metodo-title" data-video-ready={videoReady} style={{ height: `${METHOD_TRAVEL + 100}svh` }}>
+      {STOPS.map((stop, index) => <span key={stop} id={index === 0 ? 'metodo' : undefined} className="gm-story-anchor" data-scroll-stop style={{ top: `${stop}svh` }} />)}
       <div ref={stageRef} className="gm-stage">
-        <div className="gm-neural-atmosphere" aria-hidden="true" style={{ opacity: 1 - smoothStep((s - 0.84) / 0.05), backgroundPosition: `${50 - settle * 22}% 50%` }} />
-        <div className="gm-construction-video" aria-hidden="true" style={{ opacity: videoReady ? videoEnter : 0, '--video-settle': settle } as React.CSSProperties}>
+        <div className="gm-neural-atmosphere" aria-hidden="true" style={{ opacity: 1 - smoothStep((s - 0.84) / 0.05) }} />
+        <div className="gm-construction-video" aria-hidden="true" style={{ opacity: videoReady ? videoEnter : 0 }}>
           {near && <ConstructionVideo progress={videoProgress} onReady={setVideoReady} />}
         </div>
-        <div className="gm-house" style={{ opacity: houseEnter, '--house-enter': houseEnter } as React.CSSProperties}>
+        <div className="gm-house">
           <div className="gm-house-intro">
-            <SectionLabel>Il metodo</SectionLabel>
-            <h2 className="gm-house-title" id="metodo-title">Come creiamo il vostro sito web</h2>
-            <p className="gm-house-lead">Come una casa: prima le fondamenta, poi la struttura, la forma e i dettagli.</p>
+            <SectionLabel style={reveal(0)}>Il metodo</SectionLabel>
+            <h2 className="gm-house-title" id="metodo-title" style={reveal(7)}>Come creiamo il vostro sito web</h2>
+            <p className="gm-house-lead" style={reveal(15)}>Come una casa: prima le fondamenta, poi la struttura, la forma e i dettagli.</p>
           </div>
-          <div className="gm-phases">
-            <div className="gm-phases-track" aria-hidden="true"><i style={{ transform: `scaleY(${videoProgress})` }} /></div>
+          <div className="gm-phases" style={{ '--in': phasesIn } as React.CSSProperties}>
             <div className="gm-phases-dots" aria-hidden="true">
               {housePhases.map((item, index) => <i key={item.title} className={index <= phase ? 'is-on' : undefined} />)}
             </div>
@@ -126,8 +101,6 @@ export default function MethodStory() {
                 </li>
               ))}
             </ol>
-            {/* Phones: the titles stay listed, the lit phase's words below them. */}
-            <p key={phase} className="gm-phase-caption" aria-hidden="true">{housePhases[phase].text}</p>
           </div>
         </div>
       </div>

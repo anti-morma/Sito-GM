@@ -195,10 +195,11 @@ ${openingShader}
 
    float projectMix = smoothstep(0.775, 0.815, uScroll);
    // Match the CSS video rectangle exactly, with no tilt during the crossfade.
-   float videoSettle = smoothstep(0.862, 0.888, uScroll); // keep in sync with method-story.tsx
-   float frameWidth = mix(0.80 - videoSettle * 0.28, uPlanWidth, uCompact);
+   // Wide screens: the drawing takes the video's frame on the left (52% wide,
+   // from 4%: globals.css), the words beside it; compact layouts measure it.
+   float frameWidth = mix(0.52, uPlanWidth, uCompact);
    vec3 plan = vec3(aPlan.x, -aPlan.z, 0.0) * uAspect * frameWidth;
-   plan.xy += mix(vec2(-uAspect * videoSettle * 0.20, 0.0), uPlan, uCompact);
+   plan.xy += mix(vec2(-uAspect * 0.20, 0.0), uPlan, uCompact);
    // Layered relief while drawing; flattens before the video so the crossfade stays exact.
    plan.z = aOrigin.z * 0.12 * (1.0 - smoothstep(0.815, 0.845, uScroll));
    // Each group of stars joins the progressive drawing in turn.
