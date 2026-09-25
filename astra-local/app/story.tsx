@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import SectionLabel from './section-label';
 import { brainMessages } from './content';
+import { STORY_UNITS, storyAt, unitsAt } from './story-timeline';
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const smoothStep = (value: number) => {
@@ -10,41 +11,11 @@ const smoothStep = (value: number) => {
   return t * t * (3 - 2 * t);
 };
 
-// The opening ends as the neural network disperses. The same particles resume
-// their journey into the villa after the live projects.
-const KEYS: [number, number][] = [
-  [0, 0], // GM hero
-  [34, 0.12], // the monogram dissolves while the brain starts to condense
-  [88, 0.36], // the brain is formed, right after the GM: no empty sky between
-  [92, 0.47], // "Un'idea" holds only briefly: the next scroll enters "Prende forma"
-  [320, 0.745], // hold the complete network through the last thought slide
-  [420, 0.775], // scatter as the projects replace the sticky thought stage
-];
-const STORY_UNITS = KEYS[KEYS.length - 1][0];
-
-const storyAt = (units: number) => {
-  for (let i = 1; i < KEYS.length; i++) {
-    const [u1, s1] = KEYS[i];
-    const [u0, s0] = KEYS[i - 1];
-    if (units <= u1) return s0 + ((units - u0) / (u1 - u0 || 1)) * (s1 - s0);
-  }
-  return 1;
-};
-const unitsAt = (story: number) => {
-  for (let i = 1; i < KEYS.length; i++) {
-    const [u1, s1] = KEYS[i];
-    const [u0, s0] = KEYS[i - 1];
-    if (story <= s1 && s1 > s0) return u0 + ((story - s0) / (s1 - s0)) * (u1 - u0);
-  }
-  return STORY_UNITS;
-};
-
-// Chapters hand over at these points: formed brain, entering it, first
-// impulse, the four synapses, whole network.
-const CHAPTER_BOUNDS = [0.345, 0.475, 0.575, 0.655, 0.72, 0.775];
+// Three beats keep the thought concise before the particles disperse.
+const CHAPTER_BOUNDS = [0.345, 0.56, 0.68, 0.775];
 const CHAPTER_FADE = 0.014;
 
-const STOPS = [0.4, 0.525, 0.615, 0.69, 0.75];
+const STOPS = [0.4, 0.61, 0.73];
 
 export default function Story() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -107,8 +78,8 @@ export default function Story() {
           </div>
         </div>
 
-        {/* 02 — Thought: the brain, five chapters, one at a time. */}
-        <p className="gm-sr-only">Il pensiero: un’idea prende forma, trova una direzione, diventa esperienza e prende vita.</p>
+        {/* 02 — Thought: the brain, three chapters, one at a time. */}
+        <p className="gm-sr-only">Il pensiero: un’idea prende forma e prende vita.</p>
         <div className="gm-chapters" aria-hidden="true" style={{ opacity: chaptersOn, visibility: chaptersOn < 0.01 ? 'hidden' : undefined }}>
           <SectionLabel className="gm-chapters-label">Il pensiero</SectionLabel>
           <div className="gm-chapter-stack">

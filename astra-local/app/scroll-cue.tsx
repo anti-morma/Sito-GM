@@ -17,6 +17,7 @@ export default function ScrollCue() {
   const [atTop, setAtTop] = useState(true);
   const [scrolling, setScrolling] = useState(false);
   const [ended, setEnded] = useState(false);
+  const [inProjects, setInProjects] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -27,6 +28,8 @@ export default function ScrollCue() {
       setAtTop(scrollY < 8);
       const contact = document.getElementById('contatti');
       setEnded(!!contact && contact.getBoundingClientRect().top < innerHeight * 0.72);
+      const projects = document.getElementById('progetti')?.getBoundingClientRect();
+      setInProjects(matchMedia('(max-width: 760px)').matches && !!projects && projects.top < innerHeight * 0.9 && projects.bottom > innerHeight * 0.1);
     };
     const onScroll = () => {
       setScrolling(true);
@@ -59,7 +62,7 @@ export default function ScrollCue() {
     scrollTo({ top, behavior: reducedMotion() ? 'auto' : 'smooth' });
   };
 
-  const visible = !ended && !menuOpen && (atTop || !scrolling);
+  const visible = !ended && !menuOpen && !inProjects && (atTop || !scrolling);
   const label = atTop ? 'Scorri per esplorare' : 'Continua a scorrere';
 
   return (

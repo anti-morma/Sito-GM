@@ -83,8 +83,10 @@ const fragmentShader = `
 `;
 
 // Same density as the story sky had (astra-field.tsx), +10%.
-const starCount = (width: number, height: number) =>
-  Math.round(Math.min(1800, Math.max(480, (width * height) / 700)) * 0.847);
+const starCount = (width: number, height: number, mobile = false) =>
+  mobile
+    ? Math.round(Math.min(260, Math.max(180, (width * height) / 1800)))
+    : Math.round(Math.min(1800, Math.max(480, (width * height) / 700)) * 0.847);
 const MAX_STARS = starCount(1e5, 1e5);
 
 /**
@@ -105,8 +107,9 @@ export default function StarSky() {
       return;
     }
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const mobile = matchMedia('(max-width: 760px), (pointer: coarse)');
     renderer.setClearColor(0, 0);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth <= 760 ? 1.5 : 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio, mobile.matches ? 1 : 2));
     renderer.domElement.setAttribute('aria-hidden', 'true');
     host.appendChild(renderer.domElement);
 
@@ -163,7 +166,7 @@ export default function StarSky() {
       camera.updateProjectionMatrix();
       u.uAspect.value = camera.aspect;
       u.uPixelScale.value = Math.max(0.65, Math.min(1.3, height / 720));
-      geometry.setDrawRange(0, starCount(width, height));
+      geometry.setDrawRange(0, starCount(width, height, mobile.matches));
     };
     resize();
 
@@ -178,6 +181,7 @@ export default function StarSky() {
     };
     const loop = (now: number) => {
       frame = requestAnimationFrame(loop);
+      if (mobile.matches && now - last < 1000 / 30) return;
       const dt = Math.min(0.04, (now - last) / 1000);
       last = now;
       if (document.hidden) return;

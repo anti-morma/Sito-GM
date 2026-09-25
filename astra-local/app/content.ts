@@ -15,8 +15,6 @@ export const site = {
 export const brainMessages = [
   "Un'idea",
   'Prende forma',
-  'Trova una direzione',
-  'Diventa esperienza',
   'Prende vita',
 ];
 

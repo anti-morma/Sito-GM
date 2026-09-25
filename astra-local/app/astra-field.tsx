@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import {
   AdditiveBlending,
   BufferGeometry,
@@ -82,6 +82,7 @@ const vertexShader = `
  varying float vNeuralFocus;
  varying float vPulse;
  varying float vConstruction;
+ varying float vSpriteCrop;
 
  void main() {
    float t = clamp((uTime * 1.33 - 0.8 - aPhase * 0.12) / 4.8, 0.0, 1.0);
@@ -92,9 +93,17 @@ const vertexShader = `
    float travel = 1.0 - uReduced;
    // The GM flows straight into the brain from the first scroll: no empty sky between them.
    float gather = smoothstep(0.02, 0.34, uScroll);
+   #ifdef BRAIN_PASS
+   // These blends are exactly zero through scroll 0.47. Constants let the
+   // compiler remove the later scenes and their vertex attributes entirely.
+   float zoomIn = 0.0;
+   float synapseMix = 0.0;
+   float projectMix = 0.0;
+   #else
    float zoomIn = smoothstep(0.47, 0.56, uScroll);
    float synapseMix = smoothstep(0.48, 0.58, uScroll);
    float projectMix = smoothstep(0.775, 0.815, uScroll);
+   #endif
    // The brain is the protagonist: centred and large, a little bigger on
    // narrow screens where it has the whole width to itself.
    float brainScale = min(1.12, uAspect * mix(0.65, 0.9, uCompact));
@@ -137,13 +146,17 @@ const vertexShader = `
    synapse.xz = mat2(cos(neuralTurn), -sin(neuralTurn), sin(neuralTurn), cos(neuralTurn)) * synapse.xz;
    // Match the CSS video rectangle exactly, with no tilt during the crossfade.
    float videoSettle = smoothstep(0.862, 0.888, uScroll); // keep in sync with method-story.tsx
-   float frameWidth = mix(0.80 - videoSettle * 0.28, 0.92, uCompact);
+   float frameWidth = mix(0.80 - videoSettle * 0.28, 0.86, uCompact);
    vec3 project = vec3(aPlan.x, -aPlan.z, 0.0) * uAspect * frameWidth;
-   project.xy += vec2(mix(-uAspect * videoSettle * 0.20, 0.0, uCompact), 0.08 * uCompact);
+   project.xy += vec2(mix(-uAspect * videoSettle * 0.20, 0.0, uCompact), -0.05 * uCompact);
    // Layered relief while drawing; flattens before the video so the crossfade stays exact.
    project.z = aOrigin.z * 0.12 * (1.0 - smoothstep(0.815, 0.845, uScroll));
    // Scatter first, then gather each group of stars into the progressive drawing.
+   #ifdef BRAIN_PASS
+   float scatter = 0.0;
+   #else
    float scatter = smoothstep(0.745, 0.775, uScroll) * motion;
+   #endif
    vec3 loose = vec3(aOrigin.x * uAspect * 1.45, aOrigin.y * 1.35 - 0.18, aOrigin.z * 0.6);
    loose.xy += vec2(sin(aPhase * 2.7), cos(aPhase * 1.9)) * 0.18 * motion;
    synapse = mix(synapse, loose, scatter);
@@ -200,25 +213,28 @@ const vertexShader = `
    vec4 mv = aFree > 0.5
      ? viewMatrix * vec4(p, 1.0)
      : modelViewMatrix * vec4(p, 1.0);
-   // The spring texture stores screen-space offsets; sample it after the
-   // complete morph and rotation so it follows the particles actually drawn.
-   vec2 screenPoint = mv.xy * (2.0 / max(0.1, -mv.z));
-   vec2 uv = vec2((screenPoint.x + uAspect * 0.5 + 0.1) / (uAspect + 0.2),
-     (screenPoint.y + 0.6) / 1.2);
-   vec2 fieldOffset = vec2(0.0);
-   if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
-     vec2 grid = clamp(uv * uFieldSize - 0.5, vec2(0.0), uFieldSize - 1.0);
-     vec2 base = floor(grid);
-     vec2 blend = grid - base;
-     vec2 a = texture2D(uSpringField, (base + vec2(0.5, 0.5)) / uFieldSize).xy;
-     vec2 b = texture2D(uSpringField, (base + vec2(1.5, 0.5)) / uFieldSize).xy;
-     vec2 c = texture2D(uSpringField, (base + vec2(0.5, 1.5)) / uFieldSize).xy;
-     vec2 d = texture2D(uSpringField, (base + vec2(1.5, 1.5)) / uFieldSize).xy;
-     fieldOffset = mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y);
-   }
-   float fieldBlend = smoothstep(0.020, 0.025, uScroll);
-   vec2 displacement = mix(aOffset, fieldOffset, fieldBlend) * (1.0 - aFree)
-     * (1.0 - smoothstep(0.83, 0.84, uScroll) * uVideoReady);
+   // Touch screens do not use particle gestures, so skip the spring texture
+   // and its four samples for every point of the GM-to-brain transition.
+   vec2 displacement = vec2(0.0);
+   #ifndef MOBILE
+     vec2 screenPoint = mv.xy * (2.0 / max(0.1, -mv.z));
+     vec2 uv = vec2((screenPoint.x + uAspect * 0.5 + 0.1) / (uAspect + 0.2),
+       (screenPoint.y + 0.6) / 1.2);
+     vec2 fieldOffset = vec2(0.0);
+     if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
+       vec2 grid = clamp(uv * uFieldSize - 0.5, vec2(0.0), uFieldSize - 1.0);
+       vec2 base = floor(grid);
+       vec2 blend = grid - base;
+       vec2 a = texture2D(uSpringField, (base + vec2(0.5, 0.5)) / uFieldSize).xy;
+       vec2 b = texture2D(uSpringField, (base + vec2(1.5, 0.5)) / uFieldSize).xy;
+       vec2 c = texture2D(uSpringField, (base + vec2(0.5, 1.5)) / uFieldSize).xy;
+       vec2 d = texture2D(uSpringField, (base + vec2(1.5, 1.5)) / uFieldSize).xy;
+       fieldOffset = mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y);
+     }
+     float fieldBlend = smoothstep(0.020, 0.025, uScroll);
+     displacement = mix(aOffset, fieldOffset, fieldBlend) * (1.0 - aFree)
+       * (1.0 - smoothstep(0.83, 0.84, uScroll) * uVideoReady);
+   #endif
    float influence = min(length(displacement) * 3.0, 0.2);
    mv.xy += displacement * (-mv.z / 2.0);
 
@@ -316,7 +332,11 @@ const vertexShader = `
    // size, colour and shape, while the outline carries the letters.
    vSparkle = max(vSparkle, glyph * smoothstep(32.0, 50.0, aSize) * 0.85);
    vSynapse = synapseMix * (1.0 - aFree) * (1.0 - 0.85 * isGlow) * (1.0 - scatter);
+   #ifdef BRAIN_PASS
+   vNeuralFocus = 0.0;
+   #else
    vNeuralFocus = focusBlur;
+   #endif
    vPulse = pulse;
    float constructed = projectMix * (1.0 - aFree);
    vConstruction = constructed;
@@ -339,6 +359,11 @@ const vertexShader = `
    vLight *= mix(1.0, min(0.55, 0.9 / max(depthCue, 0.001)), heroCalm) * (1.0 - heroHidden);
    // Outline stars lead, the fill glows softly behind them, dust barely shows.
    vLight *= mix(1.0, aGlyph > 1.5 ? 1.04 : aGlyph > 0.5 ? 0.84 : 0.3, glyph);
+   // Compact brain dots have no broad halo. Trim only transparent sprite
+   // margins and remap UVs, preserving their pixel size, light and position.
+   vSpriteCrop = (vStar == 0.0 && vSparkle == 0.0 && vSynapse == 0.0) ? 0.6 : 1.0;
+   gl_PointSize *= vSpriteCrop;
+   if (vLight <= 0.0) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
  }
 `;
 
@@ -352,10 +377,18 @@ const fragmentShader = `
  varying float vNeuralFocus;
  varying float vPulse;
  varying float vConstruction;
+ varying float vSpriteCrop;
 
  void main() {
-   vec2 uv = gl_PointCoord - 0.5;
+   vec2 uv = (gl_PointCoord - 0.5) * vSpriteCrop;
    float r2 = dot(uv, uv);
+   if (vSpriteCrop < 1.0) {
+     float core = exp(-r2 * 850.0);
+     float alpha = (core + exp(-r2 * 200.0) * 0.25) * vLight;
+     if (alpha < 0.0003) discard;
+     gl_FragColor = vec4(mix(vColor, vec3(1.0), core * 0.6), alpha);
+     return;
+   }
    float core = exp(-r2 * mix(850.0, 310.0, vStar));
    float inner = exp(-r2 * mix(200.0, 90.0, vStar)) * mix(0.25, 0.2, vStar);
    float halo = exp(-r2 * 26.0) * 0.055 * vStar;
@@ -363,33 +396,32 @@ const fragmentShader = `
      exp(-abs(uv.x) * 170.0 - abs(uv.y) * 13.0) +
      exp(-abs(uv.y) * 170.0 - abs(uv.x) * 13.0)
    ) * 0.18 * vSparkle;
-   float neuralCore = exp(-r2 * mix(mix(240.0, 170.0, vConstruction), 85.0, vNeuralFocus));
-   float neuralHalo = exp(-r2 * 28.0) * (0.045 + vPulse * 0.06);
-   float neuralLight = (neuralCore + neuralHalo) * mix(1.0, 0.42, vNeuralFocus);
+   float neuralLight = 0.0;
+   if (vSynapse > 0.0) {
+     float neuralCore = exp(-r2 * mix(mix(240.0, 170.0, vConstruction), 85.0, vNeuralFocus));
+     float neuralHalo = exp(-r2 * 28.0) * (0.045 + vPulse * 0.06);
+     neuralLight = (neuralCore + neuralHalo) * mix(1.0, 0.42, vNeuralFocus);
+   }
    float alpha = mix(core + inner + halo + rays, neuralLight, vSynapse) * vLight;
    if (alpha < 0.0003) discard;
    gl_FragColor = vec4(mix(vColor, vec3(1.0), core * mix(0.6, 0.18, vSynapse)), alpha);
  }
 `;
 
-export default function AstraField({ scrollProgress = 0, videoReady = false, active = true, onFailed }: { scrollProgress?: number; videoReady?: boolean; active?: boolean; onFailed?: () => void }) {
+export type ParticleFrame = { progress: number; videoReady: boolean; active: boolean };
+
+export default function AstraField({ frameState, onFailed }: { frameState: RefObject<ParticleFrame>; onFailed?: () => void }) {
   const onFailedRef = useRef(onFailed);
   onFailedRef.current = onFailed;
   const hostRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef(scrollProgress);
-  const videoReadyRef = useRef(videoReady);
-  const activeRef = useRef(active);
-  useEffect(() => { videoReadyRef.current = videoReady; }, [videoReady]);
-  useEffect(() => { activeRef.current = active; }, [active]);
-
-  useEffect(() => {
-    scrollRef.current = scrollProgress;
-  }, [scrollProgress]);
+  const scrollRef = useRef(0);
+  const videoReadyRef = useRef(false);
 
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
     const media = matchMedia('(prefers-reduced-motion: reduce)');
+    const mobile = matchMedia('(max-width: 760px), (pointer: coarse)');
     let renderer: WebGLRenderer;
 
     try {
@@ -406,8 +438,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, act
 
     host.dataset.failed = 'false';
     renderer.setClearColor(0, 0);
-    // Phones draw at 1.5× at most: indistinguishable for points, far lighter.
-    renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth <= 760 ? 1.5 : 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio, mobile.matches ? 1 : 2));
     renderer.domElement.setAttribute('aria-hidden', 'true');
     host.appendChild(renderer.domElement);
 
@@ -575,7 +606,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, act
       geometry.setAttribute(name, new Float32BufferAttribute(array, size));
     }
 
-    const offsets = new Float32Array(totalCount * 2);
+    const offsets = new Float32Array((positions.length / 3) * 2);
     const velocities = new Float32Array(logoPoints.length * 2);
     const offsetAttribute = new Float32BufferAttribute(offsets, 2);
     offsetAttribute.setUsage(DynamicDrawUsage);
@@ -598,6 +629,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, act
     let springTexture = makeFieldTexture(fieldData, fieldWidth);
 
     const material = new ShaderMaterial({
+      defines: mobile.matches ? { MOBILE: 1 } : {},
       vertexShader,
       fragmentShader,
       uniforms: {
@@ -625,6 +657,13 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, act
     const field = new Points(geometry, material);
     field.frustumCulled = false;
     galaxy.add(field);
+    const brainMaterial = material.clone();
+    brainMaterial.defines = { ...material.defines, BRAIN_PASS: 1 };
+    brainMaterial.uniforms = material.uniforms;
+    // Compile both passes before the visitor reaches their scroll boundary.
+    renderer.compile(scene, camera);
+    field.material = brainMaterial;
+    renderer.compile(scene, camera);
 
     let frame = 0;
     let time = 0;
@@ -652,7 +691,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, act
     const pivot = new Vector3();
     const rotatedPivot = new Vector3();
     const interactionAvailable = () =>
-      !(videoReadyRef.current && scrollRef.current >= 0.84);
+      !mobile.matches && !(videoReadyRef.current && scrollRef.current >= 0.84);
 
     const locate = (event: PointerEvent) => {
       const bounds = host.getBoundingClientRect();
@@ -746,7 +785,9 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, act
       frame = requestAnimationFrame(render);
       const dt = Math.min(0.04, (now - last) / 1000);
       last = now;
-      if (document.hidden || !onScreen || !activeRef.current) return;
+      scrollRef.current = frameState.current.progress;
+      videoReadyRef.current = frameState.current.videoReady;
+      if (document.hidden || !onScreen || !frameState.current.active) return;
 
       time += dt * ANIMATION_SPEED;
       // Once the visitor enters the story, returning to the top must restore
@@ -762,6 +803,13 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, act
       }
       material.uniforms.uReduced.value = media.matches ? 1 : 0;
       material.uniforms.uScroll.value = scrollRef.current;
+      // Omit only groups whose shader light is exactly zero in this phase.
+      // Every surface layer is present throughout GM -> brain, both ways.
+      const progress = scrollRef.current;
+      field.material = progress <= 0.47 ? brainMaterial : material;
+      geometry.setDrawRange(0, progress <= 0.02 ? logoPoints.length
+        : progress >= 0.815 ? BASE_MORPH_COUNT
+        : progress >= 0.58 ? NEURAL_COUNT : totalCount);
       material.uniforms.uVideoReady.value = videoReadyRef.current ? 1 : 0;
       if (!interactionAvailable()) pointerActive = false;
       const damping = 1 - Math.exp(-14 * dt);
@@ -803,16 +851,18 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, act
       galaxy.updateMatrixWorld();
 
       const s = scrollRef.current;
-      const canGesture = s < 0.025 || (s >= 0.36 && s < 0.745);
+      const canGesture = !mobile.matches && (s < 0.025 || (s >= 0.36 && s < 0.745));
       gesture.style.display = canGesture ? 'block' : 'none';
       if (!canGesture && dragging) leave();
       const isLogo = s < 0.025;
       const zoneWidth = isLogo ? Math.min(0.9, material.uniforms.uLogoScale.value * 0.9 / camera.aspect) : 0.70;
       const zoneHeight = isLogo ? Math.min(0.65, material.uniforms.uLogoScale.value * 0.65) : 0.62;
-      gesture.style.width = `${zoneWidth * 100}%`;
-      gesture.style.height = `${zoneHeight * 100}%`;
-      gesture.style.left = `${(0.5 + (isLogo ? logoCenter.x / camera.aspect : 0)) * 100}%`;
-      gesture.style.top = `${(0.5 - (isLogo ? logoCenter.y : 0.035)) * 100}%`;
+      if (canGesture) {
+        gesture.style.width = `${zoneWidth * 100}%`;
+        gesture.style.height = `${zoneHeight * 100}%`;
+        gesture.style.left = `${(0.5 + (isLogo ? logoCenter.x / camera.aspect : 0)) * 100}%`;
+        gesture.style.top = `${(0.5 - (isLogo ? logoCenter.y : 0.035)) * 100}%`;
+      }
 
       if (!interactionAvailable()) {
         zoomTarget = REST_DISTANCE;
@@ -1045,6 +1095,7 @@ export default function AstraField({ scrollProgress = 0, videoReady = false, act
       renderer.domElement.removeEventListener('webglcontextlost', contextLost);
       geometry.dispose();
       material.dispose();
+      brainMaterial.dispose();
       springTexture.dispose();
       renderer.dispose();
       renderer.domElement.remove();

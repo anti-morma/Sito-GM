@@ -1,5 +1,3 @@
-@import 'tailwindcss';
-
 /* ======================================================================
    Tokens — near-black, warm whites, refined greys, ONE accent: starlight
    blue, the colour of the brightest stars, with night blue as its ink and
@@ -27,7 +25,7 @@
   --header-h: 72px;
 }
 
-* { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
 
 html { -webkit-text-size-adjust: 100%; }
 html.gm-menu-open { overflow: hidden; }
@@ -45,8 +43,10 @@ body {
 }
 
 h1, h2, h3, p { margin: 0; }
-a { color: inherit; -webkit-tap-highlight-color: transparent; }
+a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+ul, ol { list-style: none; }
 button { color: inherit; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+img, video, svg, canvas { display: block; }
 img, video { max-width: 100%; }
 em { font-style: normal; }
 
@@ -501,6 +501,9 @@ em { font-style: normal; }
 .gm-particle-journey { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 .gm-particle-journey .starfield { width: 100%; height: 100%; }
 .gm-particle-journey .starfield-gesture { pointer-events: auto; }
+@media (pointer: coarse) {
+  .gm-particle-journey .starfield-gesture { display: none !important; pointer-events: none; }
+}
 .gm-site > section { position: relative; z-index: 1; }
 .gm-story { pointer-events: none; }
 .gm-hero-actions { pointer-events: auto; }
@@ -900,11 +903,11 @@ em { font-style: normal; }
 /* Stacked layout on phones and portrait tablets (mirrors uCompact in the shader):
    headline → construction → one phase at a time. */
 @media (max-width: 600px), (max-aspect-ratio: 9/10) {
-  .gm-construction-video { top: 42%; left: 4%; width: 92%; }
+  .gm-construction-video { top: 55%; left: 7%; width: 86%; }
   .gm-house { inset: 0; display: block; width: auto; transform: none; }
   .gm-house-intro {
     position: absolute;
-    top: calc(var(--header-h) + 8px);
+    top: calc(var(--header-h) + 8svh);
     left: 20px;
     right: 20px;
     transform: translateY(calc((1 - var(--house-enter, 1)) * 14px));
@@ -913,7 +916,7 @@ em { font-style: normal; }
   .gm-house-title { max-width: 16ch; font-size: clamp(28px, 8vw, 40px); }
   .gm-house-lead { font-size: 16px; }
 
-  .gm-phases { position: absolute; top: calc(42% + 25.9vw + 24px); left: 20px; right: 20px; }
+  .gm-phases { position: absolute; top: calc(55% + 24.2vw + 20px); left: 20px; right: 20px; }
   .gm-phases-track { display: none; }
   .gm-phases-dots { display: flex; gap: 6px; margin-bottom: 18px; }
   .gm-phases-dots i { flex: 1; height: 2px; background: var(--line-2); transition: background-color 0.5s var(--ease); }
@@ -1204,9 +1207,10 @@ em { font-style: normal; }
   .gm-contact-head { position: static; }
 
   .gm-project,
-  .gm-project:nth-child(even) { grid-template-columns: 1fr; grid-template-areas: 'text' 'media'; gap: 36px; align-items: start; }
+  .gm-project:nth-child(even) { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'text' 'media'; gap: clamp(22px, 4svh, 36px); align-items: start; }
   .gm-project-description { margin-bottom: 28px; }
-  .gm-project:nth-child(odd) .gm-project-media { justify-self: start; }
+  .gm-project-media,
+  .gm-project:nth-child(odd) .gm-project-media { justify-self: center; width: min(100%, 76svh); }
 }
 
 @media (max-width: 760px) {
@@ -1222,13 +1226,20 @@ em { font-style: normal; }
   .gm-service h3 { font-size: 24px; }
   .gm-service p { font-size: 16px; }
 
-  .gm-projects-head { margin-bottom: 56px; }
-  .gm-project-list { gap: 88px; }
-  .gm-project h3 { font-size: clamp(34px, 10vw, 44px); }
-  .gm-project-text .gm-btn { width: 100%; }
-  /* Phones show the real mobile homepage in a square window. */
+  .gm-projects-head { margin-bottom: clamp(34px, 6svh, 56px); }
+  .gm-project-list { gap: clamp(56px, 10svh, 88px); }
+  .gm-project h3 { margin-top: clamp(10px, 2svh, 18px); font-size: clamp(30px, 9vw, 44px); }
+  .gm-project-category { margin-top: clamp(10px, 2svh, 16px); font-size: clamp(11px, 3.2vw, 14px); }
+  .gm-project-description { margin: clamp(14px, 2svh, 22px) 0 clamp(18px, 3svh, 28px); font-size: clamp(15px, 3.8vw, 17px); line-height: 1.45; }
+  .gm-project-text .gm-btn { width: 100%; min-width: 0; padding-inline: clamp(12px, 4vw, 24px); font-size: clamp(13px, 3.4vw, 16px); }
+  /* Portrait phones keep a square preview; its size follows the available
+     width and the viewport height instead of stopping at a fixed 440px. */
   .gm-project-media,
-  .gm-project:nth-child(odd) .gm-project-media { justify-self: center; max-width: 440px; aspect-ratio: 1 / 1; border-radius: 18px; }
+  .gm-project:nth-child(odd) .gm-project-media { justify-self: center; width: min(100%, 72svh); max-width: none; aspect-ratio: 1 / 1; border-radius: clamp(10px, 3vw, 18px); }
+  .gm-project-poster img,
+  .gm-project-video { object-fit: cover; object-position: center top; transform: none; }
+  .gm-project-poster img,
+  .gm-project-video { z-index: 1; }
   .gm-project-hover { display: none; }
   .gm-project { grid-template-areas: 'text' 'media'; }
 
@@ -1240,6 +1251,11 @@ em { font-style: normal; }
   .gm-footer-cta { flex-direction: column; align-items: stretch; }
   .gm-footer-cta .gm-btn { width: 100%; }
   .gm-footer-bottom { flex-direction: column; }
+}
+
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 600px) {
+  .gm-project-media,
+  .gm-project:nth-child(odd) .gm-project-media { width: min(100%, 90svh); aspect-ratio: 1 / 1; }
 }
 
 /* ---------- Reduced motion ---------- */

@@ -16,7 +16,7 @@ const smoothStep = (value: number) => {
 const KEYS: [number, number][] = [[0, 0.815], [70, 0.865], [250, 1]];
 const TRAVEL = KEYS[KEYS.length - 1][0];
 const PHASE_STARTS = [0, 0.27, 0.5, 0.72, 0.88];
-const STOPS = [0.835, 0.905, 0.935, 0.965, 0.995];
+const STOPS = [0.865, 0.905, 0.935, 0.965, 0.995];
 
 const storyAt = (units: number) => {
   for (let i = 1; i < KEYS.length; i++) {
@@ -83,8 +83,8 @@ export default function MethodStory() {
   PHASE_STARTS.forEach((start, index) => { if (videoProgress >= start) phase = index; });
 
   return (
-    <section ref={sectionRef} className="gm-method-story" id="metodo" aria-labelledby="metodo-title" data-scroll-stop data-video-ready={videoReady} style={{ height: `${TRAVEL + 100}svh` }}>
-      {STOPS.map((stop) => <span key={stop} className="gm-story-anchor" data-scroll-stop style={{ top: `${unitsAt(stop)}svh` }} />)}
+    <section ref={sectionRef} className="gm-method-story" aria-labelledby="metodo-title" data-video-ready={videoReady} style={{ height: `${TRAVEL + 100}svh` }}>
+      {STOPS.map((stop) => <span key={stop} id={stop === 0.905 ? 'metodo' : undefined} className="gm-story-anchor" data-scroll-stop style={{ top: `${unitsAt(stop)}svh` }} />)}
       <div ref={stageRef} className="gm-stage">
         <div className="gm-neural-atmosphere" aria-hidden="true" style={{ opacity: 1 - smoothStep((s - 0.84) / 0.05), backgroundPosition: `${50 - settle * 22}% 50%` }} />
         <div className="gm-construction-video" aria-hidden="true" style={{ opacity: videoReady ? videoEnter : 0, '--video-settle': settle } as React.CSSProperties}>

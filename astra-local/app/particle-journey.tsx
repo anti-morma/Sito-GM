@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import AstraField from './astra-field';
+import { useEffect, useRef } from 'react';
+import AstraField, { type ParticleFrame } from './astra-field';
+import { STORY_UNITS, storyAt } from './story-timeline';
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
-const STORY_KEYS: [number, number][] = [[0, 0], [34, 0.12], [88, 0.36], [92, 0.47], [320, 0.745], [420, 0.775]];
 const METHOD_KEYS: [number, number][] = [[0, 0.815], [70, 0.865], [250, 1]];
 
 function interpolate(keys: [number, number][], units: number) {
@@ -18,17 +18,15 @@ function interpolate(keys: [number, number][], units: number) {
 
 /** One particle system survives the entire thought → work → villa journey. */
 export default function ParticleJourney() {
-  const [progress, setProgress] = useState(0);
-  const [videoReady, setVideoReady] = useState(false);
-  const [opacity, setOpacity] = useState(1);
+  const host = useRef<HTMLDivElement>(null);
+  const frameState = useRef<ParticleFrame>({ progress: 0, videoReady: false, active: true });
 
   useEffect(() => {
-    let frame = 0;
+    const story = document.querySelector<HTMLElement>('.gm-story');
+    const projects = document.querySelector<HTMLElement>('.gm-projects');
+    const method = document.querySelector<HTMLElement>('.gm-method-story');
+    let previousOpacity = -1;
     const update = () => {
-      frame = 0;
-      const story = document.querySelector<HTMLElement>('.gm-story');
-      const projects = document.querySelector<HTMLElement>('.gm-projects');
-      const method = document.querySelector<HTMLElement>('.gm-method-story');
       if (!story || !projects || !method) return;
       const storyTop = story.getBoundingClientRect().top;
       const projectsTop = projects.getBoundingClientRect().top;
@@ -36,26 +34,30 @@ export default function ParticleJourney() {
       if (methodTop < 0) {
         const stageHeight = method.querySelector<HTMLElement>('.gm-stage')?.offsetHeight ?? innerHeight;
         const travel = Math.max(1, method.offsetHeight - stageHeight);
-        setProgress(interpolate(METHOD_KEYS, clamp01(-methodTop / travel) * 250));
+        frameState.current.progress = interpolate(METHOD_KEYS, clamp01(-methodTop / travel) * 250);
       } else if (methodTop < innerHeight) {
         // The same scattered stars begin to assemble as the method first
         // enters the viewport, while the last project is still on screen.
-        setProgress(0.775 + 0.04 * clamp01((innerHeight - methodTop) / innerHeight));
+        frameState.current.progress = 0.775 + 0.04 * clamp01((innerHeight - methodTop) / innerHeight);
       } else if (storyTop < 0) {
-        setProgress(interpolate(STORY_KEYS, clamp01(-storyTop / story.offsetHeight) * 420));
+        frameState.current.progress = storyAt(clamp01(-storyTop / story.offsetHeight) * STORY_UNITS);
       } else {
-        setProgress(0);
+        frameState.current.progress = 0;
       }
       // Let the field leave with the villa. Reverse scrolling brings back the
       // very same stars at their previous positions.
       const behindWork = clamp01((innerHeight - projectsTop) / innerHeight)
         * (1 - clamp01((innerHeight - methodTop) / innerHeight));
       const exit = clamp01(method.getBoundingClientRect().bottom / Math.max(1, innerHeight));
-      setOpacity((1 - behindWork * 0.68) * exit);
-      setVideoReady(method.dataset.videoReady === 'true');
+      const opacity = (1 - behindWork * 0.68) * exit;
+      if (host.current && opacity !== previousOpacity) host.current.style.opacity = String(opacity);
+      previousOpacity = opacity;
+      frameState.current.active = opacity > 0.001;
+      frameState.current.videoReady = method.dataset.videoReady === 'true';
     };
-    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
-    const method = document.querySelector<HTMLElement>('.gm-method-story');
+    // Publish before the renderer's next frame, without a React commit/effect
+    // and a second animation-frame callback in the scroll path.
+    const onScroll = update;
     const observer = new MutationObserver(onScroll);
     if (method) observer.observe(method, { attributes: true, attributeFilter: ['data-video-ready'] });
     update();
@@ -69,9 +71,8 @@ export default function ParticleJourney() {
       removeEventListener('hashchange', onScroll);
       observer.disconnect();
       clearTimeout(timer);
-      if (frame) cancelAnimationFrame(frame);
     };
   }, []);
 
-  return <div className="gm-particle-journey" style={{ opacity }}><AstraField scrollProgress={progress} videoReady={videoReady} active={opacity > 0.001} /></div>;
+  return <div ref={host} className="gm-particle-journey"><AstraField frameState={frameState} /></div>;
 }
