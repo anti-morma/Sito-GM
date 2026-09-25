@@ -1,15 +1,16 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Ascent, { setAscentProgress, type Point } from './ascent';
 import { site } from './content';
+import { contactDetails, DetailText, legalDetails } from './studio-details';
 
 // Every section of the page, in order: the one on screen lights up.
 const NAV = [
   { id: 'inizio', label: 'Studio' },
-  { id: 'pensiero', label: 'Pensiero' },
-  { id: 'progetti', label: 'Progetti' },
   { id: 'metodo', label: 'Metodo' },
+  { id: 'progetti', label: 'Progetti' },
   { id: 'servizi', label: 'Servizi' },
   { id: 'contatti', label: 'Parliamo del progetto' },
 ];
@@ -21,23 +22,26 @@ const STOP_Y = 44;
 
 // Compact screens: the same ascent, drawn small in the top bar.
 const MINI = { width: 168, height: 40 };
-const MINI_STOPS: Point[] = NAV.map((_, index) => ({ x: 12 + index * 22, y: 29 }));
+const MINI_STOPS: Point[] = NAV.map((_, index) => ({ x: 12 + index * 28, y: 29 }));
 const MINI_BEND: Point = { x: 136, y: 28 };
 const MINI_STAR: Point = { x: 160, y: 7 };
 
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const scrollToSection = (id: string) => {
-  const target = document.getElementById(id);
+// The contact CTA lands on the form itself, not on the section heading above it.
+const scrollToSection = (id: string, anchor = id) => {
+  const target = document.getElementById(anchor) ?? document.getElementById(id);
   if (!target) return;
   target.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
-  history.replaceState(null, '', id === 'inizio' ? location.pathname : `#${id}`);
+  history.replaceState(null, '', id === 'inizio' ? location.pathname : `#${anchor}`);
 };
 
 export default function SiteHeader() {
   const [active, setActive] = useState('');
   const [solid, setSolid] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const contacts = contactDetails();
+  const legal = legalDetails();
   const [route, setRoute] = useState<{ stops: Point[]; bend: Point; star: Point; width: number } | null>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const linkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
@@ -53,7 +57,7 @@ export default function SiteHeader() {
       for (const item of NAV) {
         const section = document.getElementById(item.id);
         if (!section) continue;
-        // The thought anchor lives inside the sticky opening.
+        // The method anchor lives inside its sticky scene.
         const line = innerHeight * (section.classList.contains('gm-story-anchor') ? 0.1 : 0.4);
         if (section.getBoundingClientRect().top <= line) next = item.id;
       }
@@ -134,13 +138,13 @@ export default function SiteHeader() {
     };
   }, [menuOpen]);
 
-  const go = (event: React.MouseEvent, id: string) => {
+  const go = (event: React.MouseEvent, id: string, anchor = id) => {
     event.preventDefault();
     setMenuOpen(false);
     heading.current = { id, until: performance.now() + 3000 };
     setActive(id);
     // Let the page unlock (menu closed) before scrolling.
-    requestAnimationFrame(() => scrollToSection(id));
+    requestAnimationFrame(() => scrollToSection(id, anchor));
   };
 
   return (
@@ -172,7 +176,7 @@ export default function SiteHeader() {
 
         <Ascent className="gm-ascent-mini" stops={MINI_STOPS} bend={MINI_BEND} star={MINI_STAR} arrive={10} width={MINI.width} height={MINI.height} active={NAV.findIndex((item) => item.id === active)} />
 
-        <a className="gm-btn gm-btn--primary gm-btn--small gm-header-cta" href="#contatti" onClick={(event) => go(event, 'contatti')}>
+        <a className="gm-btn gm-btn--primary gm-btn--small gm-header-cta" href="#modulo" onClick={(event) => go(event, 'contatti', 'modulo')}>
           Contattaci
         </a>
 
@@ -194,10 +198,26 @@ export default function SiteHeader() {
               </li>
             ))}
           </ol>
-          <a className="gm-btn gm-btn--primary gm-btn--large gm-btn--block" href="#contatti" onClick={(event) => go(event, 'contatti')}>
+          <a className="gm-btn gm-btn--primary gm-btn--large gm-btn--block" href="#modulo" onClick={(event) => go(event, 'contatti', 'modulo')}>
             Contattaci <span className="gm-btn-arrow" aria-hidden="true">→</span>
           </a>
-          {site.email && <a className="gm-mobile-menu-mail" href={`mailto:${site.email}`}>{site.email}</a>}
+          {/* Contacts, then the studio's legal details and pages, quietly. */}
+          <div className="gm-mobile-menu-info">
+            {contacts.length > 0 && (
+              <ul className="gm-mobile-menu-contacts" aria-label="Contatti">
+                {contacts.map((item) => <li key={item.key}><DetailText item={item} /></li>)}
+              </ul>
+            )}
+            {legal.length > 0 && (
+              <p className="gm-mobile-menu-legal">
+                {legal.map((item) => <span key={item.key}><DetailText item={item} /></span>)}
+              </p>
+            )}
+            <p className="gm-mobile-menu-pages">
+              <Link href="/privacy" onClick={() => setMenuOpen(false)}>Privacy</Link>
+              <Link href="/cookie" onClick={() => setMenuOpen(false)}>Cookie</Link>
+            </p>
+          </div>
         </nav>
       </div>
     </>

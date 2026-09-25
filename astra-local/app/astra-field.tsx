@@ -22,54 +22,144 @@ import {
 } from 'three';
 import logoPoints from './gm-points.json';
 import brainPoints from './brain-points.json';
-import { buildSynapseParticles } from './synapse-geometry';
 import { buildBlueprintParticles } from './blueprint-geometry';
 import { buildBrainVolume } from './brain-volume';
 import { springStep } from './gesture-spring';
+import { phonePixelRatio, reportFrame, watchPixelRatio } from './pixel-ratio';
 
 const ANIMATION_SPEED = 1.25;
-// The background stars now live in the site-wide sky (star-sky.tsx).
-const MAX_AMBIENT_STARS = 0;
-const BASE_MORPH_COUNT = brainPoints.length;
-const NEURAL_COUNT = BASE_MORPH_COUNT * 3;
-const MORPH_COUNT = BASE_MORPH_COUNT * 5;
+// The background stars live in the site-wide sky (star-sky.tsx).
+// The villa's drawing and each layer of the brain use this many stars.
+const BASE_COUNT = brainPoints.length;
+// The brain: front, rim, far side, and a double inner fill.
+const BRAIN_COUNT = BASE_COUNT * 5;
+// Phones draw half of each (the samples are shuffled, so any half covers the
+// whole drawing): a lighter villa, and only the brain's surface layers.
+const MOBILE_LAYER = BASE_COUNT / 2;
+const MOBILE_COUNT = MOBILE_LAYER * 3;
+// Its drawing spans about this much, in scene units at scale 1.
+const BRAIN_WIDTH = 0.68;
+const BRAIN_HEIGHT = 0.6;
+// The method's timeline starts from the loose stars (see method-story.tsx).
+const METHOD_START = 0.775;
+// The GM's height at scale 1, its dust included, and its letters' width (see gm-points.json).
+const LOGO_HEIGHT = 0.62;
+const LOGO_WIDTH = 0.818;
+// Phones: the GM rests in the header logo. gm-logo.png is drawn at 176% of the
+// logo's box and its monogram spans 44.7% of the image.
+const LOGO_MARK = 1.76 * 0.447;
+// ---------- The phone opening ----------
+// Seconds from its start; the shader reads the same values. In the dark a blue
+// spiral of stars lights up and writes GOMORE (scripts/sample-gomore.mjs, 2
+// units wide) letter by letter; a glint runs along it; the word twists and
+// folds into the GM, which locks with a flash that blows the cloud away as a
+// ring; the GM half-turns, then breaks into a stream of stars that pours into
+// the header logo.
+const WORD_WIDTH = 2;
+const OPENING = {
+  write: 0.15, writeSpread: 0.4, writeTime: 0.45,
+  sweep: 0.9, sweepTime: 0.5,
+  fold: 1.25, foldTime: 0.45, impact: 1.8,
+  turn: 1.85, turnTime: 0.55,
+  rise: 2.35, riseSpread: 0.32, riseTime: 0.48,
+  reveal: 2.85, end: 3.25,
+};
+// The cloud borrows this many of the villa's stars while the opening plays.
+const OPENING_CLOUD = 6000;
+// The opening's stage sits a little above the centre of the screen.
+const STAGE_Y = 0.04;
+const glslFloat = (value: number) => value.toFixed(3);
+const openingShader = `
+ // ---------- The phone opening (see OPENING) ----------
+ uniform float uOpening;
+ uniform float uClock;
+ uniform float uWordScale;
+ uniform float uMonoScale;
+ // The header logo: its centre, and the GM's scale there.
+ uniform vec3 uLogoRest;
+ const float STAGE_Y = ${glslFloat(STAGE_Y)};
+ const float WORD_WIDTH = ${glslFloat(WORD_WIDTH)};
+ const float WRITE = ${glslFloat(OPENING.write)};
+ const float WRITE_SPREAD = ${glslFloat(OPENING.writeSpread)};
+ const float WRITE_TIME = ${glslFloat(OPENING.writeTime)};
+ const float SWEEP = ${glslFloat(OPENING.sweep)};
+ const float SWEEP_TIME = ${glslFloat(OPENING.sweepTime)};
+ const float FOLD = ${glslFloat(OPENING.fold)};
+ const float FOLD_TIME = ${glslFloat(OPENING.foldTime)};
+ const float IMPACT = ${glslFloat(OPENING.impact)};
+ const float TURN = ${glslFloat(OPENING.turn)};
+ const float TURN_TIME = ${glslFloat(OPENING.turnTime)};
+ const float RISE = ${glslFloat(OPENING.rise)};
+ const float RISE_SPREAD = ${glslFloat(OPENING.riseSpread)};
+ const float RISE_TIME = ${glslFloat(OPENING.riseTime)};
+
+ float after(float from, float duration) {
+   return smoothstep(0.0, 1.0, (uClock - from) / duration);
+ }
+ vec2 swivel(vec2 v, float angle) {
+   float c = cos(angle);
+   float s = sin(angle);
+   return vec2(c * v.x - s * v.y, s * v.x + c * v.y);
+ }
+ // The blue cloud: a tilted two-armed spiral around the stage, its inner stars
+ // turning faster. Each star keeps its own place in it, from its seeds.
+ vec3 inCloud(float reach) {
+   float r = fract(aOrigin.x / 1.7 + 0.5);
+   r = 0.05 + r * r * reach;
+   float arm = step(0.5, fract(aOrigin.y / 1.3 + 0.5)) * 3.14159;
+   float angle = arm + r * 7.0 + (fract(aPhase * 1.113) - 0.5) * 1.2 - uClock * 0.45 / (0.2 + r);
+   float span = 0.5 * uAspect;
+   return vec3(cos(angle) * r * span * 1.15, STAGE_Y + sin(angle) * r * span * 0.5, sin(angle) * r * 0.35);
+ }
+`;
 
 const vertexShader = `
  attribute vec3 aOrigin;
  attribute vec3 aColor;
  attribute vec4 aStyle;
- attribute vec4 aMorph;
+ // The brain: its star, the surface normal (w: original relief depth), and
+ // its layer (0 front, 2 rim and far side, 3 inner fill) with its shade.
  attribute vec3 aBrain;
  attribute vec4 aBrainNormal;
- attribute vec4 aSynapse;
- attribute vec3 aRelease;
+ attribute vec2 aBrainStyle;
+ #define aDetail aBrainStyle.x
+ #define aBrainShade aBrainStyle.y
  attribute vec4 aPlan;
  attribute vec4 aBuilding;
  attribute vec2 aArchitecture;
- #define aBuildingKind aArchitecture.x
  #define aDrawOrder aArchitecture.y
  attribute vec2 aOffset;
  // Role in the GM monogram: 2 outline, 1 fill, 0 dust, -1 not part of it.
  attribute float aGlyph;
+ // The phone opening: this star's place in GOMORE.
+ attribute vec2 aWord;
  #define aSize aStyle.x
  #define aLight aStyle.y
  #define aPhase aStyle.z
- #define aKind aStyle.w
- #define aFree aMorph.x
- #define aDetail aMorph.y
- #define aBrainShade aMorph.z
- #define aSignal aMorph.w
- #define aShade aSynapse.w
  uniform float uTime;
- uniform float uBrainTurn;
  uniform float uDpr;
  uniform float uPixelScale;
  uniform float uLogoScale;
+ // The monogram's light: 0 on phones, where it rests in the header logo.
+ uniform float uGlyphLight;
  uniform vec2 uHeroOffset;
  uniform float uAspect;
  uniform float uCompact;
+ // Compact layouts: the construction video's centre and width, measured from the page.
+ uniform vec2 uPlan;
+ uniform float uPlanWidth;
  uniform float uReduced;
+ // The method's timeline, unchanged: 0.775 loose stars → 0.815 villa → 1 video.
  uniform float uScroll;
+ // Share of the hero scrolled away.
+ uniform float uHero;
+ // The idea scene before the form (0 → 1), shown while uBridgeMode is 1.
+ uniform float uBridge;
+ uniform float uBridgeMode;
+ // The brain turns on itself, placed beside the scene's words.
+ uniform float uBrainTurn;
+ uniform vec2 uBrainCenter;
+ uniform float uBrainScale;
  uniform float uVideoReady;
  uniform float uCamDist;
  uniform sampler2D uSpringField;
@@ -78,112 +168,76 @@ const vertexShader = `
  varying float vLight;
  varying float vStar;
  varying float vSparkle;
- varying float vSynapse;
- varying float vNeuralFocus;
- varying float vPulse;
- varying float vConstruction;
  varying float vSpriteCrop;
-
+${openingShader}
  void main() {
+   float motion = 1.0 - uReduced;
+   float scrolled = max(uHero, uBridgeMode);
    float t = clamp((uTime * 1.33 - 0.8 - aPhase * 0.12) / 4.8, 0.0, 1.0);
    float ordered = t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
-   ordered = mix(ordered, 1.0, max(uReduced, smoothstep(0.0, 0.025, uScroll)));
-   float motion = 1.0 - uReduced;
+   ordered = mix(ordered, 1.0, max(uReduced, smoothstep(0.0, 0.02, scrolled)));
 
-   float travel = 1.0 - uReduced;
-   // The GM flows straight into the brain from the first scroll: no empty sky between them.
-   float gather = smoothstep(0.02, 0.34, uScroll);
-   #ifdef BRAIN_PASS
-   // These blends are exactly zero through scroll 0.47. Constants let the
-   // compiler remove the later scenes and their vertex attributes entirely.
-   float zoomIn = 0.0;
-   float synapseMix = 0.0;
-   float projectMix = 0.0;
-   #else
-   float zoomIn = smoothstep(0.47, 0.56, uScroll);
-   float synapseMix = smoothstep(0.48, 0.58, uScroll);
+   // ---------- Hero → method ----------
+   // The GM rises with the page and opens into a loose cloud; its stars, joined
+   // by the rest of the field, then draw the villa of the method.
+   float isGlyph = step(-0.5, aGlyph);
+   float release = smoothstep(0.04, 0.5, uHero);
+   vec3 logo = position * uLogoScale;
+   logo.xy += uHeroOffset;
+   logo.y += uHero * 0.8 * motion;
+   vec3 loose = vec3(aOrigin.x * uAspect * 1.45, aOrigin.y * 1.35 - 0.18, aOrigin.z * 0.6);
+   loose.xy += vec2(sin(aPhase * 2.7), cos(aPhase * 1.9)) * 0.18 * motion;
+   vec3 target = mix(loose, logo, isGlyph);
+   target = mix(target, loose, release);
+   // A slight arc on the way out, so the letters open rather than slide.
+   target += vec3(aOrigin.x * uAspect, aOrigin.y, aOrigin.z) * sin(3.14159 * release) * 0.12 * motion * isGlyph;
+   if (uReduced > 0.5 && uHero < 0.02) target = position * uLogoScale + vec3(uHeroOffset, 0.0);
+
    float projectMix = smoothstep(0.775, 0.815, uScroll);
-   #endif
-   // The brain is the protagonist: centred and large, a little bigger on
-   // narrow screens where it has the whole width to itself.
-   float brainScale = min(1.12, uAspect * mix(0.65, 0.9, uCompact));
-   vec3 brain = aBrain * brainScale;
-   vec2 center = vec2(0.0, 0.035);
-   vec2 brainOverview = brain.xy + center;
+   // Match the CSS video rectangle exactly, with no tilt during the crossfade.
+   float videoSettle = smoothstep(0.862, 0.888, uScroll); // keep in sync with method-story.tsx
+   float frameWidth = mix(0.80 - videoSettle * 0.28, uPlanWidth, uCompact);
+   vec3 plan = vec3(aPlan.x, -aPlan.z, 0.0) * uAspect * frameWidth;
+   plan.xy += mix(vec2(-uAspect * videoSettle * 0.20, 0.0), uPlan, uCompact);
+   // Layered relief while drawing; flattens before the video so the crossfade stays exact.
+   plan.z = aOrigin.z * 0.12 * (1.0 - smoothstep(0.815, 0.845, uScroll));
+   // Each group of stars joins the progressive drawing in turn.
+   float assemble = smoothstep(0.775 + aDrawOrder * 0.037, 0.797 + aDrawOrder * 0.037, uScroll);
+   target = mix(target, plan, assemble);
+
+   // ---------- The idea, before the form ----------
+   // A brain of stars turns slowly on itself. It condenses from a loose halo
+   // as the scene arrives, and its stars melt away as the form arrives.
+   float gather = mix(smoothstep(0.0, 0.3, uBridge), 1.0, uReduced);
+   float melt = smoothstep(0.8 + fract(aPhase * 3.7) * 0.06, 0.94 + fract(aPhase * 3.7) * 0.06, uBridge) * motion;
+   vec3 brain = aBrain * uBrainScale;
+   vec2 brainOverview = brain.xy + uBrainCenter;
    // Front stars stay on the camera ray through their reference position, so
    // the resting view matches the original drawing exactly.
-   brainOverview *= (2.0 - brain.z) / (2.0 - aBrainNormal.w * brainScale);
+   brainOverview *= (2.0 - brain.z) / (2.0 - aBrainNormal.w * uBrainScale);
    mat3 brainRotation = mat3(
      cos(uBrainTurn), 0.0, -sin(uBrainTurn),
      0.0, 1.0, 0.0,
      sin(uBrainTurn), 0.0, cos(uBrainTurn)
    );
-   vec3 brainPivot = vec3(center, -0.12 * brainScale);
-   vec3 turnedBrain = brainPivot + brainRotation * (vec3(brainOverview, brain.z) - brainPivot);
-   vec2 brainCloseup = (aBrain.xy - vec2(0.21, 0.055)) * brainScale * 4.0;
-   brain.xy = mix(turnedBrain.xy, brainCloseup, zoomIn);
-   brain.z = mix(turnedBrain.z, brain.z, zoomIn);
-   brain.y -= (1.0 - gather) * 0.12 * travel;
-   float synapseScale = min(0.82, uAspect * 0.70);
-   // The impulse bursts out of the central soma, then eases through the
-   // outer dendrites. Its position still follows scroll in both directions.
-   float impulseTime = clamp((uScroll - 0.58) / 0.17, 0.0, 1.0);
-   float signalHead = 1.02 * (1.0 - pow(1.0 - impulseTime, 2.4));
-   float activeRoute = 1.0 - step(1.5, aSignal);
-   float pulseDistance = signalHead - aSignal;
-   float pulseFront = exp(-pow(pulseDistance * 18.0, 2.0));
-   float pulseTail = exp(-max(pulseDistance, 0.0) * 6.0)
-     * smoothstep(0.0, 0.04, pulseDistance);
-   float pulse = (pulseFront * 1.1 + pulseTail * 0.3)
-     * activeRoute * synapseMix * (1.0 - aFree);
-   vec3 synapse = aSynapse.xyz * synapseScale;
-   float releaseProgress = smoothstep(aSignal - 0.015, aSignal + 0.11, signalHead);
-   if (aKind > 1.5 && aKind < 2.5) {
-     synapse = mix(synapse, aRelease * synapseScale, releaseProgress);
-   }
-   // A small scroll-driven camera arc reveals the depth of the same particle volume.
-   float neuralTurn = (smoothstep(0.54, 0.75, uScroll) - 0.5) * 0.30 * motion;
-   synapse.xz = mat2(cos(neuralTurn), -sin(neuralTurn), sin(neuralTurn), cos(neuralTurn)) * synapse.xz;
-   // Match the CSS video rectangle exactly, with no tilt during the crossfade.
-   float videoSettle = smoothstep(0.862, 0.888, uScroll); // keep in sync with method-story.tsx
-   float frameWidth = mix(0.80 - videoSettle * 0.28, 0.86, uCompact);
-   vec3 project = vec3(aPlan.x, -aPlan.z, 0.0) * uAspect * frameWidth;
-   project.xy += vec2(mix(-uAspect * videoSettle * 0.20, 0.0, uCompact), -0.05 * uCompact);
-   // Layered relief while drawing; flattens before the video so the crossfade stays exact.
-   project.z = aOrigin.z * 0.12 * (1.0 - smoothstep(0.815, 0.845, uScroll));
-   // Scatter first, then gather each group of stars into the progressive drawing.
-   #ifdef BRAIN_PASS
-   float scatter = 0.0;
-   #else
-   float scatter = smoothstep(0.745, 0.775, uScroll) * motion;
-   #endif
-   vec3 loose = vec3(aOrigin.x * uAspect * 1.45, aOrigin.y * 1.35 - 0.18, aOrigin.z * 0.6);
-   loose.xy += vec2(sin(aPhase * 2.7), cos(aPhase * 1.9)) * 0.18 * motion;
-   synapse = mix(synapse, loose, scatter);
-   float assemble = smoothstep(0.775 + aDrawOrder * 0.037, 0.797 + aDrawOrder * 0.037, uScroll);
-   synapse = mix(synapse, project, assemble);
-   vec3 logo = position * uLogoScale;
-   logo.xy += uHeroOffset;
-   // Respond from the first scroll pixel. The GM's own stars fly into the brain
-   // along a slight arc; every other star of the brain condenses in place from a
-   // loose halo while it fades in, so the brain takes shape right after the GM.
-   logo.y += uScroll * 1.5 * travel;
-   float condense = 1.0 - smoothstep(0.02, 0.22, uScroll);
-   vec3 halo = brain + vec3(aOrigin.x * uAspect, aOrigin.y, aOrigin.z) * 0.14 * condense * travel;
-   vec3 target = mix(halo, logo, step(-0.5, aGlyph));
-   target = mix(target, brain, gather);
-   target += vec3(aOrigin.x * uAspect, aOrigin.y, aOrigin.z) * sin(3.14159 * gather) * 0.16 * travel * step(-0.5, aGlyph);
-   target = mix(target, synapse, synapseMix);
-   if (uReduced > 0.5 && uScroll < 0.025) target = position * uLogoScale + vec3(uHeroOffset, 0.0);
+   vec3 brainPivot = vec3(uBrainCenter, -0.12 * uBrainScale);
+   vec3 thought = brainPivot + brainRotation * (vec3(brainOverview, brain.z) - brainPivot);
+   thought += vec3(aOrigin.x * uAspect, aOrigin.y, aOrigin.z) * 0.18 * (1.0 - gather) * motion;
+   thought.y -= (1.0 - gather) * 0.08 * motion;
+   // Melting: each star drifts a little outward and upward as it fades.
+   thought += ((thought - brainPivot) * 0.35 + vec3(sin(aPhase * 2.3) * 0.05, 0.12, 0.0)) * melt;
+   target = mix(target, thought, uBridgeMode);
+
    // Kept tiny while the GM is formed, so the outline of the letters stays sharp.
-   float glyph = step(-0.5, aGlyph) * (1.0 - smoothstep(0.0, 0.1, uScroll));
-   float orbit = mix(mix(0.015, 0.005, glyph), 0.0012, gather) * motion * (1.0 - projectMix);
+   float glyph = isGlyph * (1.0 - smoothstep(0.0, 0.1, uHero)) * (1.0 - uBridgeMode);
+   float orbit = mix(mix(0.015, 0.005, glyph), 0.0012, max(release, uBridgeMode))
+     * motion * (1.0 - projectMix);
    target += vec3(
      sin(uTime * 0.7 + aPhase),
      cos(uTime * 0.55 + aPhase * 1.7),
      sin(uTime * 0.42 + aPhase)
    ) * orbit;
-   target.y += sin(position.x * 18.0 + uTime * 0.65) * mix(0.006, 0.0025, glyph) * motion * (1.0 - gather);
+   target.y += sin(position.x * 18.0 + uTime * 0.65) * mix(0.006, 0.0025, glyph) * motion * (1.0 - release) * (1.0 - uBridgeMode);
 
    vec3 origin = aOrigin;
    origin.x *= uAspect;
@@ -196,25 +250,88 @@ const vertexShader = `
    ) * motion;
    vec3 p = mix(origin, target, ordered) + turbulence * 0.16 * (1.0 - ordered);
 
-   if (aFree > 0.5) {
-     float layerSpeed = 0.012 + (aOrigin.z + 0.675) * 0.018;
-     vec2 drift = vec2(uTime * layerSpeed * 0.35, uTime * layerSpeed + uScroll * (0.8 + aPhase * 0.08)) * motion;
-     vec2 slot = mod(aOrigin.xy + drift + 0.55, 1.1) - 0.55;
-     p = vec3(slot, aOrigin.z);
-     p.x *= uAspect;
-     p.xy *= (2.0 - p.z) * 0.5;
-     p += vec3(
-       sin(uTime * 0.38 + aPhase) * 0.025,
-       cos(uTime * 0.31 + aPhase) * 0.02,
-       sin(uTime * 0.28 + aPhase) * 0.025
-     ) * motion;
+   // ---------- The phone opening ----------
+   float openingLight = 0.0;
+   vec3 openingColor = vec3(1.0);
+   float openingSize = 1.0;
+   float openingHalo = 0.0;
+   if (uOpening > 0.5) {
+     float seedA = fract(aPhase * 1.1141);
+     float seedB = fract(aPhase * 2.0697 + 0.31);
+     float seedC = aOrigin.z / 1.35 + 0.5;
+     vec2 stage = vec2(0.0, STAGE_Y);
+     float twinkle = 0.78 + 0.22 * sin(uClock * (5.0 + seedA * 4.0) + aPhase * 3.0);
+     vec3 cloudBlue = mix(vec3(0.36, 0.52, 1.0), vec3(0.72, 0.82, 1.0), seedB);
+     // The GM locking together: a flash through every star.
+     float flash = exp(-pow((uClock - IMPACT) / 0.07, 2.0));
+     if (isGlyph > 0.5) {
+       // Written: each star leaves the cloud for its place in GOMORE, the
+       // letters appearing left to right, each star landing with a spark.
+       float writeFrom = WRITE + WRITE_SPREAD * (aWord.x / WORD_WIDTH + 0.5) + 0.08 * seedA;
+       float written = after(writeFrom, WRITE_TIME);
+       // Folded: the word twists and closes up into the GM, its stars
+       // scattering in depth before they lock.
+       float folded = after(FOLD + 0.08 * seedB, FOLD_TIME);
+       // Turned: a half turn that still ends on a readable GM (past edge-on
+       // the letters are mirrored, so the turn brings them back true),
+       // swelling and tilting a little on the way.
+       float turned = after(TURN, TURN_TIME);
+       vec3 mono = position * uMonoScale * (1.0 + 0.08 * sin(3.14159 * turned));
+       mono.x *= 1.0 - 2.0 * step(0.5, turned);
+       mono.xz = swivel(mono.xz, 3.14159 * turned);
+       mono.yz = swivel(mono.yz, 0.3 * sin(3.14159 * turned));
+       vec3 shaped = mix(vec3(aWord * uWordScale, 0.0), mono, folded);
+       shaped.xy = stage + swivel(shaped.xy, 0.45 * sin(3.14159 * folded));
+       shaped.z += sin(3.14159 * folded) * (seedC - 0.5) * 0.45;
+       vec3 born = inCloud(0.7);
+       vec2 way = shaped.xy - born.xy;
+       vec3 placed = mix(born, shaped, written);
+       placed.xy += vec2(-way.y, way.x) * sin(3.14159 * written) * 0.25;
+       // Risen: the GM comes apart from the corner nearest the logo, its stars
+       // flowing as a stream that swings out to the right and up, widening
+       // mid-flight, and pours into the header logo.
+       float queue = (position.x / 0.82 + 0.5) * 0.6 + (0.5 - position.y / 0.58) * 0.4;
+       float rose = after(RISE + RISE_SPREAD * queue + 0.08 * seedC, RISE_TIME);
+       vec3 home = vec3(position.xy * uLogoRest.z + uLogoRest.xy, 0.0);
+       vec3 bend = mix(placed, home, 0.5) + vec3(
+         (0.34 + (seedA - 0.5) * 0.14) * uAspect,
+         0.06 + (seedB - 0.5) * 0.08,
+         0.3 + (seedC - 0.5) * 0.3
+       );
+       float q = 1.0 - rose;
+       p = q * q * placed + 2.0 * q * rose * bend + rose * rose * home;
+
+       float glint = exp(-pow((aWord.x - mix(-1.4, 1.4, after(SWEEP, SWEEP_TIME))) / 0.2, 2.0)) * (1.0 - folded);
+       float landing = exp(-pow((uClock - writeFrom - WRITE_TIME) / 0.08, 2.0));
+       float lit = aLight * twinkle * 1.15 * (1.0 + 1.2 * landing + 1.8 * glint + 1.8 * flash);
+       openingLight = mix(aLight * 0.5 * after(0.0, 0.5), lit, written);
+       // Brighter as it flies, gone as it reaches the logo.
+       openingLight *= (1.0 + 0.4 * sin(3.14159 * rose)) * (1.0 - smoothstep(0.45, 0.95, rose));
+       openingColor = mix(cloudBlue, mix(aColor, vec3(0.88, 0.92, 1.0), 0.55), written);
+       openingColor = mix(openingColor, vec3(1.0, 0.96, 0.9), glint * 0.6);
+       openingColor = mix(openingColor, vec3(0.62, 0.76, 1.0), sin(3.14159 * rose) * 0.6);
+       openingSize = mix(min(aSize, 12.0) * 0.8, aSize, written) * mix(1.0, 0.35, rose);
+     } else {
+       // The cloud: it glows in, draws in a little as the word folds, and the
+       // flash blows it out into a widening ring that fades.
+       vec3 cloud = inCloud(1.0);
+       // Its bright core would sit in the middle of the word: it dims as the word appears.
+       float core = mix(1.0, smoothstep(0.3, 0.6, fract(aOrigin.x / 1.7 + 0.5)), after(WRITE + 0.2, 0.5));
+       vec2 rel = (cloud.xy - stage) * (1.0 - 0.3 * after(FOLD, FOLD_TIME));
+       float blown = after(IMPACT, 0.75);
+       float reach = length(rel / (vec2(1.15, 0.5) * 0.5 * uAspect));
+       rel += normalize(rel + 1e-4) * blown * uAspect * (0.75 - 0.5 * smoothstep(0.0, 0.9, reach));
+       p = vec3(stage + rel, cloud.z + blown * (seedC - 0.5) * 0.5);
+       openingLight = aLight * 0.5 * twinkle * after(0.0, 0.6) * core * (1.0 - blown) * (1.0 + 1.5 * flash);
+       openingColor = cloudBlue;
+       openingSize = min(aSize, 12.0) * 0.9;
+       openingHalo = 0.55;
+     }
    }
 
-   vec4 mv = aFree > 0.5
-     ? viewMatrix * vec4(p, 1.0)
-     : modelViewMatrix * vec4(p, 1.0);
+   vec4 mv = modelViewMatrix * vec4(p, 1.0);
    // Touch screens do not use particle gestures, so skip the spring texture
-   // and its four samples for every point of the GM-to-brain transition.
+   // and its four samples for every point.
    vec2 displacement = vec2(0.0);
    #ifndef MOBILE
      vec2 screenPoint = mv.xy * (2.0 / max(0.1, -mv.z));
@@ -231,8 +348,8 @@ const vertexShader = `
        vec2 d = texture2D(uSpringField, (base + vec2(1.5, 1.5)) / uFieldSize).xy;
        fieldOffset = mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y);
      }
-     float fieldBlend = smoothstep(0.020, 0.025, uScroll);
-     displacement = mix(aOffset, fieldOffset, fieldBlend) * (1.0 - aFree)
+     float fieldBlend = smoothstep(0.020, 0.025, scrolled);
+     displacement = mix(aOffset, fieldOffset, fieldBlend)
        * (1.0 - smoothstep(0.83, 0.84, uScroll) * uVideoReady);
    #endif
    float influence = min(length(displacement) * 3.0, 0.2);
@@ -241,11 +358,10 @@ const vertexShader = `
    gl_Position = projectionMatrix * mv;
    // Aerial perspective relative to the camera focus: nearer stars brighter, farther dimmer.
    float viewDist = max(0.001, -mv.z);
-   float depthCue = clamp(pow(uCamDist / viewDist, mix(1.6, 0.8, aFree)), 0.4, 1.8);
+   float depthCue = clamp(pow(uCamDist / viewDist, 1.6), 0.4, 1.8);
    float nearFade = smoothstep(0.12, 0.45, viewDist);
    float depth = clamp(2.0 / -mv.z, 0.35, 2.5);
-   float anatomy = gather * (1.0 - synapseMix) * (1.0 - aFree);
-   // Opaque-looking brain: hide the surface turned away from the camera.
+   // An opaque-looking brain: hide the surface turned away from the camera.
    float brainShell = step(0.25, dot(aBrainNormal.xyz, aBrainNormal.xyz));
    float brainBack = step(1.5, aDetail) * brainShell;
    vec3 brainNormal = normalize(mat3(modelViewMatrix) * brainRotation * (aBrainNormal.xyz + vec3(0.0, 0.0, 1e-4)));
@@ -258,24 +374,15 @@ const vertexShader = `
    float brainTurned = smoothstep(0.02, 0.25, 1.0 - normalize(mat3(modelViewMatrix) * brainRotation * vec3(0.0, 0.0, 1.0)).z);
    float nearVisible = mix(smoothstep(-0.3, 0.0, facing), smoothstep(-0.05, 0.3, facing), brainTurned);
    float brainVisible = mix(nearVisible * (1.0 - 0.25 * rimSeam), smoothstep(-0.08, 0.22, facing), brainBack);
-   float renderedSize = mix(aSize, 7.5 + aBrainShade * 6.5, anatomy);
-   // Neural close-up roles (see NEURAL_KIND): membrane, cell body, warm light, far network.
-   float isSoma = step(0.5, aKind) * step(aKind, 1.5);
-   float isGlow = step(1.5, aKind) * step(aKind, 2.5);
-   float isDistant = step(2.5, aKind);
-   // Shallow depth of field: the central cell is sharp, the rest melts into bokeh.
-   float focusBlur = smoothstep(0.125, 0.575, abs(aSynapse.z));
-   float synapseSize = mix(mix(mix(7.0, 8.0, isSoma), 12.0, isGlow), 7.5, isDistant);
-   synapseSize *= mix(1.0, 1.725, focusBlur);
-   synapseSize *= clamp(pow(synapseScale / 0.84, 0.2), 0.8, 1.0);
-   renderedSize = mix(renderedSize, synapseSize, synapseMix * (1.0 - aFree));
-   renderedSize = mix(renderedSize, 6.5, projectMix * (1.0 - aFree));
-   renderedSize *= 1.0 + pulse * 0.18 * (1.0 - isGlow) * (1.0 - isDistant);
-   // Hero only: a quieter sky so no background star competes with the copy.
-   // It lifts before the brain arrives, leaving the later sections untouched.
-   float heroCalm = (1.0 - smoothstep(0.03, 0.14, uScroll)) * aFree;
-   float heroHidden = heroCalm * step(fract(aPhase * 7.13), 0.42);
-   renderedSize *= mix(1.0, 0.68 - 0.18 * smoothstep(20.0, 30.0, aSize), heroCalm);
+   float looseSize = min(aSize, 12.0);
+   #ifdef PHONE
+   // A phone screen is small: the loose stars between the GM and the villa stay finer.
+   looseSize *= 0.75;
+   #endif
+   float renderedSize = mix(aSize, looseSize, release);
+   renderedSize = mix(renderedSize, 6.5, projectMix);
+   renderedSize = mix(renderedSize, 7.5 + aBrainShade * 6.5, uBridgeMode);
+   if (uOpening > 0.5) renderedSize = openingSize;
    gl_PointSize = clamp(
      renderedSize * uDpr * uPixelScale * depth * (1.0 + influence * 0.12),
      2.0,
@@ -286,82 +393,53 @@ const vertexShader = `
      0.5 + 0.5 * sin(uTime * (0.7 + aPhase * 0.12) + aPhase),
      2.0
    );
-   float starShimmer = 0.72 + 0.28 * sin(
-     uTime * (0.65 + aPhase * 0.065) + aPhase * 3.0
-   );
-   shimmer = mix(shimmer, starShimmer, aFree);
-   float reached = smoothstep(aSignal - 0.025, aSignal + 0.025, signalHead);
-   float lit = activeRoute * reached * synapseMix * (1.0 - aFree);
-   vLight = aLight * mix(shimmer, 1.0, uReduced) + influence * 0.12;
-   vLight = mix(vLight, 0.035 + aBrainShade * aBrainShade * 1.6, anatomy);
-   vLight *= mix(1.0, clamp(pow(brainScale / 1.18, 0.8), 0.30, 1.0), anatomy);
-   // Dark translucent membranes catch light only at their edges; warm light
-   // ignites inside the cells and along the fibres as the impulse arrives.
-   float ignite = smoothstep(aSignal - 0.02, aSignal + 0.09, signalHead) * activeRoute;
-   float membrane = mix(0.07 + 1.05 * pow(aShade, 2.2), 0.08 + 1.1 * pow(aShade, 2.0), isSoma);
-   float glowLight = (mix(0.07, 0.56 + 0.26 * aShade, ignite) + pulse * 0.34)
-     * (0.96 + 0.04 * sin(uTime * 0.9 + aPhase * 5.0) * motion);
-   float shellLight = mix(membrane + lit * 0.08 + pulse * 0.43, glowLight, isGlow);
-   shellLight = mix(shellLight, 0.05 + 0.1 * aShade, isDistant);
-   shellLight *= mix(1.0, 0.42, focusBlur);
-   vLight = mix(vLight, shellLight, synapseMix * (1.0 - aFree));
-   // Once the network releases, its points read as individual stars rather
-   // than the deliberately dim fibres and membranes of the neural scene.
-   vLight = mix(vLight, max(0.22, aLight * 0.8), scatter * (1.0 - aFree));
-   vLight *= mix(1.0, 0.24, gather * aFree);
-   float synapseDensity = clamp(pow(synapseScale / 0.84, 0.60), 0.60, 1.0);
-   vLight *= mix(1.0, synapseDensity, synapseMix * (1.0 - aFree));
-   vLight *= 1.0 - min(aDetail, 1.0) * (1.0 - gather);
-   vec3 fiberColor = mix(vec3(0.34, 0.33, 0.44), vec3(0.8, 0.82, 0.94), aShade);
-   vec3 somaColor = mix(vec3(0.24, 0.2, 0.32), vec3(0.86, 0.84, 0.96), aShade);
-   // Brand champagne rather than amber: the light reads as intention, not alarm.
-   vec3 warmLight = vec3(0.9, 0.8, 0.6);
-   vec3 glowColor = mix(warmLight, vec3(1.0, 0.95, 0.84), aShade * 0.6);
-   vec3 synapseColor = mix(fiberColor, somaColor, isSoma);
-   synapseColor = mix(synapseColor, warmLight, min(1.0, lit * 0.14 + pulse * 0.7));
-   synapseColor = mix(synapseColor, glowColor, isGlow);
-   synapseColor = mix(synapseColor, fiberColor * 0.8, isDistant);
-   vColor = mix(aColor, synapseColor, synapseMix * (1.0 - aFree));
-   vColor = mix(vColor, vec3(0.78, 0.85, 1.0), scatter * (1.0 - aFree));
-   vStar = max(aFree, synapseMix * (1.0 - aFree) * min(0.95, isGlow * 0.75 + pulse * 0.38));
-   vStar = max(vStar, scatter * (1.0 - aFree) * 0.85);
-   vSparkle = aFree * smoothstep(22.0, 34.0, aSize) * (1.0 - 0.9 * heroCalm);
-   vSparkle = max(vSparkle, scatter * (1.0 - aFree) * smoothstep(22.0, 34.0, aSize) * 0.35);
-   vSparkle = max(vSparkle, pulse * isGlow * 0.16);
+
+   // Light: the GM, its loose stars, then the villa's drawing.
+   float heroLight = aLight * mix(shimmer, 1.0, uReduced) + influence * 0.12;
+   float looseLight = max(0.22, aLight * 0.8);
+   #ifdef PHONE
+   looseLight *= 0.6;
+   #endif
+   heroLight = mix(heroLight, looseLight, release);
+   // The rest of the field arrives with the release.
+   heroLight *= mix(isGlyph, 1.0, release);
+   // Outline stars lead, the fill glows softly behind them, dust barely shows.
+   heroLight *= mix(1.0, aGlyph > 1.5 ? 1.04 : aGlyph > 0.5 ? 0.84 : 0.3, glyph);
+   heroLight *= mix(1.0, uGlyphLight, isGlyph * (1.0 - release));
+   float blueprintLight = (0.20 + aBuilding.w * 0.42) * clamp(uAspect * frameWidth / 1.4, 0.28, 1.0);
+   // Unassembled particles remain visible: the drawing is made by their arrival.
+   heroLight = mix(heroLight, blueprintLight, projectMix);
+   heroLight *= 1.0 - smoothstep(0.84, 0.865, uScroll) * uVideoReady;
+
+   // Light: the brain's own shading from the reference drawing.
+   float thoughtLight = 0.035 + aBrainShade * aBrainShade * 1.6;
+   thoughtLight *= clamp(pow(uBrainScale / 1.18, 0.8), 0.30, 1.0);
+   // The rim, the far side and the inner fill show only where the solid faces the camera.
+   if (aDetail > 1.5) thoughtLight *= brainBack;
+   thoughtLight *= mix(1.0, brainVisible, brainShell);
+   thoughtLight *= 0.65 * gather * (1.0 - melt);
+   #ifdef PHONE
+   // Phones draw only half of the surface layers: each star carries a little more light.
+   thoughtLight *= 1.25;
+   #endif
+
+   vLight = mix(heroLight, thoughtLight, uBridgeMode);
+   if (uOpening > 0.5) vLight = openingLight;
+   vLight *= depthCue * nearFade;
+
+   vec3 starColor = vec3(0.78, 0.85, 1.0);
+   vec3 heroColor = mix(mix(aColor, starColor, release), vec3(0.94, 0.97, 1.0), projectMix);
+   vColor = mix(heroColor, aColor, uBridgeMode);
+   if (uOpening > 0.5) vColor = openingColor;
+
+   // Loose stars glow with a halo; so does the opening's cloud.
+   vStar = max(release * 0.85 * (1.0 - uBridgeMode), openingHalo);
    // The brightest stars of the GM become four-point sparkles: irregular in
    // size, colour and shape, while the outline carries the letters.
-   vSparkle = max(vSparkle, glyph * smoothstep(32.0, 50.0, aSize) * 0.85);
-   vSynapse = synapseMix * (1.0 - aFree) * (1.0 - 0.85 * isGlow) * (1.0 - scatter);
-   #ifdef BRAIN_PASS
-   vNeuralFocus = 0.0;
-   #else
-   vNeuralFocus = focusBlur;
-   #endif
-   vPulse = pulse;
-   float constructed = projectMix * (1.0 - aFree);
-   vConstruction = constructed;
-   float blueprintLight = (0.20 + aBuilding.w * 0.42) * clamp(uAspect * frameWidth / 1.4, 0.28, 1.0);
-   vec3 architecturalColor = vec3(0.94, 0.97, 1.0);
-   vLight = mix(vLight, blueprintLight, constructed);
-   // Unassembled particles remain visible: the drawing is made by their arrival.
-   vColor = mix(vColor, architecturalColor, constructed);
-   vNeuralFocus *= 1.0 - constructed;
-   vPulse *= 1.0 - constructed;
-   // Extra samples add neural detail only; preserve the original brain and project density.
-   vLight *= mix(1.0, 0.55, synapseMix * (1.0 - projectMix) * (1.0 - aFree) * (1.0 - scatter));
-   if (aDetail > 1.5) vLight *= max(synapseMix * (1.0 - projectMix), anatomy * brainBack);
-   vLight *= mix(1.0, brainVisible, anatomy * brainShell);
-   vLight *= mix(1.0, 0.65, anatomy);
-   // Extra surface stars belong only to the brain, not to the other forms.
-   if (aDetail > 2.5) vLight *= anatomy;
-   vLight *= 1.0 - smoothstep(0.84, 0.865, uScroll) * uVideoReady * (1.0 - aFree);
-   vLight *= depthCue * nearFade;
-   vLight *= mix(1.0, min(0.55, 0.9 / max(depthCue, 0.001)), heroCalm) * (1.0 - heroHidden);
-   // Outline stars lead, the fill glows softly behind them, dust barely shows.
-   vLight *= mix(1.0, aGlyph > 1.5 ? 1.04 : aGlyph > 0.5 ? 0.84 : 0.3, glyph);
-   // Compact brain dots have no broad halo. Trim only transparent sprite
-   // margins and remap UVs, preserving their pixel size, light and position.
-   vSpriteCrop = (vStar == 0.0 && vSparkle == 0.0 && vSynapse == 0.0) ? 0.6 : 1.0;
+   vSparkle = max(glyph * smoothstep(32.0, 50.0, aSize) * 0.85, release * smoothstep(22.0, 34.0, aSize) * 0.35) * (1.0 - uBridgeMode);
+   // Compact dots (the GM, the brain) have no broad halo. Trim only transparent
+   // sprite margins and remap UVs, preserving their pixel size, light and position.
+   vSpriteCrop = (vStar == 0.0 && vSparkle == 0.0) ? 0.6 : 1.0;
    gl_PointSize *= vSpriteCrop;
    if (vLight <= 0.0) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
  }
@@ -373,10 +451,6 @@ const fragmentShader = `
  varying float vLight;
  varying float vStar;
  varying float vSparkle;
- varying float vSynapse;
- varying float vNeuralFocus;
- varying float vPulse;
- varying float vConstruction;
  varying float vSpriteCrop;
 
  void main() {
@@ -396,19 +470,23 @@ const fragmentShader = `
      exp(-abs(uv.x) * 170.0 - abs(uv.y) * 13.0) +
      exp(-abs(uv.y) * 170.0 - abs(uv.x) * 13.0)
    ) * 0.18 * vSparkle;
-   float neuralLight = 0.0;
-   if (vSynapse > 0.0) {
-     float neuralCore = exp(-r2 * mix(mix(240.0, 170.0, vConstruction), 85.0, vNeuralFocus));
-     float neuralHalo = exp(-r2 * 28.0) * (0.045 + vPulse * 0.06);
-     neuralLight = (neuralCore + neuralHalo) * mix(1.0, 0.42, vNeuralFocus);
-   }
-   float alpha = mix(core + inner + halo + rays, neuralLight, vSynapse) * vLight;
+   float alpha = (core + inner + halo + rays) * vLight;
    if (alpha < 0.0003) discard;
-   gl_FragColor = vec4(mix(vColor, vec3(1.0), core * mix(0.6, 0.18, vSynapse)), alpha);
+   gl_FragColor = vec4(mix(vColor, vec3(1.0), core * 0.6), alpha);
  }
 `;
 
-export type ParticleFrame = { progress: number; videoReady: boolean; active: boolean };
+export type ParticleFrame = {
+  /** The method's timeline: 0.775 loose stars → 0.815 villa → 1 construction video. */
+  progress: number;
+  /** Share of the hero scrolled away (0 → 1): the GM rises and opens. */
+  hero: number;
+  /** The idea scene before the form (0 → 1), drawn while bridgeMode is on. */
+  bridge: number;
+  bridgeMode: boolean;
+  videoReady: boolean;
+  active: boolean;
+};
 
 export default function AstraField({ frameState, onFailed }: { frameState: RefObject<ParticleFrame>; onFailed?: () => void }) {
   const onFailedRef = useRef(onFailed);
@@ -421,7 +499,9 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
     const host = hostRef.current;
     if (!host) return;
     const media = matchMedia('(prefers-reduced-motion: reduce)');
+    // Touch screens: no hover effects. Phone-sized screens: also fewer stars.
     const mobile = matchMedia('(max-width: 760px), (pointer: coarse)');
+    const phone = matchMedia('(max-width: 760px), (max-height: 500px)');
     let renderer: WebGLRenderer;
 
     try {
@@ -438,7 +518,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
 
     host.dataset.failed = 'false';
     renderer.setClearColor(0, 0);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, mobile.matches ? 1 : 2));
+    renderer.setPixelRatio(mobile.matches ? phonePixelRatio() : Math.min(devicePixelRatio, 2));
     renderer.domElement.setAttribute('aria-hidden', 'true');
     host.appendChild(renderer.domElement);
 
@@ -454,137 +534,77 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       return (seed - 1) / 2147483646;
     };
 
+    const count = phone.matches ? MOBILE_COUNT : BRAIN_COUNT;
+    const layer = phone.matches ? MOBILE_LAYER : BASE_COUNT;
     const positions: number[] = [];
     const origins: number[] = [];
     const colors: number[] = [];
-    const sizes: number[] = [];
-    const lights: number[] = [];
-    const phases: number[] = [];
-    const free: number[] = [];
-    const details: number[] = [];
+    const styles: number[] = [];
     const brains: number[] = [];
-    const brainShades: number[] = [];
     const brainNormals: number[] = [];
-    const synapses: number[] = [];
-    const releases: number[] = [];
+    const brainStyles: number[] = [];
     const plans: number[] = [];
     const buildings: number[] = [];
     const buildingKinds: number[] = [];
-    const signals: number[] = [];
-    const kinds: number[] = [];
     const glyphs: number[] = [];
-    const totalCount = MORPH_COUNT + MAX_AMBIENT_STARS;
-    const synapseParticles = buildSynapseParticles(NEURAL_COUNT, random);
-    const projectParticles = buildBlueprintParticles(BASE_MORPH_COUNT, random);
     const brainVolume = buildBrainVolume(brainPoints, random);
+    const projectParticles = buildBlueprintParticles(BASE_COUNT, random);
 
-    for (let i = 0; i < totalCount; i++) {
-      const ambient = i >= MORPH_COUNT;
-      const detail = i >= logoPoints.length && !ambient;
-      const project = ambient ? null : projectParticles[i % BASE_MORPH_COUNT];
-      plans.push(project?.plan.x ?? 0, project?.plan.y ?? 0, project?.plan.z ?? 0, project?.phase ?? 0);
-      buildings.push(project?.built.x ?? 0, project?.built.y ?? 0, project?.built.z ?? 0, project?.shade ?? 0);
-      buildingKinds.push(project?.kind ?? 0, project?.draw ?? 0);
-      const sourceIndex = i % logoPoints.length;
-      const point = ambient ? [0, 0, 0] : logoPoints[sourceIndex];
-      const glyph = !ambient && i < logoPoints.length;
-      // Monogram stars sit exactly on the sampled letters (see scripts/sample-gm.mjs);
-      // the copies used later by the brain keep their looser cloud.
+    for (let i = 0; i < count; i++) {
+      const project = projectParticles[i % BASE_COUNT];
+      plans.push(project.plan.x, project.plan.y, project.plan.z, project.phase);
+      buildings.push(project.built.x, project.built.y, project.built.z, project.shade);
+      buildingKinds.push(project.kind, project.draw);
+      const point = logoPoints[i % logoPoints.length];
+      const glyph = i < logoPoints.length;
+      // Monogram stars sit exactly on the sampled letters (see scripts/sample-gm.mjs).
       // An irregular edge: most monogram stars stay close to the outline, a few stray further.
-      const roll = ambient ? 0 : random();
-      const scatter = ambient ? 0 : glyph ? 0.0075 * (1 + 3 * roll ** 3) : roll < 0.20 ? 0.075 : 0.022;
+      const roll = random();
+      const scatter = glyph ? 0.0075 * (1 + 3 * roll ** 3) : roll < 0.20 ? 0.075 : 0.022;
       positions.push(
         point[0] + (random() - 0.5) * scatter,
         point[1] + (random() - 0.5) * scatter,
         // Shallow depth: perspective would otherwise smear the off-centre letters.
-        (random() - 0.5) * (ambient ? 0.09 : glyph ? 0.03 : 0.16),
+        (random() - 0.5) * (glyph ? 0.03 : 0.16),
       );
       glyphs.push(glyph ? point[2] : -1);
-      origins.push(
-        (random() - 0.5) * (ambient ? 1.1 : 1.7),
-        (random() - 0.5) * (ambient ? 1.1 : 1.3),
-        (random() - 0.5) * 1.35,
-      );
+      origins.push((random() - 0.5) * 1.7, (random() - 0.5) * 1.3, (random() - 0.5) * 1.35);
 
       const heat = random();
-      colors.push(
-        ...(heat < 0.65
-          ? [0.94, 0.95, 1]
-          : heat < 0.85
-            ? [0.64, 0.82, 1]
-            : [1, 0.8, 0.59]),
-      );
+      colors.push(...(heat < 0.65 ? [0.94, 0.95, 1] : heat < 0.85 ? [0.64, 0.82, 1] : [1, 0.8, 0.59]));
       const bright = random();
-      sizes.push(
-        ambient
-          ? bright > 0.97
-            ? 26 + random() * 10
-            : bright > 0.78
-              ? 12 + random() * 6
-              : 5 + random() * 6
-          : bright > 0.993
-            ? 58
-            : bright > 0.94
-              ? 28
-              : 7 + random() * 10,
-      );
-      lights.push(ambient ? 0.38 + random() * 0.48 : 0.32 + random() * 0.4);
-      phases.push(random() * Math.PI * 2);
-      free.push(ambient ? 1 : 0);
-      details.push(!ambient && i >= NEURAL_COUNT ? 3 : !ambient && i >= BASE_MORPH_COUNT ? 2 : detail ? 1 : 0);
-      if (ambient) {
-        brains.push(0, 0, 0);
-        brainShades.push(0);
-        brainNormals.push(0, 0, 0, 0);
+      const size = bright > 0.993 ? 58 : bright > 0.94 ? 28 : 7 + random() * 10;
+      const light = 0.32 + random() * 0.4;
+      styles.push(size, light, random() * Math.PI * 2, 0);
+      const reference = brainPoints[i % layer];
+      if (i < layer) {
+        // Reference star on the solid's front face; w keeps its original depth.
+        const [z, nx, ny, nz] = brainVolume.front.subarray(i * 4, i * 4 + 4);
+        brains.push(reference[0], reference[1], z);
+        brainNormals.push(nx, ny, nz, reference[2]);
+        brainStyles.push(0, reference[3]);
+      } else if (i < layer * 2) {
+        // Rim of the solid (top, bottom, poles), revealed by rotation.
+        const k = (i - layer) * 7;
+        const [x, y, z, shade, nx, ny, nz] = brainVolume.rim.subarray(k, k + 7);
+        brains.push(x, y, z);
+        brainNormals.push(nx, ny, nz, z);
+        brainStyles.push(2, shade);
+      } else if (i < layer * 3) {
+        // Far hemisphere, carrying the same reference drawing.
+        const j = i - layer * 2;
+        const [z, nx, ny, nz] = brainVolume.far.subarray(j * 4, j * 4 + 4);
+        brains.push(reference[0], reference[1], z);
+        brainNormals.push(nx, ny, nz, z);
+        brainStyles.push(2, reference[3]);
       } else {
-        const brain = brainPoints[i % BASE_MORPH_COUNT];
-        if (i < BASE_MORPH_COUNT) {
-          // Reference star on the solid's front face; w keeps its original depth.
-          const [z, nx, ny, nz] = brainVolume.front.subarray(i * 4, i * 4 + 4);
-          brains.push(brain[0], brain[1], z);
-          brainShades.push(brain[3]);
-          brainNormals.push(nx, ny, nz, brain[2]);
-        } else if (i < BASE_MORPH_COUNT * 2) {
-          // Rim of the solid (top, bottom, poles), revealed by rotation.
-          const k = (i - BASE_MORPH_COUNT) * 7;
-          const [x, y, z, shade, nx, ny, nz] = brainVolume.rim.subarray(k, k + 7);
-          brains.push(x, y, z);
-          brainShades.push(shade);
-          brainNormals.push(nx, ny, nz, z);
-        } else if (i < NEURAL_COUNT) {
-          // Far hemisphere, carrying the same reference drawing.
-          const j = i - BASE_MORPH_COUNT * 2;
-          const [z, nx, ny, nz] = brainVolume.far.subarray(j * 4, j * 4 + 4);
-          brains.push(brain[0], brain[1], z);
-          brainShades.push(brain[3]);
-          brainNormals.push(nx, ny, nz, z);
-        } else {
-          const k = (i - NEURAL_COUNT) * 7;
-          const [x, y, z, shade, nx, ny, nz] = brainVolume.fill.subarray(k, k + 7);
-          brains.push(x, y, z);
-          brainShades.push(shade);
-          brainNormals.push(nx, ny, nz, z);
-        }
+        // Continuous inner surface, including the dark folds.
+        const k = (i - layer * 3) * 7;
+        const [x, y, z, shade, nx, ny, nz] = brainVolume.fill.subarray(k, k + 7);
+        brains.push(x, y, z);
+        brainNormals.push(nx, ny, nz, z);
+        brainStyles.push(3, shade);
       }
-      if (ambient) {
-        synapses.push(0, 0, 0, 0);
-        releases.push(0, 0, 0);
-        signals.push(2);
-        kinds.push(0);
-      } else {
-        const synapse = synapseParticles[i % NEURAL_COUNT];
-        synapses.push(synapse.point.x, synapse.point.y, synapse.point.z, synapse.shade);
-        releases.push(synapse.release.x, synapse.release.y, synapse.release.z);
-        signals.push(synapse.signal);
-        kinds.push(synapse.kind);
-      }
-    }
-
-    const styles: number[] = [];
-    const morphs: number[] = [];
-    for (let i = 0; i < totalCount; i++) {
-      styles.push(sizes[i], lights[i], phases[i], kinds[i]);
-      morphs.push(free[i], details[i], brainShades[i], signals[i]);
     }
 
     const geometry = new BufferGeometry();
@@ -593,11 +613,9 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       ['aOrigin', origins, 3],
       ['aColor', colors, 3],
       ['aStyle', styles, 4],
-      ['aMorph', morphs, 4],
       ['aBrain', brains, 3],
       ['aBrainNormal', brainNormals, 4],
-      ['aSynapse', synapses, 4],
-      ['aRelease', releases, 3],
+      ['aBrainStyle', brainStyles, 2],
       ['aPlan', plans, 4],
       ['aBuilding', buildings, 4],
       ['aArchitecture', buildingKinds, 2],
@@ -605,6 +623,10 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
     ] as [string, number[], number][]) {
       geometry.setAttribute(name, new Float32BufferAttribute(array, size));
     }
+
+    // Filled only when the phone opening plays (see below).
+    const wordAttribute = new Float32BufferAttribute(new Float32Array(count * 2), 2);
+    geometry.setAttribute('aWord', wordAttribute);
 
     const offsets = new Float32Array((positions.length / 3) * 2);
     const velocities = new Float32Array(logoPoints.length * 2);
@@ -629,20 +651,33 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
     let springTexture = makeFieldTexture(fieldData, fieldWidth);
 
     const material = new ShaderMaterial({
-      defines: mobile.matches ? { MOBILE: 1 } : {},
+      defines: { ...(mobile.matches ? { MOBILE: 1 } : {}), ...(phone.matches ? { PHONE: 1 } : {}) },
       vertexShader,
       fragmentShader,
       uniforms: {
         uTime: { value: 0 },
-        uBrainTurn: { value: 0 },
         uDpr: { value: renderer.getPixelRatio() },
         uPixelScale: { value: 1 },
         uLogoScale: { value: 1 },
+        uGlyphLight: { value: 1 },
+        uOpening: { value: 0 },
+        uClock: { value: 0 },
+        uWordScale: { value: 1 },
+        uMonoScale: { value: 1 },
+        uLogoRest: { value: new Vector3() },
         uHeroOffset: { value: new Vector2() },
         uAspect: { value: 1 },
         uCompact: { value: 0 },
+        uPlan: { value: new Vector2(0, -0.05) },
+        uPlanWidth: { value: 0.86 },
         uReduced: { value: media.matches ? 1 : 0 },
-        uScroll: { value: 0 },
+        uScroll: { value: METHOD_START },
+        uHero: { value: 0 },
+        uBridge: { value: 0 },
+        uBridgeMode: { value: 0 },
+        uBrainTurn: { value: 0 },
+        uBrainCenter: { value: new Vector2() },
+        uBrainScale: { value: 1 },
         uVideoReady: { value: 0 },
         uCamDist: { value: 2 },
         uSpringField: { value: springTexture },
@@ -657,12 +692,6 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
     const field = new Points(geometry, material);
     field.frustumCulled = false;
     galaxy.add(field);
-    const brainMaterial = material.clone();
-    brainMaterial.defines = { ...material.defines, BRAIN_PASS: 1 };
-    brainMaterial.uniforms = material.uniforms;
-    // Compile both passes before the visitor reaches their scroll boundary.
-    renderer.compile(scene, camera);
-    field.material = brainMaterial;
     renderer.compile(scene, camera);
 
     let frame = 0;
@@ -690,8 +719,14 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
     const contacts = new Map<number, Vector2>();
     const pivot = new Vector3();
     const rotatedPivot = new Vector3();
-    const interactionAvailable = () =>
-      !mobile.matches && !(videoReadyRef.current && scrollRef.current >= 0.84);
+    // The stars answer the pointer in the GM, the villa's drawing and the
+    // brain; never over the video or while the brain melts away.
+    const interactionAvailable = () => {
+      const state = frameState.current;
+      if (mobile.matches) return false;
+      if (state.bridgeMode) return state.bridge < 0.8;
+      return !(videoReadyRef.current && scrollRef.current >= 0.84);
+    };
 
     const locate = (event: PointerEvent) => {
       const bounds = host.getBoundingClientRect();
@@ -713,6 +748,63 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       pointerActive = true;
     };
 
+    // ---------- The phone opening ----------
+    // The page's first script marks it with .gm-intro (page.tsx) and hides the
+    // header and the copy; the shader plays the opening from one clock (see
+    // OPENING), then the page appears. A touch skips it.
+    const root = document.documentElement;
+    let phoneHero = false;
+    const rest = { scale: 0.05, x: 0, y: 0.45 };
+    const stage = { word: 0.2, mono: 0.3 };
+    let opening: 'waiting' | 'playing' | 'done' = root.classList.contains('gm-intro') ? 'waiting' : 'done';
+    let openingStart = 0;
+    let wordReady = false;
+    // A slow push-in of the camera while the word forms and folds.
+    let openingPush = 0;
+    const placeOpening = (seconds: number) => {
+      const u = material.uniforms;
+      const playing = phoneHero && Number.isFinite(seconds);
+      u.uOpening.value = playing ? 1 : 0;
+      u.uClock.value = playing ? seconds : 0;
+      const push = playing ? (seconds - OPENING.write) / (OPENING.rise - OPENING.write) : 0;
+      openingPush = push > 0 && push < 1 ? 0.16 * Math.sin(Math.PI * push) : 0;
+      if (!phoneHero) {
+        u.uGlyphLight.value = 1;
+        return;
+      }
+      // At rest the GM sits, unlit, in the header logo: the page draws the logo.
+      u.uGlyphLight.value = 0;
+      u.uLogoScale.value = rest.scale;
+      (u.uHeroOffset.value as Vector2).set(rest.x, rest.y);
+      (u.uLogoRest.value as Vector3).set(rest.x, rest.y, rest.scale);
+      u.uWordScale.value = stage.word;
+      u.uMonoScale.value = stage.mono;
+    };
+    const showPage = () => {
+      if (!root.classList.contains('gm-intro')) return;
+      root.classList.remove('gm-intro');
+      root.classList.add('gm-intro-done');
+    };
+    const skipEvents = ['pointerdown', 'wheel', 'keydown', 'scroll'] as const;
+    const finishOpening = () => {
+      if (opening === 'done') return;
+      opening = 'done';
+      skipEvents.forEach((type) => removeEventListener(type, finishOpening));
+      showPage();
+      delete root.dataset.intro;
+      root.style.removeProperty('--opening-impact');
+      placeOpening(Infinity);
+    };
+    if (opening !== 'done') {
+      skipEvents.forEach((type) => addEventListener(type, finishOpening, { passive: true }));
+      import('./gomore-points.json').then(({ default: word }) => {
+        const array = wordAttribute.array as Float32Array;
+        word.forEach(([x, y], i) => { array[i * 2] = x; array[i * 2 + 1] = y; });
+        wordAttribute.needsUpdate = true;
+        wordReady = true;
+      }, finishOpening);
+    }
+
     const resize = () => {
       const width = host.clientWidth;
       const height = host.clientHeight;
@@ -733,17 +825,44 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       material.uniforms.uAspect.value = camera.aspect;
       // Mirrors the CSS stacked layout: (max-width: 600px), (max-aspect-ratio: 9/10).
       material.uniforms.uCompact.value = width <= 600 || camera.aspect <= 0.9 ? 1 : 0;
+      // There the villa's drawing lands exactly on the construction video,
+      // wherever the page puts it. The video's stage keeps the height of the
+      // screen with the browser bars shown, while this canvas grows as they
+      // hide: measuring (and measuring again on resize) keeps the two aligned.
+      const frame = document.querySelector<HTMLElement>('.gm-construction-video');
+      if (frame) {
+        material.uniforms.uPlanWidth.value = frame.offsetWidth / width;
+        (material.uniforms.uPlan.value as Vector2).set(
+          ((frame.offsetLeft + frame.offsetWidth / 2) / width - 0.5) * camera.aspect,
+          0.5 - frame.offsetTop / height,
+        );
+      }
       const fullScale = Math.min(1, (camera.aspect * 0.84) / 0.82);
       // The headline leads; the GM fills the space the copy leaves free,
       // measured from the rendered hero copy rather than guessed.
       const heroOffset = material.uniforms.uHeroOffset.value as Vector2;
       const copy = document.querySelector<HTMLElement>('.gm-hero-copy');
-      if (width <= 600 || camera.aspect < 1.05) {
+      // Mirrors the CSS phone composition: (max-width: 600px) and (orientation: portrait).
+      phoneHero = width <= 600 && camera.aspect <= 1;
+      if (phoneHero) {
+        // Phones: the words have the hero to themselves and the GM rests in
+        // the header logo, unlit (the logo is drawn by the page). From there
+        // its stars stream out into the villa as the visitor scrolls.
+        const mark = document.querySelector<HTMLElement>('.gm-header .gm-logo');
+        const box = mark?.getBoundingClientRect();
+        rest.scale = ((mark?.offsetWidth ?? 46) * LOGO_MARK) / (LOGO_WIDTH * height);
+        rest.x = box ? ((box.left + box.width / 2) / width - 0.5) * camera.aspect : -camera.aspect * 0.4;
+        rest.y = box ? 0.5 - (box.top + box.height / 2) / height : 0.46;
+        // The opening, centred a little high: GOMORE across the screen, then the GM.
+        stage.word = (0.86 * camera.aspect) / WORD_WIDTH;
+        stage.mono = (0.62 * camera.aspect) / LOGO_WIDTH;
+        placeOpening(opening === 'playing' ? (performance.now() - openingStart) / 1000 : Infinity);
+      } else if (camera.aspect < 1.05) {
         // Stacked: the GM sits between the header and the copy.
         const top = 76;
         const bottom = copy ? copy.offsetTop - 24 : height * 0.45;
         const room = Math.max(90, bottom - top);
-        material.uniforms.uLogoScale.value = Math.min(fullScale * 0.92, room / height / 0.62) * 1.10;
+        material.uniforms.uLogoScale.value = Math.min(fullScale * 0.92, room / height / LOGO_HEIGHT) * 1.10;
         heroOffset.set(0, 0.5 - (top + room / 2) / height);
       } else {
         // Side by side: the GM is centred in the space right of the words
@@ -765,6 +884,31 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
         material.uniforms.uLogoScale.value = Math.max(0.4, Math.min(fit, 0.48 / 0.58));
         heroOffset.set(((start + end) / 2 - 0.5) * camera.aspect, 0.02);
       }
+      if (!phoneHero) {
+        placeOpening(Infinity);
+        finishOpening();
+      }
+      // The brain sits beside the scene's words: to their right on wide
+      // screens, below them on phones and portrait tablets.
+      const brainCenter = material.uniforms.uBrainCenter.value as Vector2;
+      const words = document.querySelector<HTMLElement>('.gm-bridge-copy');
+      const header = 76;
+      if (width <= 760 || camera.aspect < 1.05) {
+        const top = words ? words.offsetTop + words.offsetHeight + 28 : height * 0.3;
+        const bottom = height - 96; // clears the scroll cue
+        const room = Math.max(120, bottom - top);
+        // Narrower than the screen: turning, the brain is wider in some views.
+        const scale = Math.min(1.12, (camera.aspect * 0.72) / BRAIN_WIDTH, (room / height) / BRAIN_HEIGHT);
+        material.uniforms.uBrainScale.value = scale;
+        brainCenter.set(0, 0.5 - (top + room / 2) / height);
+      } else {
+        const textRight = words ? words.offsetLeft + words.offsetWidth : width * 0.45;
+        const start = (textRight + 48) / width;
+        const end = 0.96;
+        const scale = Math.min(1.12, ((end - start) * camera.aspect * 0.9) / BRAIN_WIDTH, ((height - header) / height * 0.8) / BRAIN_HEIGHT);
+        material.uniforms.uBrainScale.value = scale;
+        brainCenter.set(((start + end) / 2 - 0.5) * camera.aspect, -(header / height) / 2);
+      }
       material.uniforms.uPixelScale.value = Math.max(
         0.65,
         Math.min(1.3, height / 720),
@@ -773,43 +917,81 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
 
     window.addEventListener('resize', resize);
     resize();
+    // Phones: sharper stars, one step coarser if the device falls behind.
+    const unwatch = watchPixelRatio(() => {
+      renderer.setPixelRatio(phonePixelRatio());
+      material.uniforms.uDpr.value = renderer.getPixelRatio();
+      resize();
+    });
     // Web fonts change the copy's height: place the GM again once they land.
     document.fonts?.ready.then(() => resize());
 
     // Nothing to draw once the story has scrolled away: skip the GPU work.
     let onScreen = true;
+    // Behind the construction video every star is dark (the shader fades them
+    // out as it arrives): the canvas is hidden and the GPU rests until the
+    // scene needs the stars again.
+    let asleep = false;
     const visibility = new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; });
     visibility.observe(host);
 
     const render = (now: number) => {
       frame = requestAnimationFrame(render);
-      const dt = Math.min(0.04, (now - last) / 1000);
+      const elapsed = now - last;
+      const dt = Math.min(0.04, elapsed / 1000);
       last = now;
-      scrollRef.current = frameState.current.progress;
-      videoReadyRef.current = frameState.current.videoReady;
-      if (document.hidden || !onScreen || !frameState.current.active) return;
-
-      time += dt * ANIMATION_SPEED;
-      // Once the visitor enters the story, returning to the top must restore
-      // the completed monogram even if the opening assembly was interrupted.
-      if (scrollRef.current > 0.025) time = Math.max(time, 10);
-      material.uniforms.uTime.value = media.matches ? 10 : time;
-      // One full revolution every 18 seconds, independent of the logo timing.
-      // Pause while the visitor drags; resume from the same orientation.
-      if (media.matches || scrollRef.current < 0.28 || scrollRef.current >= 0.58) {
-        material.uniforms.uBrainTurn.value = 0;
-      } else if (!dragging && scrollRef.current >= 0.36 && scrollRef.current < 0.48) {
-        material.uniforms.uBrainTurn.value = (material.uniforms.uBrainTurn.value + dt * Math.PI * 2 / 18) % (Math.PI * 2);
+      const state = frameState.current;
+      scrollRef.current = state.bridgeMode ? METHOD_START : state.progress;
+      videoReadyRef.current = state.videoReady;
+      if (document.hidden || !onScreen || !state.active) return;
+      const behindVideo = !state.bridgeMode && state.videoReady && state.progress >= 0.866;
+      if (behindVideo !== asleep) {
+        asleep = behindVideo;
+        renderer.domElement.style.visibility = asleep ? 'hidden' : '';
       }
+      if (asleep) return;
+      if (mobile.matches) reportFrame(now, elapsed);
+
+      if (opening === 'waiting') {
+        // The page stopped waiting for the stars (page.tsx): no opening today.
+        if (!root.classList.contains('gm-intro')) finishOpening();
+        else if (wordReady) {
+          opening = 'playing';
+          openingStart = now;
+          // The page's own effects (globals.css) keep time with the stars.
+          root.style.setProperty('--opening-impact', `${OPENING.impact}s`);
+          root.dataset.intro = 'playing';
+        }
+      }
+      if (opening === 'playing') {
+        const seconds = (now - openingStart) / 1000;
+        placeOpening(seconds);
+        if (seconds >= OPENING.reveal) showPage();
+        if (seconds >= OPENING.end) finishOpening();
+      }
+
+      const atHero = !state.bridgeMode && state.hero < 0.02;
+      time += dt * ANIMATION_SPEED;
+      // Once the visitor scrolls on, returning to the top must restore the
+      // completed monogram even if the opening assembly was interrupted.
+      if (!atHero) time = Math.max(time, 10);
+      material.uniforms.uTime.value = media.matches ? 10 : time;
       material.uniforms.uReduced.value = media.matches ? 1 : 0;
       material.uniforms.uScroll.value = scrollRef.current;
-      // Omit only groups whose shader light is exactly zero in this phase.
-      // Every surface layer is present throughout GM -> brain, both ways.
-      const progress = scrollRef.current;
-      field.material = progress <= 0.47 ? brainMaterial : material;
-      geometry.setDrawRange(0, progress <= 0.02 ? logoPoints.length
-        : progress >= 0.815 ? BASE_MORPH_COUNT
-        : progress >= 0.58 ? NEURAL_COUNT : totalCount);
+      material.uniforms.uHero.value = state.bridgeMode ? 1 : state.hero;
+      material.uniforms.uBridge.value = state.bridge;
+      material.uniforms.uBridgeMode.value = state.bridgeMode ? 1 : 0;
+      // One full revolution every 18 seconds; it pauses while the visitor drags,
+      // and starts again from the resting view each time the scene returns.
+      if (media.matches || !state.bridgeMode) {
+        material.uniforms.uBrainTurn.value = 0;
+      } else if (!dragging) {
+        material.uniforms.uBrainTurn.value = (material.uniforms.uBrainTurn.value + dt * Math.PI * 2 / 18) % (Math.PI * 2);
+      }
+      // Draw only the stars the current scene uses: the GM, the villa, or the network.
+      geometry.setDrawRange(0, atHero
+        ? logoPoints.length + (opening === 'playing' ? Math.min(OPENING_CLOUD, count - logoPoints.length) : 0)
+        : state.bridgeMode ? count : layer);
       material.uniforms.uVideoReady.value = videoReadyRef.current ? 1 : 0;
       if (!interactionAvailable()) pointerActive = false;
       const damping = 1 - Math.exp(-14 * dt);
@@ -825,7 +1007,8 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
           zoomTarget = REST_DISTANCE;
         }
       }
-      const videoSettle = videoReadyRef.current
+      // The villa's drawing settles, aligned and untilted, before its video.
+      const videoSettle = videoReadyRef.current && !state.bridgeMode
         ? Math.max(0, Math.min(1, (scrollRef.current - 0.83) / 0.01))
         : 0;
       const xLimit = 1.20 * (1 - videoSettle);
@@ -843,32 +1026,35 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       galaxy.rotation.y *= 1 - videoSettle;
       galaxy.rotation.z *= 1 - videoSettle;
       // Rotate the monogram around its own centre, not around the page centre.
-      const heroWeight = 1 - Math.min(1, scrollRef.current / 0.20);
+      const heroWeight = 1 - Math.min(1, state.hero / 0.5);
       const logoCenter = material.uniforms.uHeroOffset.value as Vector2;
-      pivot.set(logoCenter.x * heroWeight, logoCenter.y * heroWeight, 0);
+      const brainCenter = material.uniforms.uBrainCenter.value as Vector2;
+      if (state.bridgeMode) pivot.set(brainCenter.x, brainCenter.y, 0);
+      else pivot.set(logoCenter.x * heroWeight, logoCenter.y * heroWeight, 0);
       rotatedPivot.copy(pivot).applyEuler(galaxy.rotation);
       galaxy.position.copy(pivot).sub(rotatedPivot);
       galaxy.updateMatrixWorld();
 
-      const s = scrollRef.current;
-      const canGesture = !mobile.matches && (s < 0.025 || (s >= 0.36 && s < 0.745));
+      // The GM and the brain can be turned by hand while they are whole.
+      const onBrain = state.bridgeMode && state.bridge > 0.2 && state.bridge < 0.8;
+      const canGesture = !mobile.matches && (onBrain || (!state.bridgeMode && state.hero < 0.025));
       gesture.style.display = canGesture ? 'block' : 'none';
       if (!canGesture && dragging) leave();
-      const isLogo = s < 0.025;
-      const zoneWidth = isLogo ? Math.min(0.9, material.uniforms.uLogoScale.value * 0.9 / camera.aspect) : 0.70;
-      const zoneHeight = isLogo ? Math.min(0.65, material.uniforms.uLogoScale.value * 0.65) : 0.62;
       if (canGesture) {
-        gesture.style.width = `${zoneWidth * 100}%`;
-        gesture.style.height = `${zoneHeight * 100}%`;
-        gesture.style.left = `${(0.5 + (isLogo ? logoCenter.x / camera.aspect : 0)) * 100}%`;
-        gesture.style.top = `${(0.5 - (isLogo ? logoCenter.y : 0.035)) * 100}%`;
+        const logoScale = material.uniforms.uLogoScale.value;
+        const brainScale = material.uniforms.uBrainScale.value;
+        const center = onBrain ? brainCenter : logoCenter;
+        gesture.style.width = `${Math.min(0.9, (onBrain ? brainScale * BRAIN_WIDTH * 1.1 : logoScale * 0.9) / camera.aspect) * 100}%`;
+        gesture.style.height = `${Math.min(0.8, onBrain ? brainScale * BRAIN_HEIGHT * 1.1 : logoScale * 0.65) * 100}%`;
+        gesture.style.left = `${(0.5 + center.x / camera.aspect) * 100}%`;
+        gesture.style.top = `${(0.5 - center.y) * 100}%`;
       }
 
       if (!interactionAvailable()) {
         zoomTarget = REST_DISTANCE;
         panTarget.set(0, 0);
       }
-      const distanceGoal = zoomTarget + (REST_DISTANCE - zoomTarget) * videoSettle;
+      const distanceGoal = zoomTarget + (REST_DISTANCE - zoomTarget) * videoSettle - openingPush;
       const zoomFollow = media.matches ? 1 : 1 - Math.exp(-9 * dt);
       camera.position.z += (distanceGoal - camera.position.z) * zoomFollow;
       camera.position.x += (panTarget.x * (1 - videoSettle) - camera.position.x) * zoomFollow;
@@ -886,15 +1072,15 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       const heroOffset = material.uniforms.uHeroOffset.value as Vector2;
 
       // Keep the original GM particles on their individual CPU springs.
-      const scroll = scrollRef.current;
+      const leftHero = state.bridgeMode || state.hero >= 0.025;
       let gmDirty = false;
-      if (scroll >= 0.025 && springsMoving) {
+      if (leftHero && springsMoving) {
         offsets.fill(0, 0, logoPoints.length * 2);
         velocities.fill(0);
         springsMoving = false;
         gmDirty = true;
       }
-      if (scroll < 0.025 && (pointerActive || springsMoving)) {
+      if (!leftHero && (pointerActive || springsMoving)) {
         let nextSpringsMoving = false;
         const steps = Math.max(1, Math.ceil(dt * 120));
         const stepTime = dt / steps;
@@ -911,7 +1097,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
           const dx = (rx - camera.position.x) * depth + offsets[j] - smoothPointer.x;
           const dy = (ry - camera.position.y) * depth + offsets[j + 1] - smoothPointer.y;
           const radius = Math.hypot(dx, dy);
-          const weight = pointerActive && !dragging && scroll < 0.02 && (time > 4 || media.matches)
+          const weight = pointerActive && !dragging && atHero && (time > 4 || media.matches)
             ? Math.pow(Math.max(0, 1 - radius / 0.17), 2) * strength
             : 0;
           const radial = dragging ? -18 : 0.6 / Math.max(radius, 0.008);
@@ -948,7 +1134,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
 
       // A compact screen-space spring field drives all later constructions.
       // The shader samples this at each star's current projected position.
-      const fieldForces = pointerActive && !dragging && interactionAvailable() && scroll >= 0.02;
+      const fieldForces = pointerActive && !dragging && interactionAvailable() && !atHero;
       let nextFieldMoving = false;
       if (fieldForces || fieldMoving) {
         const steps = Math.max(1, Math.ceil(dt * 120));
@@ -1082,6 +1268,8 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
 
     return () => {
       cancelAnimationFrame(frame);
+      unwatch();
+      skipEvents.forEach((type) => removeEventListener(type, finishOpening));
       visibility.disconnect();
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', move);
@@ -1095,7 +1283,6 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       renderer.domElement.removeEventListener('webglcontextlost', contextLost);
       geometry.dispose();
       material.dispose();
-      brainMaterial.dispose();
       springTexture.dispose();
       renderer.dispose();
       renderer.domElement.remove();

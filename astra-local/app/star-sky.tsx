@@ -11,11 +11,12 @@ import {
   ShaderMaterial,
   WebGLRenderer,
 } from 'three';
+import { phonePixelRatio, reportFrame, watchPixelRatio } from './pixel-ratio';
 
 // Same clock as the story scene (astra-field.tsx), so the sky moves alike.
 const ANIMATION_SPEED = 1.25;
 // Stars rise by a fifth of their field for every screen height scrolled:
-// the pace of the sky behind the brain and the synapses.
+// the pace of the sky behind the particle scenes.
 const SCROLL_DRIFT = 0.2;
 // The sky as it looks behind the synapses: the story dimmed it to 24%.
 const SKY_LIGHT = 0.24;
@@ -109,7 +110,10 @@ export default function StarSky() {
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     const mobile = matchMedia('(max-width: 760px), (pointer: coarse)');
     renderer.setClearColor(0, 0);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, mobile.matches ? 1 : 2));
+    // Phones: the sky's small soft stars look the same at 1.5x as at 2x, for
+    // half the pixels; the particle scenes keep the sharper budget.
+    const skyRatio = () => (mobile.matches ? Math.min(1.5, phonePixelRatio()) : Math.min(devicePixelRatio, 2));
+    renderer.setPixelRatio(skyRatio());
     renderer.domElement.setAttribute('aria-hidden', 'true');
     host.appendChild(renderer.domElement);
 
@@ -173,6 +177,7 @@ export default function StarSky() {
     let time = 0;
     let frame = 0;
     let last = performance.now();
+    let previous = last;
     const draw = () => {
       u.uTime.value = reduced.matches ? 10 : time;
       u.uMotion.value = reduced.matches ? 0 : 1;
@@ -181,6 +186,8 @@ export default function StarSky() {
     };
     const loop = (now: number) => {
       frame = requestAnimationFrame(loop);
+      if (mobile.matches && !document.hidden) reportFrame(now, now - previous);
+      previous = now;
       if (mobile.matches && now - last < 1000 / 30) return;
       const dt = Math.min(0.04, (now - last) / 1000);
       last = now;
@@ -189,6 +196,12 @@ export default function StarSky() {
       draw();
     };
     const onResize = () => { resize(); draw(); };
+    // Phones: a sharper sky, one step coarser if the device falls behind.
+    const unwatch = watchPixelRatio(() => {
+      renderer.setPixelRatio(skyRatio());
+      u.uDpr.value = renderer.getPixelRatio();
+      onResize();
+    });
     const onMotion = () => {
       cancelAnimationFrame(frame);
       draw();
@@ -200,6 +213,7 @@ export default function StarSky() {
 
     return () => {
       cancelAnimationFrame(frame);
+      unwatch();
       removeEventListener('resize', onResize);
       reduced.removeEventListener('change', onMotion);
       geometry.dispose();

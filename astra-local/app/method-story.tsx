@@ -17,6 +17,9 @@ const KEYS: [number, number][] = [[0, 0.815], [70, 0.865], [250, 1]];
 const TRAVEL = KEYS[KEYS.length - 1][0];
 const PHASE_STARTS = [0, 0.27, 0.5, 0.72, 0.88];
 const STOPS = [0.865, 0.905, 0.935, 0.965, 0.995];
+// Phones and portrait tablets (see globals.css): the video does not move aside,
+// so the words can arrive with it and the first phase stays lit for longer.
+const STACKED = '(max-width: 600px), (max-aspect-ratio: 9/10)';
 
 const storyAt = (units: number) => {
   for (let i = 1; i < KEYS.length; i++) {
@@ -42,6 +45,15 @@ export default function MethodStory() {
   const [scrollProgress, setScrollProgress] = useState(0.815);
   const [near, setNear] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [stacked, setStacked] = useState(false);
+
+  useEffect(() => {
+    const media = matchMedia(STACKED);
+    const sync = () => setStacked(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
 
   useEffect(() => {
     let frame = 0;
@@ -52,7 +64,9 @@ export default function MethodStory() {
       if (!section || !stage) return;
       const travel = Math.max(1, section.offsetHeight - stage.offsetHeight);
       const fraction = clamp01(-section.getBoundingClientRect().top / travel);
-      setScrollProgress(storyAt(fraction * TRAVEL));
+      const next = storyAt(fraction * TRAVEL);
+      // Finer than a frame of the film: no new render for it.
+      setScrollProgress((previous) => (Math.abs(previous - next) < 1e-4 ? previous : next));
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
     update();
@@ -77,7 +91,7 @@ export default function MethodStory() {
   const s = scrollProgress;
   const videoEnter = smoothStep((s - 0.84) / 0.025);
   const settle = smoothStep((s - 0.862) / 0.026);
-  const houseEnter = smoothStep((s - 0.883) / 0.024);
+  const houseEnter = stacked ? smoothStep((s - 0.848) / 0.02) : smoothStep((s - 0.883) / 0.024);
   const videoProgress = clamp01((s - 0.865) / 0.135);
   let phase = 0;
   PHASE_STARTS.forEach((start, index) => { if (videoProgress >= start) phase = index; });
@@ -93,7 +107,7 @@ export default function MethodStory() {
         <div className="gm-house" style={{ opacity: houseEnter, '--house-enter': houseEnter } as React.CSSProperties}>
           <div className="gm-house-intro">
             <SectionLabel>Il metodo</SectionLabel>
-            <h2 className="gm-house-title" id="metodo-title">Una presenza digitale si costruisce.</h2>
+            <h2 className="gm-house-title" id="metodo-title">Come creiamo il vostro sito web</h2>
             <p className="gm-house-lead">Come una casa: prima le fondamenta, poi la struttura, la forma e i dettagli.</p>
           </div>
           <div className="gm-phases">
@@ -112,6 +126,8 @@ export default function MethodStory() {
                 </li>
               ))}
             </ol>
+            {/* Phones: the titles stay listed, the lit phase's words below them. */}
+            <p key={phase} className="gm-phase-caption" aria-hidden="true">{housePhases[phase].text}</p>
           </div>
         </div>
       </div>

@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { site } from './content';
+import { contactDetails, DetailText, legalDetails } from './studio-details';
 
 export default function SiteFooter({ cta = true }: { cta?: boolean }) {
-  const legal = [site.legalName, site.vat && `P.IVA ${site.vat}`, site.address].filter(Boolean).join(' · ');
+  const contacts = contactDetails();
+  const legal = legalDetails();
   return (
     <footer className="gm-footer">
       <div className="gm-wrap">
@@ -15,13 +17,22 @@ export default function SiteFooter({ cta = true }: { cta?: boolean }) {
           </div>
         )}
         <div className="gm-footer-bottom">
-          <div>
+          {/* The studio and its legal details. */}
+          <div className="gm-footer-studio">
             <p className="gm-footer-brand">{site.name}</p>
             <p>Studio digitale indipendente · Italia</p>
-            {legal && <p>{legal}</p>}
+            {legal.length > 0 && (
+              <p className="gm-footer-legal">
+                {legal.map((item) => <span key={item.key}><DetailText item={item} /></span>)}
+              </p>
+            )}
           </div>
-          <ul>
-            {site.email && <li><a href={`mailto:${site.email}`}>{site.email}</a></li>}
+          {contacts.length > 0 && (
+            <ul className="gm-footer-contacts" aria-label="Contatti">
+              {contacts.map((item) => <li key={item.key}><DetailText item={item} /></li>)}
+            </ul>
+          )}
+          <ul aria-label="Informazioni legali">
             <li><Link href="/privacy">Privacy</Link></li>
             <li><Link href="/cookie">Cookie</Link></li>
             <li><span>© {new Date().getFullYear()} {site.name}</span></li>

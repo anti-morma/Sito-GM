@@ -39,6 +39,8 @@ const structuredData = {
       logo: `${site.url}/icon.png`,
       description,
       ...(site.email ? { email: site.email } : {}),
+      ...(site.phone ? { telephone: site.phone } : {}),
+      ...(site.address ? { address: site.address } : {}),
       ...(site.legalName ? { legalName: site.legalName } : {}),
       ...(site.vat ? { vatID: site.vat } : {}),
     },
@@ -74,7 +76,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="it" className={`${heroSans.variable} ${heroSerif.variable}`}>
+    // The phone opening marks <html> before hydration (page.tsx): expected.
+    <html lang="it" className={`${heroSans.variable} ${heroSerif.variable}`} suppressHydrationWarning>
       <body>
         {/* Moving stars behind every page and section. */}
         <StarSky />

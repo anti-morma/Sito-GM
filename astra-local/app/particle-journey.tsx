@@ -2,10 +2,17 @@
 
 import { useEffect, useRef } from 'react';
 import AstraField, { type ParticleFrame } from './astra-field';
-import { STORY_UNITS, storyAt } from './story-timeline';
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+const smoothStep = (value: number) => {
+  const t = clamp01(value);
+  return t * t * (3 - 2 * t);
+};
 const METHOD_KEYS: [number, number][] = [[0, 0.815], [70, 0.865], [250, 1]];
+// Loose stars, ready to draw the villa (see method-story.tsx).
+const METHOD_START = 0.775;
+// With reduced motion the idea scene holds its whole, still brain.
+const BRIDGE_STILL = 0.5;
 
 function interpolate(keys: [number, number][], units: number) {
   for (let i = 1; i < keys.length; i++) {
@@ -16,59 +23,92 @@ function interpolate(keys: [number, number][], units: number) {
   return keys[keys.length - 1][1];
 }
 
-/** One particle system survives the entire thought → work → villa journey. */
+/**
+ * One particle system for the page's two scenes: the hero's GM opens and draws
+ * the method's villa; later, before the form, a brain of stars gathers, turns
+ * and melts away (the idea scene, bridge.tsx). Between them only the sky remains.
+ */
 export default function ParticleJourney() {
   const host = useRef<HTMLDivElement>(null);
-  const frameState = useRef<ParticleFrame>({ progress: 0, videoReady: false, active: true });
+  const frameState = useRef<ParticleFrame>({
+    progress: METHOD_START,
+    hero: 0,
+    bridge: 0,
+    bridgeMode: false,
+    videoReady: false,
+    active: true,
+  });
 
   useEffect(() => {
-    const story = document.querySelector<HTMLElement>('.gm-story');
-    const projects = document.querySelector<HTMLElement>('.gm-projects');
+    const hero = document.querySelector<HTMLElement>('.gm-hero');
     const method = document.querySelector<HTMLElement>('.gm-method-story');
+    const bridge = document.querySelector<HTMLElement>('.gm-bridge');
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     let previousOpacity = -1;
+    let previousBridge = -1;
+
     const update = () => {
-      if (!story || !projects || !method) return;
-      const storyTop = story.getBoundingClientRect().top;
-      const projectsTop = projects.getBoundingClientRect().top;
-      const methodTop = method.getBoundingClientRect().top;
-      if (methodTop < 0) {
-        const stageHeight = method.querySelector<HTMLElement>('.gm-stage')?.offsetHeight ?? innerHeight;
-        const travel = Math.max(1, method.offsetHeight - stageHeight);
-        frameState.current.progress = interpolate(METHOD_KEYS, clamp01(-methodTop / travel) * 250);
-      } else if (methodTop < innerHeight) {
-        // The same scattered stars begin to assemble as the method first
-        // enters the viewport, while the last project is still on screen.
-        frameState.current.progress = 0.775 + 0.04 * clamp01((innerHeight - methodTop) / innerHeight);
-      } else if (storyTop < 0) {
-        frameState.current.progress = storyAt(clamp01(-storyTop / story.offsetHeight) * STORY_UNITS);
+      if (!hero || !method || !bridge) return;
+      const state = frameState.current;
+      const vh = innerHeight;
+      const still = reduced.matches;
+      state.videoReady = method.dataset.videoReady === 'true';
+
+      const bridgeBox = bridge.getBoundingClientRect();
+      let opacity: number;
+      if (bridgeBox.top >= vh) {
+        state.bridgeMode = false;
+        state.bridge = 0;
+        state.hero = clamp01(-hero.getBoundingClientRect().top / Math.max(1, hero.offsetHeight));
+        const methodBox = method.getBoundingClientRect();
+        if (methodBox.top < 0) {
+          const stageHeight = method.querySelector<HTMLElement>('.gm-stage')?.offsetHeight ?? vh;
+          const travel = Math.max(1, method.offsetHeight - stageHeight);
+          state.progress = interpolate(METHOD_KEYS, clamp01(-methodBox.top / travel) * 250);
+        } else {
+          // The GM opens over the first half of the hero's exit; the villa's
+          // drawing starts in the second, as the method arrives.
+          state.progress = METHOD_START + 0.04 * clamp01((state.hero - 0.5) / 0.5);
+        }
+        // The field leaves with the villa: the projects and services keep only the sky.
+        opacity = clamp01(methodBox.bottom / vh);
       } else {
-        frameState.current.progress = 0;
+        state.bridgeMode = true;
+        state.hero = 1;
+        state.progress = METHOD_START;
+        // No empty scroll: the brain gathers while the section comes in, turns
+        // while it is pinned, and melts while the form arrives.
+        const travel = Math.max(1, bridge.offsetHeight - vh);
+        const entering = clamp01((vh - bridgeBox.top) / vh);
+        const pinned = clamp01(-bridgeBox.top / travel);
+        const leaving = clamp01((vh - bridgeBox.bottom) / vh);
+        state.bridge = still ? BRIDGE_STILL : bridgeBox.top > 0 ? 0.3 * entering : pinned < 1 ? 0.3 + 0.5 * pinned : 0.8 + 0.2 * leaving;
+        // In with its section; out as the form arrives.
+        opacity = smoothStep((vh - bridgeBox.top) / vh) * clamp01(bridgeBox.bottom / vh);
       }
-      // Let the field leave with the villa. Reverse scrolling brings back the
-      // very same stars at their previous positions.
-      const behindWork = clamp01((innerHeight - projectsTop) / innerHeight)
-        * (1 - clamp01((innerHeight - methodTop) / innerHeight));
-      const exit = clamp01(method.getBoundingClientRect().bottom / Math.max(1, innerHeight));
-      const opacity = (1 - behindWork * 0.68) * exit;
+
+      if (state.bridge !== previousBridge) bridge.style.setProperty('--bridge', state.bridge.toFixed(4));
+      previousBridge = state.bridge;
       if (host.current && opacity !== previousOpacity) host.current.style.opacity = String(opacity);
       previousOpacity = opacity;
-      frameState.current.active = opacity > 0.001;
-      frameState.current.videoReady = method.dataset.videoReady === 'true';
+      state.active = opacity > 0.001;
     };
+
     // Publish before the renderer's next frame, without a React commit/effect
     // and a second animation-frame callback in the scroll path.
-    const onScroll = update;
-    const observer = new MutationObserver(onScroll);
+    const observer = new MutationObserver(update);
     if (method) observer.observe(method, { attributes: true, attributeFilter: ['data-video-ready'] });
     update();
     const timer = window.setTimeout(update, 300);
-    addEventListener('scroll', onScroll, { passive: true });
-    addEventListener('resize', onScroll);
-    addEventListener('hashchange', onScroll);
+    addEventListener('scroll', update, { passive: true });
+    addEventListener('resize', update);
+    addEventListener('hashchange', update);
+    reduced.addEventListener('change', update);
     return () => {
-      removeEventListener('scroll', onScroll);
-      removeEventListener('resize', onScroll);
-      removeEventListener('hashchange', onScroll);
+      removeEventListener('scroll', update);
+      removeEventListener('resize', update);
+      removeEventListener('hashchange', update);
+      reduced.removeEventListener('change', update);
       observer.disconnect();
       clearTimeout(timer);
     };

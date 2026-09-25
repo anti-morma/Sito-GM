@@ -4,19 +4,22 @@
 export const site = {
   name: 'GoMore',
   url: process.env.NEXT_PUBLIC_SITE_URL || 'https://sito-gm-one.vercel.app',
-  /** Public contact e-mail, shown in the contact section and footer. */
+  // Contacts: the contact section, the footer and the phone menu.
+  /** Public contact e-mail, e.g. 'ciao@gomore.it'. */
   email: '',
-  /** Legal details for the footer and the privacy policy (Italian law requires P.IVA). */
+  /** Phone as it should read, e.g. '+39 333 123 4567' (the link dials the digits). */
+  phone: '',
+  // Legal details: the footer, the phone menu and the privacy policy
+  // (an Italian business site must show its P.IVA).
+  /** Ragione sociale, e.g. 'GoMore S.r.l.' or 'Mario Rossi'. */
   legalName: '',
+  /** Partita IVA, digits only, e.g. '01234567890'. */
   vat: '',
+  /** Sede legale, e.g. 'Via Roma 1, 20100 Milano (MI)'. */
   address: '',
+  /** Posta elettronica certificata, e.g. 'gomore@pec.it'. */
+  pec: '',
 };
-
-export const brainMessages = [
-  "Un'idea",
-  'Prende forma',
-  'Prende vita',
-];
 
 export const housePhases = [
   { title: 'Fondamenta', text: 'Strategia, obiettivi e direzione.' },
@@ -26,12 +29,34 @@ export const housePhases = [
   { title: 'Risultato', text: 'Un sito che lavora per te: chiaro, veloce, riconoscibile.' },
 ];
 
-export const services = [
-  { title: 'Strategia', text: 'Obiettivi, pubblico e priorità, chiariti prima di disegnare una sola pagina.' },
-  { title: 'Web design & sviluppo', text: 'Siti su misura, veloci e curati in ogni dettaglio, dal primo schizzo al codice.' },
-  { title: 'UX & conversione', text: 'Contenuti e percorsi pensati per portare chi visita a contattarti.' },
-  { title: '3D, motion & AI', text: 'Solo dove rendono l’esperienza più chiara e memorabile, mai come effetto.' },
-  { title: 'Evoluzione & supporto', text: 'Aggiornamenti, manutenzione e nuove funzioni anche dopo il lancio.' },
+// What we offer: one custom website, and someone who looks after it.
+export const offers = [
+  {
+    title: 'Sito web su misura',
+    kicker: 'Il progetto',
+    text: 'Nessun modello pronto: ogni sito nasce da una consulenza e viene progettato e sviluppato da zero sul tuo progetto.',
+    includes: [
+      'Consulenza e strategia iniziale',
+      'Struttura, contenuti e percorso dell’utente',
+      'Design su misura della tua identità',
+      'Sviluppo, animazioni e 3D dove servono',
+      'Ottimizzato per telefono e velocità',
+      'Pubblicazione online',
+    ],
+    cta: 'Richiedi una consulenza',
+  },
+  {
+    title: 'Manutenzione',
+    kicker: 'Dopo il lancio · servizio a pagamento',
+    text: 'Il sito non si ferma alla messa online. Ce ne occupiamo noi, così resta sicuro, aggiornato e al passo con la tua attività.',
+    includes: [
+      'Aggiornamenti tecnici e di sicurezza',
+      'Modifiche a testi, immagini e contenuti',
+      'Nuove sezioni e funzioni quando servono',
+      'Un riferimento diretto per ogni richiesta',
+    ],
+    cta: 'Chiedi informazioni',
+  },
 ];
 
 export type Project = {

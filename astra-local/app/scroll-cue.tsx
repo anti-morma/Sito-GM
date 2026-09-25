@@ -17,7 +17,7 @@ export default function ScrollCue() {
   const [atTop, setAtTop] = useState(true);
   const [scrolling, setScrolling] = useState(false);
   const [ended, setEnded] = useState(false);
-  const [inProjects, setInProjects] = useState(false);
+  const [overText, setOverText] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -28,8 +28,14 @@ export default function ScrollCue() {
       setAtTop(scrollY < 8);
       const contact = document.getElementById('contatti');
       setEnded(!!contact && contact.getBoundingClientRect().top < innerHeight * 0.72);
-      const projects = document.getElementById('progetti')?.getBoundingClientRect();
-      setInProjects(matchMedia('(max-width: 760px)').matches && !!projects && projects.top < innerHeight * 0.9 && projects.bottom > innerHeight * 0.1);
+      // Phones: over the sections people read, the cue would cover their text.
+      // It stays in the hero and in the pinned scenes, where scrolling moves
+      // the scene rather than the page and a hint to keep going helps.
+      const scene = [...document.querySelectorAll<HTMLElement>('.gm-hero, .gm-method-story, .gm-bridge')].some((section) => {
+        const box = section.getBoundingClientRect();
+        return box.top <= innerHeight * 0.1 && box.bottom >= innerHeight * 0.9;
+      });
+      setOverText(matchMedia('(max-width: 760px)').matches && !scene);
     };
     const onScroll = () => {
       setScrolling(true);
@@ -62,7 +68,7 @@ export default function ScrollCue() {
     scrollTo({ top, behavior: reducedMotion() ? 'auto' : 'smooth' });
   };
 
-  const visible = !ended && !menuOpen && !inProjects && (atTop || !scrolling);
+  const visible = !ended && !menuOpen && !overText && (atTop || !scrolling);
   const label = atTop ? 'Scorri per esplorare' : 'Continua a scorrere';
 
   return (
@@ -75,7 +81,10 @@ export default function ScrollCue() {
       onClick={next}
       aria-label={`${label}: vai alla sezione successiva`}
     >
-      <span className="gm-cue-label">{label}</span>
+      {/* Phones: a single word, a hint rather than a second call to action. */}
+      <span className="gm-cue-label">
+        {atTop ? <><span className="gm-cue-label-long">{label}</span><span className="gm-cue-label-short">Esplora</span></> : label}
+      </span>
       <span className="gm-cue-track" aria-hidden="true"><i /></span>
     </button>
   );

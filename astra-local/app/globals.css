@@ -133,6 +133,8 @@ em { font-style: normal; }
   text-wrap: balance;
 }
 .gm-h2--xl { font-size: clamp(46px, 6vw, 104px); }
+/* A line of a heading that wraps evenly on its own (no single word left behind). */
+.gm-h2-line { display: inline-block; text-wrap: balance; }
 
 .gm-lead {
   max-width: 38ch;
@@ -450,7 +452,17 @@ em { font-style: normal; }
 .gm-mobile-menu ol a span { color: var(--ink-3); font-size: 13px; letter-spacing: 0.1em; }
 .gm-mobile-menu ol a[aria-current] { text-shadow: 0 0 18px rgb(143 177 255 / 70%); }
 .gm-mobile-menu ol a[aria-current] span { color: var(--accent); }
-.gm-mobile-menu-mail { color: var(--ink-2); font-size: 17px; text-align: center; }
+.gm-mobile-menu { overflow-y: auto; }
+/* Contacts, legal details and pages at the foot of the menu, quieter than the sections. */
+.gm-mobile-menu-info { display: grid; gap: 6px; color: var(--ink-3); font-size: 12px; line-height: 1.5; text-align: center; }
+.gm-mobile-menu-contacts { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 22px; margin: 0; padding: 0; list-style: none; }
+.gm-mobile-menu .gm-mobile-menu-contacts li { border: 0; }
+.gm-mobile-menu-contacts a,
+.gm-mobile-menu-contacts .gm-detail-missing { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); font-size: 17px; }
+.gm-mobile-menu-legal span:not(:last-child)::after,
+.gm-footer-legal span:not(:last-child)::after { content: '·'; margin-inline: 0.5em; }
+.gm-mobile-menu-pages { display: flex; justify-content: center; gap: 24px; }
+.gm-mobile-menu-pages a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); font-size: 13px; }
 
 @media (max-width: 960px) {
   .gm-header { display: flex; justify-content: space-between; }
@@ -491,12 +503,37 @@ em { font-style: normal; }
 }
 @media (max-width: 760px) {
   :root { --header-h: 64px; }
+  /* Phones: a lighter bar. A smaller mark (its tap area kept), a quieter
+     menu, and the ascent as a fine detail of the composition: smaller, with
+     a slimmer route, a softer light and a calmer engine. */
+  .gm-header { gap: 10px; }
+  .gm-logo { position: relative; width: 46px; height: 34px; margin-left: -6px; }
+  .gm-logo::after { content: ''; position: absolute; inset: -5px -4px; }
+  .gm-menu-toggle { gap: 10px; padding-left: 12px; font-size: 14px; font-weight: 400; }
+  .gm-menu-toggle i { flex: none; width: 18px; height: 7px; border-width: 1px 0; }
+  /* 80%, and the width it no longer uses given back to the bar (168px × 0.2 / 2 a side),
+     so the bar fits a 320px screen. */
+  .gm-ascent-mini { margin-inline: -17px; scale: 0.8; }
+  .gm-ascent-mini .gm-ascent-route { stroke: rgb(243 241 236 / 7%); }
+  .gm-ascent-mini .gm-ascent-trail { opacity: 0.6; }
+  .gm-ascent-mini .gm-ascent-glow { stroke-width: 2; opacity: 0.2; }
+  .gm-ascent-mini.is-rising .gm-ascent-glow { opacity: 0.45; }
+  .gm-ascent-mini .gm-ascent-stop[data-state='next'] { opacity: 0.16; }
+  .gm-ascent-mini .gm-ascent-stop[data-state='past'] { opacity: 0.4; }
+  .gm-ascent-mini .gm-ascent-star-body { opacity: 0.38; }
+  .gm-ascent-mini .gm-rocket { opacity: 0.88; filter: drop-shadow(0 0 2px rgb(143 177 255 / 18%)); }
+  .gm-ascent-mini .gm-rocket-flame { animation-duration: 0.26s; }
+  .gm-ascent-mini .gm-rocket-flame--inner { animation-duration: 0.17s; }
+  .gm-ascent-mini .gm-rocket-heat { animation-duration: 0.44s; }
+  .gm-ascent-mini .gm-ascent-dust i { animation-duration: 1.6s; }
 }
 
 /* ======================================================================
-   Story: hero → brain, then projects, then the villa in a second stage
+   Story: hero → the villa (method) → the bridge → the projects.
+   One particle field (particle-journey.tsx) runs behind all of them.
    ====================================================================== */
-.gm-story { position: relative; }
+/* Clipped: the dark pool behind the copy must not widen the page on phones. */
+.gm-hero { position: relative; height: 100svh; min-height: 520px; overflow: clip; }
 .gm-method-story { position: relative; }
 .gm-particle-journey { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 .gm-particle-journey .starfield { width: 100%; height: 100%; }
@@ -505,10 +542,11 @@ em { font-style: normal; }
   .gm-particle-journey .starfield-gesture { display: none !important; pointer-events: none; }
 }
 .gm-site > section { position: relative; z-index: 1; }
-.gm-story { pointer-events: none; }
+/* The GM beside the copy answers the pointer: only the copy's links take clicks. */
+.gm-hero { pointer-events: none; }
 .gm-hero-actions { pointer-events: auto; }
 .gm-story-anchor { position: absolute; left: 0; width: 1px; height: 1px; pointer-events: none; }
-/* Transparent: the site-wide sky (star-sky.tsx) shows through the story. */
+/* Transparent: the site-wide sky (star-sky.tsx) shows through the scenes. */
 .gm-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; }
 
 .gm-neural-atmosphere {
@@ -529,7 +567,7 @@ em { font-style: normal; }
   pointer-events: none;
   background: radial-gradient(34% 48% at var(--nebula-x, 68%) 50%, rgb(34 64 150 / 26%), rgb(13 31 74 / 14%) 50%, transparent 78%);
 }
-@media (max-width: 600px), (max-aspect-ratio: 21/20) {
+@media (max-aspect-ratio: 21/20) {
   .gm-nebula { background: radial-gradient(70% 34% at 50% 30%, rgb(34 64 150 / 26%), rgb(13 31 74 / 14%) 50%, transparent 80%); }
 }
 
@@ -552,7 +590,7 @@ em { font-style: normal; }
   top: calc(50% + var(--header-h) / 4);
   left: var(--gutter);
   width: min(54vw, 860px);
-  transform: translateY(calc(-50% + var(--hero-lift, 0svh)));
+  transform: translateY(-50%);
 }
 
 /* A pool of darkness keeps every star quieter than the words. */
@@ -582,14 +620,16 @@ em { font-style: normal; }
   text-wrap: balance;
 }
 /* The promise: a sharp display italic lit like the brightest stars. */
-.gm-hero-title em {
+.gm-hero-title em,
+.gm-bridge-line em {
   background: linear-gradient(100deg, #fbf5e8 0%, #e6e9ff 38%, #b9cdff 70%, var(--accent) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   filter: drop-shadow(0 0 28px rgb(143 177 255 / 28%));
 }
-.gm-hero-title em {
+.gm-hero-title em,
+.gm-bridge-line em {
   display: inline-block;
   margin-top: 0.06em;
   padding: 0 0.08em 0.06em 0;
@@ -740,11 +780,24 @@ em { font-style: normal; }
 .gm-cue[data-mode='compact'] .gm-cue-track i::before { height: 12px; }
 .gm-cue[data-mode='compact']:hover { border-color: rgb(143 177 255 / 55%); }
 
-@media (max-width: 600px) {
-  /* Phones: the hero cue sits in a single row under the copy. */
-  .gm-cue[data-mode='hero'] { --track: 30px; flex-direction: row-reverse; gap: 14px; bottom: max(12px, env(safe-area-inset-bottom)); }
+/* The one-word label, for phones. */
+.gm-cue-label-short { display: none; }
+
+@media (max-width: 600px) and (orientation: portrait) {
+  /* Phones: the hero cue is a quiet hint in a single row under the copy:
+     one word, finer and dimmer, a shorter fall, a full tap area. */
+  .gm-cue[data-mode='hero'] { --track: 24px; flex-direction: row-reverse; gap: 12px; min-height: 44px; bottom: max(10px, env(safe-area-inset-bottom)); }
+  .gm-cue[data-mode='hero'] .gm-cue-label { color: var(--ink-2); font-size: 11px; font-weight: 400; }
+  .gm-cue-label-long { display: none; }
+  .gm-cue-label-short { display: inline; }
   .gm-cue[data-mode='hero'] .gm-cue-track { margin: -6px 0 0; }
+  .gm-cue[data-mode='hero'] .gm-cue-track::after { width: 7px; height: 7px; border-color: var(--ink-2); border-width: 0 1px 1px 0; }
+  .gm-cue[data-mode='hero'] .gm-cue-track i { width: 4px; height: 4px; margin-left: -2px; box-shadow: 0 0 5px 1px rgb(143 177 255 / 70%), 0 0 12px 3px rgb(143 177 255 / 22%); }
+  .gm-cue[data-mode='hero'] .gm-cue-track i::before { height: 16px; }
   .gm-cue[data-mode='compact'] { bottom: max(14px, env(safe-area-inset-bottom)); }
+  /* Over the video and the stars a blur would be redrawn every frame: a
+     slightly deeper background reads the same, for nothing. */
+  .gm-cue[data-mode='compact'] { background: rgb(5 6 8 / 92%); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 /* Tall screens and tablets in portrait: the GM rises, the copy sits below it. */
@@ -755,81 +808,141 @@ em { font-style: normal; }
     bottom: calc(clamp(18px, 3.4vh, 34px) + 124px);
     width: auto;
     right: var(--gutter);
-    transform: translateY(var(--hero-lift, 0svh));
+    transform: none;
   }
   .gm-hero-title { max-width: 12ch; }
 }
 
-/* A dedicated phone composition. */
-@media (max-width: 600px) {
-  .gm-hero-copy { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 76px); }
+/* A dedicated phone composition. The GM, smaller, leaves the screen to the
+   words (astra-field.tsx); headline, promise and action follow, with gaps
+   that grow with the screen's height, and the copy ends above the cue. */
+@media (max-width: 600px) and (orientation: portrait) {
+  /* The GM lives in the header logo (see the opening below): the words take
+     the hero, centred between the header and the scroll cue. */
+  .gm-hero-copy { top: calc(50% + (var(--header-h) - 54px) / 2); bottom: auto; transform: translateY(-50%); }
   .gm-hero-copy::before { inset: -18% -20% -10%; }
-  .gm-hero-eyebrow { margin-bottom: 18px; font-size: 12px; letter-spacing: 0.1em; }
-  .gm-hero-title { font-size: clamp(42px, 12.4vw, 56px); letter-spacing: -0.045em; }
-  .gm-hero-description { margin-top: 18px; font-size: 17px; }
-  .gm-hero-actions { margin-top: 24px; }
-  .gm-hero-actions .gm-btn { width: 100%; }
+  /* An overline that introduces the headline without competing with it. */
+  .gm-hero-eyebrow { margin-bottom: clamp(14px, 2.6svh, 22px); font-size: 11px; letter-spacing: 0.16em; }
+  .gm-hero-eyebrow .gm-label-mark { color: var(--ink-2); }
+  .gm-hero-eyebrow-more { display: none; }
+  .gm-hero-title { font-size: clamp(36px, min(13.4vw, 8svh), 60px); line-height: 1.02; letter-spacing: -0.04em; }
+  .gm-hero-title-line { display: block; }
+  /* Three even lines on every phone: "…in pochi secondi / chi sei, cosa offri…". */
+  .gm-hero-description { max-width: 19.5em; margin-top: clamp(16px, 3.6svh, 32px); font-size: 17px; line-height: 1.5; text-wrap: pretty; }
+  .gm-hero-actions { margin-top: clamp(22px, 5svh, 44px); }
+  /* The main action, slimmer, with a quieter glow and the same touch comfort. */
+  .gm-hero-actions .gm-btn {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 24px;
+    font-size: 16px;
+    box-shadow: 0 0 0 1px rgb(143 177 255 / 24%), 0 8px 28px -14px rgb(143 177 255 / 45%);
+  }
 }
 
-@media (max-width: 600px) and (max-height: 700px) {
+/* Short phones: the words take the whole screen and the cue steps aside,
+   in the hero and in the pinned scenes alike. */
+@media (max-width: 600px) and (orientation: portrait) and (max-height: 600px) {
+  .gm-hero { min-height: 0; }
+  .gm-cue { display: none; }
+}
+/* The shortest: the headline and its action. */
+@media (max-width: 600px) and (orientation: portrait) and (max-height: 500px) {
   .gm-hero-description { display: none; }
-  .gm-hero-title { font-size: clamp(38px, 11vw, 46px); }
 }
 
-/* ---------- Brain: chapters ---------- */
-.gm-chapters {
-  position: absolute;
-  z-index: 4;
-  left: 5vw;
-  bottom: clamp(40px, 11vh, 120px);
-  width: min(25vw, 400px);
+/* Phones held sideways: one short screen. The copy stays compact and clear
+   of the scroll cue; the GM keeps the space to its right. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .gm-hero { min-height: 0; }
+  .gm-hero-copy { top: calc(50% + var(--header-h) / 2 - 22px); width: min(50vw, 520px); }
+  .gm-hero-eyebrow { margin-bottom: 12px; font-size: 11px; }
+  .gm-hero-title { font-size: clamp(30px, 10.5vh, 44px); }
+  .gm-hero-description { display: none; }
+  .gm-hero-actions { margin-top: 18px; }
+  .gm-cue[data-mode='hero'] { --track: 24px; flex-direction: row-reverse; gap: 12px; bottom: max(8px, env(safe-area-inset-bottom)); }
+  .gm-cue[data-mode='hero'] .gm-cue-track { margin: -6px 0 0; }
+  .gm-cue[data-mode='hero'] .gm-cue-label { font-size: 11px; }
+}
+
+/* ---------- The idea: from the services to the form ----------
+   Pinned for --bridge-travel; --bridge (0 → 1) is set by particle-journey.tsx.
+   The brain of stars beside the words is drawn by the particle field. */
+.gm-bridge {
+  --bridge-travel: 60svh;
+  --bridge: 0;
+  position: relative;
+  height: calc(100svh + var(--bridge-travel));
   pointer-events: none;
 }
-
-.gm-chapters-label { margin-bottom: 20px; }
-.gm-chapter-stack { display: grid; }
-.gm-chapter {
-  grid-area: 1 / 1;
-  align-self: end;
-  will-change: opacity, transform;
+.gm-bridge-stop { top: calc(var(--bridge-travel) * 0.5); }
+/* Night blue behind the brain: it arrives with it and melts away with its stars. */
+.gm-bridge-atmosphere {
+  --nebula-x: 70%;
+  opacity: clamp(0, min(var(--bridge) * 4, (1 - var(--bridge)) * 5), 1);
 }
-
-.gm-chapter-number {
-  display: block;
-  color: transparent;
-  font-size: clamp(76px, 9vw, 152px);
-  font-weight: 400;
-  line-height: 0.8;
-  letter-spacing: -0.06em;
-  -webkit-text-stroke: 1px rgb(243 241 236 / 60%);
+/* The words, on the left; the brain fills the space to their right. */
+.gm-bridge-copy {
+  position: absolute;
+  z-index: 3;
+  top: calc(50% + var(--header-h) / 4);
+  left: var(--gutter);
+  max-width: min(40vw, 640px);
+  opacity: clamp(0, (var(--bridge) - 0.1) * 6, 1);
+  transform: translateY(calc(-50% + (1 - clamp(0, (var(--bridge) - 0.1) * 6, 1)) * 16px));
 }
-
-.gm-chapter-title {
-  margin-top: 16px;
+.gm-bridge-line {
   color: var(--ink);
-  font-size: clamp(32px, 3.1vw, 54px);
+  font-size: clamp(44px, 5vw, 92px);
   font-weight: 500;
-  line-height: 1;
-  letter-spacing: -0.035em;
-  text-shadow: 0 2px 30px var(--bg), 0 0 12px var(--bg);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
   text-wrap: balance;
 }
-
-.gm-chapter-progress { display: flex; align-items: center; gap: 18px; margin-top: 28px; }
-.gm-chapter-bars { display: flex; gap: 6px; }
-.gm-chapter-bars i {
-  width: 26px;
-  height: 2px;
-  background: rgb(243 241 236 / 22%);
-  transition: background-color 0.5s var(--ease);
+/* Down to the form: the scroll cue's falling star, inside a ring like the
+   site's ghost buttons; it lights up in starlight blue on hover. */
+.gm-bridge-arrow {
+  --track: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  margin-top: clamp(28px, 4.6vh, 48px);
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: rgb(5 6 8 / 40%);
+  pointer-events: auto;
+  transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease), transform 0.3s var(--ease);
 }
-.gm-chapter-bars i.is-on { background: var(--accent); }
-
-@media (max-width: 600px) {
-  .gm-chapters { left: 20px; right: 20px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 64px); width: auto; }
-  .gm-chapter-number { font-size: clamp(64px, 20vw, 88px); }
-  .gm-chapter-title { margin-top: 12px; font-size: clamp(30px, 8.6vw, 38px); }
-  .gm-chapter-progress { margin-top: 20px; }
+.gm-bridge-arrow .gm-cue-track { margin: -4px 0 0; }
+.gm-bridge-arrow .gm-cue-track::after { width: 10px; height: 10px; transition: border-color 0.3s var(--ease); }
+.gm-bridge-arrow .gm-cue-track i { animation-delay: 0.4s; }
+.gm-bridge-arrow:hover,
+.gm-bridge-arrow:focus-visible {
+  border-color: rgb(143 177 255 / 55%);
+  box-shadow: 0 0 0 1px rgb(143 177 255 / 20%), 0 10px 36px -12px rgb(143 177 255 / 60%);
+  transform: translateY(2px);
+}
+.gm-bridge-arrow:hover .gm-cue-track::after,
+.gm-bridge-arrow:focus-visible .gm-cue-track::after { border-color: var(--accent); }
+.gm-bridge-arrow:focus-visible { outline-offset: 4px; }
+@media (max-width: 760px), (max-aspect-ratio: 21/20) {
+  .gm-bridge { --bridge-travel: 40svh; }
+  .gm-bridge-atmosphere { --nebula-x: 50%; }
+  .gm-bridge-copy { top: calc(var(--header-h) + 5svh); right: var(--gutter); max-width: none; transform: none; }
+  .gm-bridge-line { max-width: 14ch; font-size: clamp(38px, 10vw, 56px); }
+  .gm-bridge-arrow { width: 56px; height: 56px; margin-top: 20px; }
+}
+/* Reduced motion: no pinned scroll, the brain and the words stay still. */
+@media (prefers-reduced-motion: reduce) {
+  .gm-bridge { --bridge-travel: 0svh; }
+  .gm-bridge-atmosphere,
+  .gm-bridge-copy { opacity: 1; }
+  .gm-bridge-copy { transform: translateY(-50%); }
+}
+@media (prefers-reduced-motion: reduce) and ((max-width: 760px) or (max-aspect-ratio: 21/20)) {
+  .gm-bridge-copy { transform: none; }
 }
 
 /* ---------- Method: video left, phases right ---------- */
@@ -944,18 +1057,62 @@ em { font-style: normal; }
   .gm-house-lead { display: none; }
 }
 
+/* Phones: the five titles stay listed under the video, as large as the screen
+   allows; the one the video is building is lit, a line follows the build, and
+   its words appear below the list. The video rises a little to make room; the
+   stars follow it (astra-field.tsx). */
+.gm-phase-caption { display: none; }
+@media (max-width: 600px) {
+  .gm-construction-video { top: 46%; }
+  .gm-house-intro { top: calc(var(--header-h) + 5svh); }
+  .gm-phases { top: calc(46% + 24.2vw + 18px); }
+  .gm-phases-track { display: block; top: 8px; bottom: 8px; }
+  .gm-phases-dots { display: none; }
+  .gm-phases ol { min-height: 0; }
+  .gm-phases li,
+  .gm-phases li.is-done {
+    position: relative;
+    inset: auto;
+    grid-template-columns: 30px 1fr;
+    align-items: baseline;
+    padding: clamp(3px, 0.6svh, 6px) 0 clamp(3px, 0.6svh, 6px) 18px;
+    opacity: 0.42;
+    transform: none;
+    transition: opacity 0.5s var(--ease);
+  }
+  .gm-phases li.is-done { opacity: 0.62; }
+  .gm-phases li.is-active { opacity: 1; }
+  .gm-phases li::before { display: block; top: calc(clamp(3px, 0.6svh, 6px) + 0.45em); left: -3px; width: 7px; height: 7px; }
+  .gm-phase-number { padding-top: 0; font-size: 12px; }
+  .gm-phase-body strong { font-size: clamp(15px, 2.1svh, 18px); line-height: 1.3; }
+  /* Read by screen readers in the list; shown below it, one at a time. */
+  .gm-phase-body span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .gm-phase-caption {
+    display: block;
+    min-height: 2.9em;
+    margin: clamp(6px, 1.2svh, 12px) 0 0 48px;
+    color: var(--ink-2);
+    font-size: clamp(13px, 1.75svh, 15px);
+    line-height: 1.45;
+    animation: gm-fade-in 0.5s var(--ease) both;
+  }
+}
+/* Tall phones have room: the title breathes above the video and everything
+   sits a little lower. */
+@media (max-width: 600px) and (min-height: 740px) {
+  .gm-house-intro { top: calc(var(--header-h) + 6svh); }
+  .gm-construction-video { top: 50%; }
+  .gm-phases { top: calc(50% + 24.2vw + 24px); }
+}
+/* Short phones: no room for the section's kicker. */
+@media (max-width: 600px) and (max-height: 640px) {
+  .gm-house-intro .gm-label { display: none; }
+}
+
 /* ======================================================================
    Content sections
    ====================================================================== */
 .gm-section { position: relative; padding-block: clamp(96px, 16vh, 200px); }
-
-/* The next section enters while a sticky scene leaves the viewport. This
-   avoids an empty screen at the end of each scroll-driven animation. */
-.gm-story + .gm-projects,
-.gm-method-story + .gm-services {
-  margin-top: calc(-1 * clamp(56px, 9vh, 112px));
-  padding-top: clamp(56px, 9vh, 112px);
-}
 
 /* Section reveal: opacity and a short rise, once. */
 .gm-reveal-ready [data-reveal] {
@@ -965,46 +1122,71 @@ em { font-style: normal; }
 }
 .gm-reveal-ready [data-reveal].is-visible { opacity: 1; transform: none; }
 
-/* ---------- Services ---------- */
-.gm-services-grid {
+/* ---------- Services: two offers ---------- */
+.gm-services-head { max-width: 760px; margin-bottom: clamp(48px, 8vh, 88px); }
+.gm-offers {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: clamp(48px, 7vw, 120px);
-  align-items: start;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(20px, 2.4vw, 32px);
+  align-items: stretch;
 }
-.gm-services-head { position: sticky; top: calc(var(--header-h) + 48px); }
-.gm-services-head .gm-link { margin-top: 28px; }
-
-.gm-service-list { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--line); }
-.gm-service {
+.gm-offer {
   position: relative;
-  display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
-  gap: 10px 20px;
-  padding: clamp(26px, 3.6vh, 38px) 0;
-  border-top: 1px solid var(--line);
-  transition: opacity 1s var(--ease) var(--reveal-delay, 0ms), transform 0.45s var(--ease);
+  display: flex;
+  flex-direction: column;
+  padding: clamp(28px, 3.4vw, 48px);
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgb(13 31 74 / 38%), rgb(5 6 8 / 55%) 55%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: border-color 0.4s var(--ease), transform 0.45s var(--ease);
 }
-.gm-service::after {
+.gm-offer:first-child { border-color: rgb(143 177 255 / 35%); box-shadow: 0 30px 80px -40px rgb(143 177 255 / 35%); }
+.gm-offer-kicker { display: flex; align-items: center; gap: 12px; color: var(--ink-3); font-size: 13px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; }
+.gm-offer-kicker span { color: var(--accent); }
+.gm-offer h3 { margin-top: 18px; color: var(--ink); font-size: clamp(30px, 2.8vw, 46px); font-weight: 500; line-height: 1.05; letter-spacing: -0.03em; }
+.gm-offer-text { max-width: 44ch; margin-top: 16px; color: var(--ink-2); font-size: 17px; line-height: 1.55; }
+.gm-offer-list { display: grid; gap: 12px; margin: 28px 0 36px; padding: 0; list-style: none; }
+.gm-offer:first-child .gm-offer-list { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }
+.gm-offer-list li { position: relative; padding-left: 22px; color: var(--ink); font-size: 16px; line-height: 1.45; }
+/* A small star for every item. */
+.gm-offer-list li::before {
   content: '';
   position: absolute;
-  top: -1px;
-  left: 0;
-  width: 100%;
-  height: 1px;
+  top: 0.45em;
+  left: 2px;
+  width: 7px;
+  height: 7px;
   background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.6s var(--ease);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
 }
-.gm-service-number { padding-top: 8px; color: var(--ink-3); font-size: 14px; font-weight: 500; letter-spacing: 0.06em; transition: color 0.4s var(--ease); }
-.gm-service h3 { color: var(--ink); font-size: clamp(24px, 2.1vw, 34px); font-weight: 500; line-height: 1.1; letter-spacing: -0.025em; }
-.gm-service p { grid-column: 2; max-width: 46ch; color: var(--ink-2); font-size: 17px; line-height: 1.5; }
+.gm-offer .gm-btn { align-self: flex-start; margin-top: auto; }
+
+/* Desktop: heading and both offers fit on one screen. The title and its
+   lead sit side by side, and the spacing follows the screen's height. */
+@media (min-width: 1025px) {
+  /* Clear the fixed header when the menu brings the section to the top. */
+  .gm-services { padding-top: calc(var(--header-h) + clamp(16px, 3vh, 40px)); }
+  .gm-services-head {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(12px, 2.4vh, 28px) clamp(20px, 2.4vw, 32px);
+    align-items: end;
+    max-width: none;
+    margin-bottom: clamp(24px, 4.4vh, 56px);
+  }
+  .gm-services-head .gm-label { grid-column: 1 / -1; margin-bottom: 0; }
+  .gm-services-head .gm-h2 { font-size: clamp(36px, min(3.6vw, 6.4vh), 64px); }
+  .gm-services-head .gm-lead { margin-top: 0; font-size: clamp(16px, 1.15vw, 18px); }
+  .gm-offer { padding: clamp(22px, 3.6vh, 44px) clamp(28px, 2.8vw, 44px); }
+  .gm-offer h3 { margin-top: 12px; font-size: clamp(28px, min(2.4vw, 4.4vh), 42px); }
+  .gm-offer-text { margin-top: 12px; font-size: 16px; }
+  .gm-offer-list { gap: clamp(8px, 1.4vh, 12px); margin: clamp(16px, 2.8vh, 28px) 0 clamp(20px, 3.4vh, 36px); }
+}
 
 @media (hover: hover) {
-  .gm-reveal-ready .gm-service.is-visible:hover { transform: translateX(6px); }
-  .gm-service:hover::after { transform: scaleX(1); }
-  .gm-service:hover .gm-service-number { color: var(--accent); }
+  .gm-reveal-ready .gm-offer.is-visible:hover { transform: translateY(-4px); border-color: rgb(143 177 255 / 55%); }
 }
 
 /* ---------- Projects ---------- */
@@ -1021,8 +1203,6 @@ em { font-style: normal; }
 .gm-project:nth-child(even) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-areas: 'media text'; }
 
 .gm-project-text { grid-area: text; }
-.gm-project-index { color: var(--ink-3); font-size: 14px; font-weight: 500; letter-spacing: 0.06em; }
-.gm-project-index span { opacity: 0.6; }
 .gm-project h3 { margin-top: 18px; color: var(--ink); font-size: clamp(36px, 3.6vw, 60px); font-weight: 500; line-height: 1; letter-spacing: -0.035em; }
 .gm-project-category { margin-top: 16px; color: var(--ink-3); font-size: 14px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
 .gm-project-description { max-width: 40ch; margin: 22px 0 32px; color: var(--ink-2); font-size: 17px; line-height: 1.55; }
@@ -1098,6 +1278,7 @@ em { font-style: normal; }
 /* ---------- Contact ---------- */
 .gm-contact-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(48px, 7vw, 120px); align-items: start; }
 .gm-contact-head { position: sticky; top: calc(var(--header-h) + 48px); }
+.gm-contact-form { scroll-margin-top: calc(var(--header-h) + 24px); }
 .gm-contact-mail { margin-top: 28px; color: var(--ink-2); font-size: 17px; }
 .gm-contact-mail a { color: var(--ink); text-underline-offset: 5px; }
 
@@ -1182,9 +1363,13 @@ em { font-style: normal; }
 .gm-footer-cta p { font-size: clamp(30px, 3.4vw, 52px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.05; }
 .gm-footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px 40px; padding-top: 28px; color: var(--ink-3); font-size: 14px; }
 .gm-footer-brand { color: var(--ink); font-size: 16px; font-weight: 500; }
+.gm-footer-legal { margin-top: 6px; }
 .gm-footer-bottom ul { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px; margin: 0; padding: 0; list-style: none; }
 .gm-footer-bottom a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); text-decoration: none; }
 .gm-footer-bottom a:hover { color: var(--ink); }
+
+/* A studio detail not filled in yet (development only, see studio-details.tsx). */
+.gm-detail-missing { opacity: 0.5; text-decoration: underline dashed; text-underline-offset: 4px; }
 
 /* ---------- Legal pages ---------- */
 .gm-legal-header { display: flex; align-items: center; justify-content: space-between; height: var(--header-h); padding: 0 var(--gutter); }
@@ -1201,9 +1386,8 @@ em { font-style: normal; }
 
 /* ---------- Content: tablets and phones ---------- */
 @media (max-width: 1024px) {
-  .gm-services-grid,
+  .gm-offers,
   .gm-contact-grid { grid-template-columns: 1fr; }
-  .gm-services-head,
   .gm-contact-head { position: static; }
 
   .gm-project,
@@ -1221,10 +1405,10 @@ em { font-style: normal; }
   .gm-lead { font-size: 18px; }
 
 
-  .gm-service { grid-template-columns: 40px minmax(0, 1fr); gap: 8px 12px; padding: 26px 0; }
-  .gm-service-number { padding-top: 6px; }
-  .gm-service h3 { font-size: 24px; }
-  .gm-service p { font-size: 16px; }
+  .gm-offer { padding: 26px 22px; border-radius: 16px; }
+  .gm-offer:first-child .gm-offer-list { grid-template-columns: 1fr; }
+  .gm-offer-text { font-size: 16px; }
+  .gm-offer .gm-btn { align-self: stretch; }
 
   .gm-projects-head { margin-bottom: clamp(34px, 6svh, 56px); }
   .gm-project-list { gap: clamp(56px, 10svh, 88px); }
@@ -1258,6 +1442,131 @@ em { font-style: normal; }
   .gm-project:nth-child(odd) .gm-project-media { width: min(100%, 90svh); aspect-ratio: 1 / 1; }
 }
 
+/* ---------- Projects on phones: a swipeable row (project-carousel.tsx) ----------
+   One project at a time. A narrow, tall preview frames the site's whole mobile
+   homepage; an arrow waits in the margin either side of it, a dot per project
+   below, then the name and a few words. Elsewhere the controls stay hidden. */
+.gm-project-carousel { position: relative; }
+.gm-project-arrow,
+.gm-project-dots { display: none; }
+
+@media (max-width: 760px) and (orientation: portrait) {
+  .gm-project-carousel {
+    /* The preview's width; the recordings are 720 × 1182. */
+    --shot: min(58vw, 250px, 46svh * 0.609);
+    --shot-h: calc(var(--shot) / 0.609);
+    margin-inline: calc(var(--gutter) * -1);
+  }
+  .gm-project-list {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .gm-project-list::-webkit-scrollbar { display: none; }
+  .gm-project,
+  .gm-project:nth-child(even) {
+    display: flex;
+    flex: 0 0 100%;
+    flex-direction: column;
+    align-items: center;
+    padding-inline: var(--gutter);
+    text-align: center;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+  /* Every slide is ready before it is swiped in. */
+  .gm-reveal-ready .gm-project-list [data-reveal] { opacity: 1; transform: none; }
+  .gm-project-media,
+  .gm-project:nth-child(odd) .gm-project-media { order: -1; width: var(--shot); aspect-ratio: 720 / 1182; border-radius: 18px; }
+  .gm-project-text { max-width: 34ch; margin-top: 46px; }
+  .gm-project h3 { margin-top: 0; font-size: 28px; }
+  .gm-project-category { margin-top: 8px; font-size: 11px; }
+  .gm-project-description { margin: 12px 0 18px; font-size: 15px; }
+  .gm-project-text .gm-btn { width: auto; min-height: 44px; padding-inline: 20px; font-size: 14px; }
+
+  .gm-project-arrow {
+    position: absolute;
+    z-index: 2;
+    top: calc(var(--shot-h) / 2 - 22px);
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-2);
+    border-radius: 50%;
+    background: rgb(5 6 8 / 55%);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    transition: opacity 0.3s var(--ease), border-color 0.3s var(--ease);
+  }
+  .gm-project-arrow--prev { left: calc(50% - var(--shot) / 2 - 56px); }
+  .gm-project-arrow--next { right: calc(50% - var(--shot) / 2 - 56px); }
+  .gm-project-arrow span { width: 8px; height: 8px; border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor; transform: translateX(-2px) rotate(45deg); }
+  .gm-project-arrow--prev span { transform: translateX(2px) rotate(-135deg); }
+  .gm-project-arrow:disabled { opacity: 0.25; cursor: default; }
+  .gm-project-arrow:not(:disabled):active { border-color: rgb(143 177 255 / 55%); }
+
+  .gm-project-dots { position: absolute; top: calc(var(--shot-h) + 8px); left: 50%; display: flex; transform: translateX(-50%); }
+  .gm-project-dots button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; background: none; }
+  .gm-project-dots button::before { content: ''; width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); transition: width 0.4s var(--ease), background-color 0.4s var(--ease); }
+  .gm-project-dots button[aria-current]::before { width: 18px; background: var(--accent); }
+}
+
+/* ---------- The phone opening (page.tsx, astra-field.tsx) ----------
+   GOMORE, written in stars, folds into the GM, which turns and flies into the
+   header logo. Until it lands the header and the hero copy wait unseen; then
+   the logo takes over from the stars and the words follow quickly. */
+.gm-intro .gm-header,
+.gm-intro .gm-hero-copy > *,
+.gm-intro .gm-cue > * { animation: none; opacity: 0; }
+.gm-intro .gm-header,
+.gm-intro .gm-cue { pointer-events: none; }
+.gm-intro-done .gm-header { animation: gm-fade-in 0.45s var(--ease) both; }
+.gm-intro-done .gm-hero-copy > * { animation-duration: 0.9s; }
+.gm-intro-done .gm-hero-copy > .gm-hero-eyebrow { animation-delay: 0.15s; }
+.gm-intro-done .gm-hero-copy > .gm-hero-title { animation-delay: 0.25s; }
+.gm-intro-done .gm-hero-copy > .gm-hero-description { animation-delay: 0.4s; }
+.gm-intro-done .gm-hero-copy > .gm-hero-actions { animation-delay: 0.5s; }
+.gm-intro-done .gm-cue[data-mode='hero'] > * { animation-delay: 0.9s; }
+/* The night blue opens behind the cloud as the stars light up… */
+.gm-intro .gm-hero .gm-nebula { opacity: 0; }
+[data-intro='playing'] .gm-hero .gm-nebula { animation: gm-nebula-open 1.6s var(--ease) both; }
+@keyframes gm-nebula-open {
+  from { opacity: 0; transform: scale(0.55); }
+  to { opacity: 1; transform: none; }
+}
+/* …blooms as the G and the M lock together (the stars' flash, astra-field.tsx)… */
+[data-intro='playing'] .gm-hero::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: radial-gradient(circle at 50% 46%, rgb(200 216 255 / 34%), rgb(143 177 255 / 12%) 24%, transparent 50%);
+  opacity: 0;
+  pointer-events: none;
+  animation: gm-impact 0.8s ease-out var(--opening-impact, 1.8s) both;
+}
+@keyframes gm-impact {
+  0% { opacity: 0; transform: scale(0.5); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.7); }
+}
+/* …and the logo lights up as the stars pour into it. */
+.gm-intro-done .gm-header .gm-logo { animation: gm-logo-ignite 1.3s var(--ease) both; }
+@keyframes gm-logo-ignite {
+  from { filter: brightness(2.2) drop-shadow(0 0 10px rgb(143 177 255 / 90%)); }
+  to { filter: brightness(1) drop-shadow(0 0 0 rgb(143 177 255 / 0%)); }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  /* Night blue behind the opening's GM, at the centre of the screen. */
+  .gm-hero .gm-nebula { background: radial-gradient(80% 40% at 50% 46%, rgb(34 64 150 / 26%), rgb(13 31 74 / 14%) 50%, transparent 80%); }
+  /* Without WebGL the header logo is the GM: no large one behind the words. */
+  .starfield[data-failed='true'] { background-image: none; }
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .gm-hero-copy > *,
@@ -1270,11 +1579,9 @@ em { font-style: normal; }
   .gm-ascent-sparks { display: none; }
   .gm-rocket-flame,
   .gm-rocket-heat { animation: none; }
-  .gm-hero-copy { --hero-lift: 0svh !important; }
-  .gm-chapter { transform: none !important; }
   .gm-house, .gm-house-intro { --house-enter: 1 !important; }
   .gm-reveal-ready [data-reveal] { transform: none; transition: opacity 0.4s linear; }
-  .gm-reveal-ready .gm-service.is-visible:hover { transform: none; }
+  .gm-reveal-ready .gm-offer.is-visible:hover { transform: none; }
   .gm-project-media:hover :is(img, .gm-project-video) { transform: none; }
   .gm-submit-dots i { animation-duration: 2.4s; }
 }

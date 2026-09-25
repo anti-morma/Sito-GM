@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { site } from '../content';
 import LegalPage, { owner } from '../legal-page';
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export default function Privacy() {
       <p>Questa informativa descrive come vengono trattati i dati personali di chi visita questo sito e di chi ci scrive tramite il modulo di contatto, ai sensi del Regolamento (UE) 2016/679 (GDPR).</p>
 
       <h2>Titolare del trattamento</h2>
-      <p>{o.name} — {o.address} — {o.vat}<br />Contatto: {o.email}</p>
+      <p>{o.name} — {o.address} — {o.vat}<br />Contatto: {o.email}{site.pec && ` · PEC ${site.pec}`}</p>
 
       <h2>Quali dati raccogliamo</h2>
       <p><strong>Dati inviati tramite il modulo di contatto:</strong> nome, indirizzo e-mail, eventuale azienda o progetto e il testo del messaggio.</p>
