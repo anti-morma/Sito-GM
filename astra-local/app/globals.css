@@ -527,6 +527,19 @@ em { font-style: normal; }
   .gm-ascent-mini .gm-rocket-heat { animation-duration: 0.44s; }
   .gm-ascent-mini .gm-ascent-dust i { animation-duration: 1.6s; }
 }
+.gm-logo-stars { display: none; }
+/* Phones: the GM, a living constellation (dynamic-gm-logo.tsx), holds the
+   top-left corner, the menu the right; both clear of the safe areas. */
+@media (max-width: 600px) {
+  .gm-header {
+    height: calc(var(--header-h) + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+    padding-right: max(var(--gutter), env(safe-area-inset-right));
+    padding-left: max(var(--gutter), env(safe-area-inset-left));
+  }
+  .gm-header .gm-logo { background: none; }
+  .gm-logo-stars { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+}
 
 /* ======================================================================
    Story: hero → the villa (method) → the bridge → the projects.
@@ -984,7 +997,8 @@ em { font-style: normal; }
    under its title when it is reached. */
 .gm-phases { position: relative; }
 .gm-phases ol { margin: 0; padding: 0; list-style: none; }
-.gm-phases-dots { display: none; }
+.gm-phases-dots,
+.gm-phases-count { display: none; }
 
 .gm-phases li {
   --pad: clamp(7px, 1.2vh, 12px);
@@ -1031,13 +1045,13 @@ em { font-style: normal; }
 .gm-phase-body { display: grid; grid-template-rows: auto 0fr; row-gap: 0; transition: grid-template-rows 0.5s var(--ease), row-gap 0.5s var(--ease); }
 .gm-phase-body strong { display: block; color: var(--ink); font-size: clamp(17px, 1.35vw, 21px); font-weight: 500; letter-spacing: -0.01em; }
 .gm-phase-body span { display: block; min-height: 0; max-width: 36ch; overflow: hidden; color: var(--ink-2); font-size: 15px; line-height: 1.45; opacity: 0; transition: opacity 0.4s var(--ease); }
-.gm-phases li:is(.is-active, .is-done) .gm-phase-body { grid-template-rows: auto 1fr; row-gap: 4px; }
-.gm-phases li:is(.is-active, .is-done) .gm-phase-body span { opacity: 1; }
+/* Only the lit phase opens its words: the list keeps its height, so the
+   column never slides while the eye looks for the new phase. */
+.gm-phases li.is-active .gm-phase-body { grid-template-rows: auto 1fr; row-gap: 4px; }
+.gm-phases li.is-active .gm-phase-body span { opacity: 1; }
 
 @media (max-height: 700px) and (min-width: 601px) and (min-aspect-ratio: 9/10) {
   .gm-house-lead { display: none; }
-  .gm-phases li.is-done .gm-phase-body { grid-template-rows: auto 0fr; row-gap: 0; }
-  .gm-phases li.is-done .gm-phase-body span { opacity: 0; }
 }
 
 /* Stacked layout on phones and portrait tablets (mirrors uCompact in the shader):
@@ -1075,15 +1089,14 @@ em { font-style: normal; }
   .gm-phase-body span { font-size: 16px; }
 }
 
-@media (max-width: 600px) and (max-height: 760px) {
+/* Small phones held sideways keep the listed layout: the five titles under the
+   video, only the lit phase opens its words. The video rises a little to make
+   room; the stars follow it (astra-field.tsx). Held upright, phones have their
+   own composition below. */
+@media (max-width: 600px) and (max-height: 760px) and (orientation: landscape) {
   .gm-house-lead { display: none; }
 }
-
-/* Phones: the five titles stay listed under the video, as large as the screen
-   allows, on the same path as on desktop; only the lit phase opens its words
-   under its title. The video rises a little to make room; the stars follow it
-   (astra-field.tsx). */
-@media (max-width: 600px) {
+@media (max-width: 600px) and (orientation: landscape) {
   .gm-construction-video { top: 46%; }
   .gm-house-intro { top: calc(var(--header-h) + 5svh); }
   .gm-phases { top: calc(46% + 24.2vw + 18px); }
@@ -1110,19 +1123,87 @@ em { font-style: normal; }
   .gm-phase-number { padding-top: 0; font-size: 12px; }
   .gm-phase-body strong { font-size: 1em; line-height: 1.3; }
   .gm-phase-body span { font-size: clamp(13px, 1.75svh, 15px); }
-  .gm-phases li.is-done .gm-phase-body { grid-template-rows: auto 0fr; row-gap: 0; }
-  .gm-phases li.is-done .gm-phase-body span { opacity: 0; }
 }
-/* Tall phones have room: the title breathes above the video and everything
-   sits a little lower. */
-@media (max-width: 600px) and (min-height: 740px) {
-  .gm-house-intro { top: calc(var(--header-h) + 6svh); }
-  .gm-construction-video { top: 50%; }
-  .gm-phases { top: calc(50% + 24.2vw + 24px); }
-}
-/* Short phones: no room for the section's kicker. */
-@media (max-width: 600px) and (max-height: 640px) {
+@media (max-width: 600px) and (max-height: 640px) and (orientation: landscape) {
   .gm-house-intro .gm-label { display: none; }
+}
+
+/* ---------- Method on phones (up to 767px, upright) ----------
+   One column in the pinned stage, centred between the header and the scroll
+   cue: kicker, title and line → the construction video, almost full width →
+   one phase at a time under it, with "01 / 05" and a hairline of five steps.
+   The scroll, the film and the timeline are the desktop's (method-story.tsx);
+   the stars measure the video wherever it lands (astra-field.tsx). */
+@media (max-width: 767px) and (orientation: portrait) {
+  .gm-method-story .gm-stage {
+    display: grid;
+    grid-template-rows: auto auto auto;
+    align-content: center;
+    row-gap: clamp(20px, 3.4svh, 30px);
+    padding: calc(var(--header-h) + 8px) 20px calc(72px + env(safe-area-inset-bottom));
+  }
+  /* Its words and phases join the stage's column, around the video. */
+  .gm-house { position: static; display: contents; width: auto; transform: none; }
+  .gm-house-intro { position: static; grid-row: 1; }
+  .gm-house-intro .gm-label { margin-bottom: 10px; font-size: 12px; }
+  .gm-house-title { max-width: 16ch; font-size: clamp(28px, 8vw, 36px); }
+  .gm-house-lead { display: block; max-width: 34ch; margin-top: 10px; font-size: 16px; }
+
+  /* The film's frame is sized before the video loads: nothing moves when it does. */
+  .gm-construction-video { position: relative; grid-row: 2; top: auto; left: auto; width: 100%; aspect-ratio: 16 / 9; transform: none; }
+
+  .gm-phases {
+    position: static;
+    grid-row: 3;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 14px;
+  }
+  .gm-phases-count { display: block; margin: 0; color: var(--ink-3); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+  .gm-phases-count span { color: var(--accent); }
+  .gm-phases-dots { display: flex; gap: 4px; margin: 0; }
+  .gm-phases-dots i { flex: 1; height: 1px; background: var(--line-2); transition: background-color 0.5s var(--ease); }
+  .gm-phases-dots i.is-on { background: var(--accent); }
+
+  /* The five phases share one cell: the tallest sets the height, so the page
+     never moves as they take turns. */
+  .gm-phases ol { grid-column: 1 / -1; display: grid; min-height: 0; }
+  .gm-phases li,
+  .gm-phases li.is-done {
+    position: relative;
+    inset: auto;
+    grid-area: 1 / 1;
+    display: block;
+    padding: 0;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.35s var(--ease), transform 0.35s var(--ease);
+  }
+  .gm-phases li.is-active { opacity: 1; transform: none; }
+  .gm-phases li > *,
+  .gm-phases li.is-done > * { opacity: 1; }
+  .gm-phases li::before,
+  .gm-phases li::after { display: none; }
+  /* The count above already says which phase this is. */
+  .gm-phase-number { display: none; }
+  .gm-phase-body,
+  .gm-phases li.is-active .gm-phase-body { display: block; }
+  .gm-phase-body strong { font-size: clamp(22px, 6.2vw, 26px); line-height: 1.2; }
+  .gm-phase-body span,
+  .gm-phases li.is-done .gm-phase-body span { max-width: 34ch; margin-top: 6px; font-size: 16px; opacity: 1; }
+}
+/* Short phones (Safari with its bars): the kicker, then the line, give way. */
+@media (max-width: 767px) and (orientation: portrait) and (max-height: 640px) {
+  .gm-house-intro .gm-label { display: none; }
+}
+@media (max-width: 767px) and (orientation: portrait) and (max-height: 600px) {
+  .gm-method-story .gm-stage { row-gap: 16px; padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .gm-house-lead { display: none; }
+}
+@media (max-width: 767px) and (orientation: portrait) and (prefers-reduced-motion: reduce) {
+  .gm-phases li,
+  .gm-phases li.is-done { transform: none; transition: opacity 0.2s linear; }
 }
 
 /* ======================================================================
@@ -1531,51 +1612,45 @@ em { font-style: normal; }
   .gm-project-dots button[aria-current]::before { width: 18px; background: var(--accent); }
 }
 
-/* ---------- The phone opening (page.tsx, astra-field.tsx) ----------
-   GOMORE, written in stars, folds into the GM, which turns and flies into the
-   header logo. Until it lands the header and the hero copy wait unseen; then
-   the logo takes over from the stars and the words follow quickly. */
-.gm-intro .gm-header,
+/* ---------- The phone opening (page.tsx, gomore-mobile-intro.tsx) ----------
+   Black before the first paint; then the opening's canvas over the page.
+   GOMORE's stars become the GM, which rises into the header logo. Until it
+   lands the rest of the header and the hero copy wait unseen; the logo, drawn
+   by the same stars, is never hidden. */
+html[data-intro='waiting']::after {
+  content: '';
+  position: fixed;
+  z-index: 61;
+  inset: 0;
+  background: #000;
+}
+.gm-intro,
+.gm-intro body { overflow: hidden; }
+.gm-opening {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+.gm-opening canvas { display: block; width: 100%; height: 100%; }
+.gm-intro .gm-header { animation: none; }
+.gm-intro .gm-header > :not(.gm-logo),
 .gm-intro .gm-hero-copy > *,
 .gm-intro .gm-cue > * { animation: none; opacity: 0; }
-.gm-intro .gm-header,
+.gm-intro .gm-header > :not(.gm-logo),
 .gm-intro .gm-cue { pointer-events: none; }
-.gm-intro-done .gm-header { animation: gm-fade-in 0.45s var(--ease) both; }
+.gm-intro-done .gm-header { animation: none; }
+.gm-intro-done .gm-header > :not(.gm-logo) { animation: gm-fade-in 0.45s var(--ease) both; }
 .gm-intro-done .gm-hero-copy > * { animation-duration: 0.9s; }
 .gm-intro-done .gm-hero-copy > .gm-hero-eyebrow { animation-delay: 0.15s; }
 .gm-intro-done .gm-hero-copy > .gm-hero-title { animation-delay: 0.25s; }
 .gm-intro-done .gm-hero-copy > .gm-hero-description { animation-delay: 0.4s; }
 .gm-intro-done .gm-hero-copy > .gm-hero-actions { animation-delay: 0.5s; }
 .gm-intro-done .gm-cue[data-mode='hero'] > * { animation-delay: 0.9s; }
-/* The night blue opens behind the cloud as the stars light up… */
+/* The night blue behind the hero opens once the page is there. */
 .gm-intro .gm-hero .gm-nebula { opacity: 0; }
-[data-intro='playing'] .gm-hero .gm-nebula { animation: gm-nebula-open 1.6s var(--ease) both; }
-@keyframes gm-nebula-open {
-  from { opacity: 0; transform: scale(0.55); }
-  to { opacity: 1; transform: none; }
-}
-/* …blooms as the G and the M lock together (the stars' flash, astra-field.tsx)… */
-[data-intro='playing'] .gm-hero::after {
-  content: '';
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  background: radial-gradient(circle at 50% 46%, rgb(200 216 255 / 34%), rgb(143 177 255 / 12%) 24%, transparent 50%);
-  opacity: 0;
-  pointer-events: none;
-  animation: gm-impact 0.8s ease-out var(--opening-impact, 1.8s) both;
-}
-@keyframes gm-impact {
-  0% { opacity: 0; transform: scale(0.5); }
-  15% { opacity: 1; }
-  100% { opacity: 0; transform: scale(1.7); }
-}
-/* …and the logo lights up as the stars pour into it. */
-.gm-intro-done .gm-header .gm-logo { animation: gm-logo-ignite 1.3s var(--ease) both; }
-@keyframes gm-logo-ignite {
-  from { filter: brightness(2.2) drop-shadow(0 0 10px rgb(143 177 255 / 90%)); }
-  to { filter: brightness(1) drop-shadow(0 0 0 rgb(143 177 255 / 0%)); }
-}
+.gm-intro-done .gm-hero .gm-nebula { animation: gm-fade-in 1.2s var(--ease) 0.2s both; }
 @media (max-width: 600px) and (orientation: portrait) {
   /* Night blue behind the opening's GM, at the centre of the screen. */
   .gm-hero .gm-nebula { background: radial-gradient(80% 40% at 50% 46%, rgb(34 64 150 / 26%), rgb(13 31 74 / 14%) 50%, transparent 80%); }

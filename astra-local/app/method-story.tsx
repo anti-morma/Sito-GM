@@ -12,10 +12,33 @@ const smoothStep = (value: number) => {
   return t * t * (3 - 2 * t);
 };
 
-// Where each phase starts in the construction footage (share of the film).
-const PHASE_STARTS = [0, 0.27, 0.5, 0.72, 0.88];
-// The scroll cue's stops: the words read, then each stretch of the film.
-const STOPS = [30, ...[0.865, 0.905, 0.935, 0.965, 0.995].map(methodUnitsAt)];
+// Where each phase starts in the construction footage (share of the film), on
+// the film's own beats: the plan, the volumes rising, the furnishing, the wave
+// of light and materials, the finished house.
+const PHASE_STARTS = [0, 0.25, 0.48, 0.68, 0.84];
+// Scroll (share of the film's stretch) → film. The plan barely moves for its
+// first fifth: it passes in a tenth of the scroll, the rest runs evenly.
+const FILM_KEYS: [number, number][] = [[0, 0], [0.1, 0.22], [1, 1]];
+const piecewise = (keys: [number, number][], value: number) => {
+  for (let i = 1; i < keys.length; i++) {
+    const [x1, y1] = keys[i];
+    const [x0, y0] = keys[i - 1];
+    if (value <= x1) return y0 + ((value - x0) / (x1 - x0)) * (y1 - y0);
+  }
+  return keys[keys.length - 1][1];
+};
+const filmAt = (scroll: number) => piecewise(FILM_KEYS, clamp01(scroll));
+const scrollAt = (film: number) => piecewise(FILM_KEYS.map(([x, y]) => [y, x]), clamp01(film));
+// The scroll cue's stops: the words read, the film's start, then the middle of
+// each later phase.
+const STOPS = [
+  30,
+  methodUnitsAt(0.865),
+  ...PHASE_STARTS.slice(1).map((start, index) => {
+    const middle = (start + (PHASE_STARTS[index + 2] ?? 1)) / 2;
+    return methodUnitsAt(0.865 + scrollAt(middle) * 0.135);
+  }),
+];
 
 /**
  * The method, one step at a time as the visitor scrolls (method-timeline.ts):
@@ -68,7 +91,7 @@ export default function MethodStory() {
   const videoEnter = smoothStep((s - 0.84) / 0.025);
   // The phases arrive with the footage, already written.
   const phasesIn = smoothStep((s - 0.845) / 0.02);
-  const videoProgress = clamp01((s - 0.865) / 0.135);
+  const videoProgress = filmAt((s - 0.865) / 0.135);
   let phase = 0;
   PHASE_STARTS.forEach((start, index) => { if (videoProgress >= start) phase = index; });
 
@@ -87,6 +110,10 @@ export default function MethodStory() {
             <p className="gm-house-lead" style={reveal(15)}>Come una casa: prima le fondamenta, poi la struttura, la forma e i dettagli.</p>
           </div>
           <div className="gm-phases" style={{ '--in': phasesIn } as React.CSSProperties}>
+            {/* Phones only: where the visitor is along the five phases. */}
+            <p className="gm-phases-count" aria-hidden="true">
+              <span>{String(phase + 1).padStart(2, '0')}</span> / {String(housePhases.length).padStart(2, '0')}
+            </p>
             <div className="gm-phases-dots" aria-hidden="true">
               {housePhases.map((item, index) => <i key={item.title} className={index <= phase ? 'is-on' : undefined} />)}
             </div>

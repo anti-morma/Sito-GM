@@ -1,6 +1,8 @@
 import { Fragment } from 'react';
 import Bridge from './bridge';
 import ContactForm from './contact-form';
+import { PHONE_OPENING_QUERY } from './gm-constellation';
+import GoMoreMobileIntro from './gomore-mobile-intro';
 import Hero from './hero';
 import MethodStory from './method-story';
 import ParticleJourney from './particle-journey';
@@ -14,28 +16,30 @@ import SiteHeader from './site-header';
 import { offers, projects, type Project } from './content';
 import { contactDetails, DetailText } from './studio-details';
 
-// Phones, first visit of the session: hide the header and the hero copy before
-// the first paint, for the opening drawn by the stars (astra-field.tsx). Never
-// on a return or a reload, a link to a section, or with reduced motion. If the
-// stars are not under way in time, the page simply appears. To preview it
-// again, add ?intro to the address: it then plays on every load.
+// Phones, first visit of the session: black before the first paint, for the
+// opening (gomore-mobile-intro.tsx), which ends in the header logo. Never on a
+// reload, a return or a link to a section (sessionStorage: a new session plays
+// it again); with reduced motion, a short version of fades. If the opening is
+// not under way in time, the page simply appears. To preview it again, add
+// ?intro to the address: it then plays on every load.
 const OPENING = `(() => { try {
   const root = document.documentElement;
   const visit = performance.getEntriesByType('navigation')[0];
   const preview = new URLSearchParams(location.search).has('intro');
-  if (!matchMedia('(max-width: 600px) and (orientation: portrait)').matches
-    || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!matchMedia('${PHONE_OPENING_QUERY}').matches) return;
   if (!preview && (location.hash || (visit && visit.type !== 'navigate')
     || sessionStorage.getItem('gm-intro'))) return;
   sessionStorage.setItem('gm-intro', '1');
   root.classList.add('gm-intro');
+  root.dataset.intro = 'waiting';
   const show = () => {
     if (!root.classList.contains('gm-intro')) return;
     root.classList.remove('gm-intro');
     root.classList.add('gm-intro-done');
+    delete root.dataset.intro;
   };
-  setTimeout(() => { if (!root.dataset.intro) show(); }, 1800);
-  setTimeout(show, 5500);
+  setTimeout(() => { if (root.dataset.intro === 'waiting') show(); }, 2500);
+  setTimeout(show, 6500);
 } catch (error) {} })();`;
 
 const pad = (index: number) => String(index + 1).padStart(2, '0');
@@ -75,6 +79,7 @@ export default function Home() {
     <>
       <script dangerouslySetInnerHTML={{ __html: OPENING }} />
       <SiteHeader />
+      <GoMoreMobileIntro />
       <ParticleJourney />
       <main className="gm-site" id="contenuto">
         {/* Hero: the headline, and the GM made of stars */}

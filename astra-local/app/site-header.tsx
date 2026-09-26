@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Ascent, { setAscentProgress, type Point } from './ascent';
 import { site } from './content';
+import DynamicGMLogo from './dynamic-gm-logo';
 import { contactDetails, DetailText, legalDetails } from './studio-details';
 
 // Every section of the page, in order: the one on screen lights up.
@@ -151,7 +152,10 @@ export default function SiteHeader() {
     <>
       <a className="gm-skip" href="#progetti">Salta l’introduzione animata</a>
       <header className="gm-header" data-solid={solid} data-menu={menuOpen ? 'open' : 'closed'}>
-        <a className="gm-logo" href="#inizio" onClick={(event) => go(event, 'inizio')} aria-label={`${site.name} — torna all’inizio`} />
+        {/* Phones: the GM as a living constellation. */}
+        <a className="gm-logo" href="#inizio" onClick={(event) => go(event, 'inizio')} aria-label={`${site.name} — torna all’inizio`}>
+          <DynamicGMLogo />
+        </a>
 
         {/* The sections, in a dedicated capsule: a comet travels to the one on screen. */}
         <nav className="gm-nav" aria-label="Sezioni">

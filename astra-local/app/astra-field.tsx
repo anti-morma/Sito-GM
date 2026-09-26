@@ -26,6 +26,7 @@ import { buildBlueprintParticles } from './blueprint-geometry';
 import { buildBrainVolume } from './brain-volume';
 import { springStep } from './gesture-spring';
 import { phonePixelRatio, reportFrame, watchPixelRatio } from './pixel-ratio';
+import { LOGO_MARK_SHARE } from './gm-constellation';
 
 const ANIMATION_SPEED = 1.25;
 // The background stars live in the site-wide sky (star-sky.tsx).
@@ -45,74 +46,8 @@ const METHOD_START = 0.775;
 // The GM's height at scale 1, its dust included, and its letters' width (see gm-points.json).
 const LOGO_HEIGHT = 0.62;
 const LOGO_WIDTH = 0.818;
-// Phones: the GM rests in the header logo. gm-logo.png is drawn at 176% of the
-// logo's box and its monogram spans 44.7% of the image.
-const LOGO_MARK = 1.76 * 0.447;
-// ---------- The phone opening ----------
-// Seconds from its start; the shader reads the same values. In the dark a blue
-// spiral of stars lights up and writes GOMORE (scripts/sample-gomore.mjs, 2
-// units wide) letter by letter; a glint runs along it; the word twists and
-// folds into the GM, which locks with a flash that blows the cloud away as a
-// ring; the GM half-turns, then breaks into a stream of stars that pours into
-// the header logo.
-const WORD_WIDTH = 2;
-const OPENING = {
-  write: 0.15, writeSpread: 0.4, writeTime: 0.45,
-  sweep: 0.9, sweepTime: 0.5,
-  fold: 1.25, foldTime: 0.45, impact: 1.8,
-  turn: 1.85, turnTime: 0.55,
-  rise: 2.35, riseSpread: 0.32, riseTime: 0.48,
-  reveal: 2.85, end: 3.25,
-};
-// The cloud borrows this many of the villa's stars while the opening plays.
-const OPENING_CLOUD = 6000;
-// The opening's stage sits a little above the centre of the screen.
-const STAGE_Y = 0.04;
-const glslFloat = (value: number) => value.toFixed(3);
-const openingShader = `
- // ---------- The phone opening (see OPENING) ----------
- uniform float uOpening;
- uniform float uClock;
- uniform float uWordScale;
- uniform float uMonoScale;
- // The header logo: its centre, and the GM's scale there.
- uniform vec3 uLogoRest;
- const float STAGE_Y = ${glslFloat(STAGE_Y)};
- const float WORD_WIDTH = ${glslFloat(WORD_WIDTH)};
- const float WRITE = ${glslFloat(OPENING.write)};
- const float WRITE_SPREAD = ${glslFloat(OPENING.writeSpread)};
- const float WRITE_TIME = ${glslFloat(OPENING.writeTime)};
- const float SWEEP = ${glslFloat(OPENING.sweep)};
- const float SWEEP_TIME = ${glslFloat(OPENING.sweepTime)};
- const float FOLD = ${glslFloat(OPENING.fold)};
- const float FOLD_TIME = ${glslFloat(OPENING.foldTime)};
- const float IMPACT = ${glslFloat(OPENING.impact)};
- const float TURN = ${glslFloat(OPENING.turn)};
- const float TURN_TIME = ${glslFloat(OPENING.turnTime)};
- const float RISE = ${glslFloat(OPENING.rise)};
- const float RISE_SPREAD = ${glslFloat(OPENING.riseSpread)};
- const float RISE_TIME = ${glslFloat(OPENING.riseTime)};
-
- float after(float from, float duration) {
-   return smoothstep(0.0, 1.0, (uClock - from) / duration);
- }
- vec2 swivel(vec2 v, float angle) {
-   float c = cos(angle);
-   float s = sin(angle);
-   return vec2(c * v.x - s * v.y, s * v.x + c * v.y);
- }
- // The blue cloud: a tilted two-armed spiral around the stage, its inner stars
- // turning faster. Each star keeps its own place in it, from its seeds.
- vec3 inCloud(float reach) {
-   float r = fract(aOrigin.x / 1.7 + 0.5);
-   r = 0.05 + r * r * reach;
-   float arm = step(0.5, fract(aOrigin.y / 1.3 + 0.5)) * 3.14159;
-   float angle = arm + r * 7.0 + (fract(aPhase * 1.113) - 0.5) * 1.2 - uClock * 0.45 / (0.2 + r);
-   float span = 0.5 * uAspect;
-   return vec3(cos(angle) * r * span * 1.15, STAGE_Y + sin(angle) * r * span * 0.5, sin(angle) * r * 0.35);
- }
-`;
-
+// Phones: the GM rests in the header logo, whose letters span this share of its box.
+const LOGO_MARK = LOGO_MARK_SHARE;
 const vertexShader = `
  attribute vec3 aOrigin;
  attribute vec3 aColor;
@@ -131,8 +66,6 @@ const vertexShader = `
  attribute vec2 aOffset;
  // Role in the GM monogram: 2 outline, 1 fill, 0 dust, -1 not part of it.
  attribute float aGlyph;
- // The phone opening: this star's place in GOMORE.
- attribute vec2 aWord;
  #define aSize aStyle.x
  #define aLight aStyle.y
  #define aPhase aStyle.z
@@ -169,7 +102,6 @@ const vertexShader = `
  varying float vStar;
  varying float vSparkle;
  varying float vSpriteCrop;
-${openingShader}
  void main() {
    float motion = 1.0 - uReduced;
    float scrolled = max(uHero, uBridgeMode);
@@ -251,84 +183,6 @@ ${openingShader}
    ) * motion;
    vec3 p = mix(origin, target, ordered) + turbulence * 0.16 * (1.0 - ordered);
 
-   // ---------- The phone opening ----------
-   float openingLight = 0.0;
-   vec3 openingColor = vec3(1.0);
-   float openingSize = 1.0;
-   float openingHalo = 0.0;
-   if (uOpening > 0.5) {
-     float seedA = fract(aPhase * 1.1141);
-     float seedB = fract(aPhase * 2.0697 + 0.31);
-     float seedC = aOrigin.z / 1.35 + 0.5;
-     vec2 stage = vec2(0.0, STAGE_Y);
-     float twinkle = 0.78 + 0.22 * sin(uClock * (5.0 + seedA * 4.0) + aPhase * 3.0);
-     vec3 cloudBlue = mix(vec3(0.36, 0.52, 1.0), vec3(0.72, 0.82, 1.0), seedB);
-     // The GM locking together: a flash through every star.
-     float flash = exp(-pow((uClock - IMPACT) / 0.07, 2.0));
-     if (isGlyph > 0.5) {
-       // Written: each star leaves the cloud for its place in GOMORE, the
-       // letters appearing left to right, each star landing with a spark.
-       float writeFrom = WRITE + WRITE_SPREAD * (aWord.x / WORD_WIDTH + 0.5) + 0.08 * seedA;
-       float written = after(writeFrom, WRITE_TIME);
-       // Folded: the word twists and closes up into the GM, its stars
-       // scattering in depth before they lock.
-       float folded = after(FOLD + 0.08 * seedB, FOLD_TIME);
-       // Turned: a half turn that still ends on a readable GM (past edge-on
-       // the letters are mirrored, so the turn brings them back true),
-       // swelling and tilting a little on the way.
-       float turned = after(TURN, TURN_TIME);
-       vec3 mono = position * uMonoScale * (1.0 + 0.08 * sin(3.14159 * turned));
-       mono.x *= 1.0 - 2.0 * step(0.5, turned);
-       mono.xz = swivel(mono.xz, 3.14159 * turned);
-       mono.yz = swivel(mono.yz, 0.3 * sin(3.14159 * turned));
-       vec3 shaped = mix(vec3(aWord * uWordScale, 0.0), mono, folded);
-       shaped.xy = stage + swivel(shaped.xy, 0.45 * sin(3.14159 * folded));
-       shaped.z += sin(3.14159 * folded) * (seedC - 0.5) * 0.45;
-       vec3 born = inCloud(0.7);
-       vec2 way = shaped.xy - born.xy;
-       vec3 placed = mix(born, shaped, written);
-       placed.xy += vec2(-way.y, way.x) * sin(3.14159 * written) * 0.25;
-       // Risen: the GM comes apart from the corner nearest the logo, its stars
-       // flowing as a stream that swings out to the right and up, widening
-       // mid-flight, and pours into the header logo.
-       float queue = (position.x / 0.82 + 0.5) * 0.6 + (0.5 - position.y / 0.58) * 0.4;
-       float rose = after(RISE + RISE_SPREAD * queue + 0.08 * seedC, RISE_TIME);
-       vec3 home = vec3(position.xy * uLogoRest.z + uLogoRest.xy, 0.0);
-       vec3 bend = mix(placed, home, 0.5) + vec3(
-         (0.34 + (seedA - 0.5) * 0.14) * uAspect,
-         0.06 + (seedB - 0.5) * 0.08,
-         0.3 + (seedC - 0.5) * 0.3
-       );
-       float q = 1.0 - rose;
-       p = q * q * placed + 2.0 * q * rose * bend + rose * rose * home;
-
-       float glint = exp(-pow((aWord.x - mix(-1.4, 1.4, after(SWEEP, SWEEP_TIME))) / 0.2, 2.0)) * (1.0 - folded);
-       float landing = exp(-pow((uClock - writeFrom - WRITE_TIME) / 0.08, 2.0));
-       float lit = aLight * twinkle * 1.15 * (1.0 + 1.2 * landing + 1.8 * glint + 1.8 * flash);
-       openingLight = mix(aLight * 0.5 * after(0.0, 0.5), lit, written);
-       // Brighter as it flies, gone as it reaches the logo.
-       openingLight *= (1.0 + 0.4 * sin(3.14159 * rose)) * (1.0 - smoothstep(0.45, 0.95, rose));
-       openingColor = mix(cloudBlue, mix(aColor, vec3(0.88, 0.92, 1.0), 0.55), written);
-       openingColor = mix(openingColor, vec3(1.0, 0.96, 0.9), glint * 0.6);
-       openingColor = mix(openingColor, vec3(0.62, 0.76, 1.0), sin(3.14159 * rose) * 0.6);
-       openingSize = mix(min(aSize, 12.0) * 0.8, aSize, written) * mix(1.0, 0.35, rose);
-     } else {
-       // The cloud: it glows in, draws in a little as the word folds, and the
-       // flash blows it out into a widening ring that fades.
-       vec3 cloud = inCloud(1.0);
-       // Its bright core would sit in the middle of the word: it dims as the word appears.
-       float core = mix(1.0, smoothstep(0.3, 0.6, fract(aOrigin.x / 1.7 + 0.5)), after(WRITE + 0.2, 0.5));
-       vec2 rel = (cloud.xy - stage) * (1.0 - 0.3 * after(FOLD, FOLD_TIME));
-       float blown = after(IMPACT, 0.75);
-       float reach = length(rel / (vec2(1.15, 0.5) * 0.5 * uAspect));
-       rel += normalize(rel + 1e-4) * blown * uAspect * (0.75 - 0.5 * smoothstep(0.0, 0.9, reach));
-       p = vec3(stage + rel, cloud.z + blown * (seedC - 0.5) * 0.5);
-       openingLight = aLight * 0.5 * twinkle * after(0.0, 0.6) * core * (1.0 - blown) * (1.0 + 1.5 * flash);
-       openingColor = cloudBlue;
-       openingSize = min(aSize, 12.0) * 0.9;
-       openingHalo = 0.55;
-     }
-   }
 
    vec4 mv = modelViewMatrix * vec4(p, 1.0);
    // Touch screens do not use particle gestures, so skip the spring texture
@@ -383,7 +237,6 @@ ${openingShader}
    float renderedSize = mix(aSize, looseSize, release);
    renderedSize = mix(renderedSize, 6.5, projectMix);
    renderedSize = mix(renderedSize, 7.5 + aBrainShade * 6.5, uBridgeMode);
-   if (uOpening > 0.5) renderedSize = openingSize;
    gl_PointSize = clamp(
      renderedSize * uDpr * uPixelScale * depth * (1.0 + influence * 0.12),
      2.0,
@@ -425,16 +278,14 @@ ${openingShader}
    #endif
 
    vLight = mix(heroLight, thoughtLight, uBridgeMode);
-   if (uOpening > 0.5) vLight = openingLight;
    vLight *= depthCue * nearFade;
 
    vec3 starColor = vec3(0.78, 0.85, 1.0);
    vec3 heroColor = mix(mix(aColor, starColor, release), vec3(0.94, 0.97, 1.0), projectMix);
    vColor = mix(heroColor, aColor, uBridgeMode);
-   if (uOpening > 0.5) vColor = openingColor;
 
-   // Loose stars glow with a halo; so does the opening's cloud.
-   vStar = max(release * 0.85 * (1.0 - uBridgeMode), openingHalo);
+   // Loose stars glow with a halo.
+   vStar = release * 0.85 * (1.0 - uBridgeMode);
    // The brightest stars of the GM become four-point sparkles: irregular in
    // size, colour and shape, while the outline carries the letters.
    vSparkle = max(glyph * smoothstep(32.0, 50.0, aSize) * 0.85, release * smoothstep(22.0, 34.0, aSize) * 0.35) * (1.0 - uBridgeMode);
@@ -625,10 +476,6 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       geometry.setAttribute(name, new Float32BufferAttribute(array, size));
     }
 
-    // Filled only when the phone opening plays (see below).
-    const wordAttribute = new Float32BufferAttribute(new Float32Array(count * 2), 2);
-    geometry.setAttribute('aWord', wordAttribute);
-
     const offsets = new Float32Array((positions.length / 3) * 2);
     const velocities = new Float32Array(logoPoints.length * 2);
     const offsetAttribute = new Float32BufferAttribute(offsets, 2);
@@ -661,11 +508,6 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
         uPixelScale: { value: 1 },
         uLogoScale: { value: 1 },
         uGlyphLight: { value: 1 },
-        uOpening: { value: 0 },
-        uClock: { value: 0 },
-        uWordScale: { value: 1 },
-        uMonoScale: { value: 1 },
-        uLogoRest: { value: new Vector3() },
         uHeroOffset: { value: new Vector2() },
         uAspect: { value: 1 },
         uCompact: { value: 0 },
@@ -749,62 +591,23 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       pointerActive = true;
     };
 
-    // ---------- The phone opening ----------
-    // The page's first script marks it with .gm-intro (page.tsx) and hides the
-    // header and the copy; the shader plays the opening from one clock (see
-    // OPENING), then the page appears. A touch skips it.
+    // ---------- Phones: the GM at rest in the header logo ----------
+    // The page draws the living logo (dynamic-gm-logo.tsx); these stars wait
+    // there, unlit, and stream out into the villa as the visitor scrolls.
+    // While the phone opening plays (gomore-mobile-intro.tsx) this canvas rests.
     const root = document.documentElement;
     let phoneHero = false;
     const rest = { scale: 0.05, x: 0, y: 0.45 };
-    const stage = { word: 0.2, mono: 0.3 };
-    let opening: 'waiting' | 'playing' | 'done' = root.classList.contains('gm-intro') ? 'waiting' : 'done';
-    let openingStart = 0;
-    let wordReady = false;
-    // A slow push-in of the camera while the word forms and folds.
-    let openingPush = 0;
-    const placeOpening = (seconds: number) => {
+    const placeRest = () => {
       const u = material.uniforms;
-      const playing = phoneHero && Number.isFinite(seconds);
-      u.uOpening.value = playing ? 1 : 0;
-      u.uClock.value = playing ? seconds : 0;
-      const push = playing ? (seconds - OPENING.write) / (OPENING.rise - OPENING.write) : 0;
-      openingPush = push > 0 && push < 1 ? 0.16 * Math.sin(Math.PI * push) : 0;
       if (!phoneHero) {
         u.uGlyphLight.value = 1;
         return;
       }
-      // At rest the GM sits, unlit, in the header logo: the page draws the logo.
       u.uGlyphLight.value = 0;
       u.uLogoScale.value = rest.scale;
       (u.uHeroOffset.value as Vector2).set(rest.x, rest.y);
-      (u.uLogoRest.value as Vector3).set(rest.x, rest.y, rest.scale);
-      u.uWordScale.value = stage.word;
-      u.uMonoScale.value = stage.mono;
     };
-    const showPage = () => {
-      if (!root.classList.contains('gm-intro')) return;
-      root.classList.remove('gm-intro');
-      root.classList.add('gm-intro-done');
-    };
-    const skipEvents = ['pointerdown', 'wheel', 'keydown', 'scroll'] as const;
-    const finishOpening = () => {
-      if (opening === 'done') return;
-      opening = 'done';
-      skipEvents.forEach((type) => removeEventListener(type, finishOpening));
-      showPage();
-      delete root.dataset.intro;
-      root.style.removeProperty('--opening-impact');
-      placeOpening(Infinity);
-    };
-    if (opening !== 'done') {
-      skipEvents.forEach((type) => addEventListener(type, finishOpening, { passive: true }));
-      import('./gomore-points.json').then(({ default: word }) => {
-        const array = wordAttribute.array as Float32Array;
-        word.forEach(([x, y], i) => { array[i * 2] = x; array[i * 2 + 1] = y; });
-        wordAttribute.needsUpdate = true;
-        wordReady = true;
-      }, finishOpening);
-    }
 
     const resize = () => {
       const width = host.clientWidth;
@@ -824,18 +627,24 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
         fieldMoving = false;
       }
       material.uniforms.uAspect.value = camera.aspect;
-      // Mirrors the CSS stacked layout: (max-width: 600px), (max-aspect-ratio: 9/10).
-      material.uniforms.uCompact.value = width <= 600 || camera.aspect <= 0.9 ? 1 : 0;
+      // Mirrors the CSS stacked layouts: (max-width: 600px), (max-aspect-ratio: 9/10),
+      // and upright phones up to 767px.
+      material.uniforms.uCompact.value = width <= 600 || camera.aspect <= 0.9 || (width <= 767 && camera.aspect <= 1) ? 1 : 0;
       // There the villa's drawing lands exactly on the construction video,
       // wherever the page puts it. The video's stage keeps the height of the
       // screen with the browser bars shown, while this canvas grows as they
       // hide: measuring (and measuring again on resize) keeps the two aligned.
       const frame = document.querySelector<HTMLElement>('.gm-construction-video');
-      if (frame) {
+      const frameStage = frame?.offsetParent;
+      if (frame && frameStage) {
+        // Its centre in the stage, whether the CSS centres it on its top
+        // (translate -50%) or lays it out in the flow (phones).
+        const box = frame.getBoundingClientRect();
+        const centre = box.top + box.height / 2 - frameStage.getBoundingClientRect().top;
         material.uniforms.uPlanWidth.value = frame.offsetWidth / width;
         (material.uniforms.uPlan.value as Vector2).set(
           ((frame.offsetLeft + frame.offsetWidth / 2) / width - 0.5) * camera.aspect,
-          0.5 - frame.offsetTop / height,
+          0.5 - centre / height,
         );
       }
       const fullScale = Math.min(1, (camera.aspect * 0.84) / 0.82);
@@ -854,10 +663,6 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
         rest.scale = ((mark?.offsetWidth ?? 46) * LOGO_MARK) / (LOGO_WIDTH * height);
         rest.x = box ? ((box.left + box.width / 2) / width - 0.5) * camera.aspect : -camera.aspect * 0.4;
         rest.y = box ? 0.5 - (box.top + box.height / 2) / height : 0.46;
-        // The opening, centred a little high: GOMORE across the screen, then the GM.
-        stage.word = (0.86 * camera.aspect) / WORD_WIDTH;
-        stage.mono = (0.62 * camera.aspect) / LOGO_WIDTH;
-        placeOpening(opening === 'playing' ? (performance.now() - openingStart) / 1000 : Infinity);
       } else if (camera.aspect < 1.05) {
         // Stacked: the GM sits between the header and the copy.
         const top = 76;
@@ -885,10 +690,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
         material.uniforms.uLogoScale.value = Math.max(0.4, Math.min(fit, 0.48 / 0.58));
         heroOffset.set(((start + end) / 2 - 0.5) * camera.aspect, 0.02);
       }
-      if (!phoneHero) {
-        placeOpening(Infinity);
-        finishOpening();
-      }
+      placeRest();
       // The brain sits beside the scene's words: to their right on wide
       // screens, below them on phones and portrait tablets.
       const brainCenter = material.uniforms.uBrainCenter.value as Vector2;
@@ -945,6 +747,8 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       scrollRef.current = state.bridgeMode ? METHOD_START : state.progress;
       videoReadyRef.current = state.videoReady;
       if (document.hidden || !onScreen || !state.active) return;
+      // The phone opening covers the page: nothing to draw under it.
+      if (root.classList.contains('gm-intro')) return;
       const behindVideo = !state.bridgeMode && state.videoReady && state.progress >= 0.866;
       if (behindVideo !== asleep) {
         asleep = behindVideo;
@@ -953,23 +757,6 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       if (asleep) return;
       if (mobile.matches) reportFrame(now, elapsed);
 
-      if (opening === 'waiting') {
-        // The page stopped waiting for the stars (page.tsx): no opening today.
-        if (!root.classList.contains('gm-intro')) finishOpening();
-        else if (wordReady) {
-          opening = 'playing';
-          openingStart = now;
-          // The page's own effects (globals.css) keep time with the stars.
-          root.style.setProperty('--opening-impact', `${OPENING.impact}s`);
-          root.dataset.intro = 'playing';
-        }
-      }
-      if (opening === 'playing') {
-        const seconds = (now - openingStart) / 1000;
-        placeOpening(seconds);
-        if (seconds >= OPENING.reveal) showPage();
-        if (seconds >= OPENING.end) finishOpening();
-      }
 
       const atHero = !state.bridgeMode && state.hero < 0.02;
       time += dt * ANIMATION_SPEED;
@@ -991,7 +778,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       }
       // Draw only the stars the current scene uses: the GM, the villa, or the network.
       geometry.setDrawRange(0, atHero
-        ? logoPoints.length + (opening === 'playing' ? Math.min(OPENING_CLOUD, count - logoPoints.length) : 0)
+        ? logoPoints.length
         : state.bridgeMode ? count : layer);
       material.uniforms.uVideoReady.value = videoReadyRef.current ? 1 : 0;
       if (!interactionAvailable()) pointerActive = false;
@@ -1055,7 +842,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
         zoomTarget = REST_DISTANCE;
         panTarget.set(0, 0);
       }
-      const distanceGoal = zoomTarget + (REST_DISTANCE - zoomTarget) * videoSettle - openingPush;
+      const distanceGoal = zoomTarget + (REST_DISTANCE - zoomTarget) * videoSettle;
       const zoomFollow = media.matches ? 1 : 1 - Math.exp(-9 * dt);
       camera.position.z += (distanceGoal - camera.position.z) * zoomFollow;
       camera.position.x += (panTarget.x * (1 - videoSettle) - camera.position.x) * zoomFollow;
@@ -1270,7 +1057,6 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
     return () => {
       cancelAnimationFrame(frame);
       unwatch();
-      skipEvents.forEach((type) => removeEventListener(type, finishOpening));
       visibility.disconnect();
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', move);
