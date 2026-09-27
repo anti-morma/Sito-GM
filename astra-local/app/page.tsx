@@ -5,6 +5,7 @@ import { PHONE_OPENING_QUERY } from './gm-constellation';
 import GoMoreMobileIntro from './gomore-mobile-intro';
 import Hero from './hero';
 import MethodStory from './method-story';
+import OfferList from './offer-list';
 import ParticleJourney from './particle-journey';
 import ProjectCarousel from './project-carousel';
 import ProjectPreview from './project-preview';
@@ -116,9 +117,7 @@ export default function Home() {
                   <p className="gm-offer-kicker"><span>{pad(index)}</span>{offer.kicker}</p>
                   <h3>{offer.title}</h3>
                   <p className="gm-offer-text">{offer.text}</p>
-                  <ul className="gm-offer-list" aria-label={`Cosa include: ${offer.title}`}>
-                    {offer.includes.map((item) => <li key={item}>{item}</li>)}
-                  </ul>
+                  <OfferList title={offer.title} items={offer.includes} />
                   <a className={index === 0 ? 'gm-btn gm-btn--primary' : 'gm-btn gm-btn--ghost'} href="#contatti">
                     {offer.cta} <span className="gm-btn-arrow" aria-hidden="true">→</span>
                   </a>

@@ -1,7 +1,8 @@
 """Extract particle geometry from the supplied blue brain reference.
 
 Run: python scripts/sample-brain.py
-The source image is kept outside public/; the site loads only brain-points.json.
+The source image and samples stay outside public/. Build the display volume
+afterwards with: node scripts/build-brain-sculpture.mjs
 """
 
 from pathlib import Path
@@ -13,7 +14,7 @@ from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "assets" / "brain-reference.png"
-OUTPUT = ROOT / "app" / "brain-points.json"
+OUTPUT = ROOT / "assets" / "brain-reference-points.json"
 COUNT = 32768
 RNG = random.Random(61904)
 

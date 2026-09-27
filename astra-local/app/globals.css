@@ -562,30 +562,7 @@ em { font-style: normal; }
 /* Transparent: the site-wide sky (star-sky.tsx) shows through the scenes. */
 .gm-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; }
 
-.gm-neural-atmosphere {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background-image: radial-gradient(ellipse at center, rgb(30 52 120 / 16%), rgb(13 31 74 / 8%) 42%, transparent 68%);
-  background-size: 85% 90%;
-  background-position: 28% 50%;
-  background-repeat: no-repeat;
-}
-
-/* Night blue, painted behind the canvas so it never dims a star. */
-.gm-nebula {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: radial-gradient(34% 48% at var(--nebula-x, 68%) 50%, rgb(34 64 150 / 26%), rgb(13 31 74 / 14%) 50%, transparent 78%);
-}
-@media (max-aspect-ratio: 21/20) {
-  .gm-nebula { background: radial-gradient(70% 34% at 50% 30%, rgb(34 64 150 / 26%), rgb(13 31 74 / 14%) 50%, transparent 80%); }
-}
-
-/* Transparent: the nebula behind it shows through the sky. */
+/* Transparent: the site-wide starfield remains behind the shapes. */
 .starfield {
   position: absolute;
   z-index: 0;
@@ -890,11 +867,6 @@ em { font-style: normal; }
   pointer-events: none;
 }
 .gm-bridge-stop { top: calc(var(--bridge-travel) * 0.5); }
-/* Night blue behind the brain: it arrives with it and melts away with its stars. */
-.gm-bridge-atmosphere {
-  --nebula-x: 70%;
-  opacity: clamp(0, min(var(--bridge) * 4, (1 - var(--bridge)) * 5), 1);
-}
 /* The words, on the left; the brain fills the space to their right. */
 .gm-bridge-copy {
   position: absolute;
@@ -943,7 +915,6 @@ em { font-style: normal; }
 .gm-bridge-arrow:focus-visible { outline-offset: 4px; }
 @media (max-width: 760px), (max-aspect-ratio: 21/20) {
   .gm-bridge { --bridge-travel: 40svh; }
-  .gm-bridge-atmosphere { --nebula-x: 50%; }
   .gm-bridge-copy { top: calc(var(--header-h) + 5svh); right: var(--gutter); max-width: none; transform: none; }
   .gm-bridge-line { max-width: 14ch; font-size: clamp(38px, 10vw, 56px); }
   .gm-bridge-arrow { width: 56px; height: 56px; margin-top: 20px; }
@@ -951,7 +922,6 @@ em { font-style: normal; }
 /* Reduced motion: no pinned scroll, the brain and the words stay still. */
 @media (prefers-reduced-motion: reduce) {
   .gm-bridge { --bridge-travel: 0svh; }
-  .gm-bridge-atmosphere,
   .gm-bridge-copy { opacity: 1; }
   .gm-bridge-copy { transform: translateY(-50%); }
 }
@@ -1258,6 +1228,8 @@ em { font-style: normal; }
   background: var(--accent);
   clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
 }
+.gm-offer-details { display: contents; }
+.gm-offer-toggle { display: none; }
 .gm-offer .gm-btn { align-self: flex-start; margin-top: auto; }
 
 /* Desktop: heading and both offers fit on one screen. The title and its
@@ -1505,6 +1477,27 @@ em { font-style: normal; }
   .gm-offer { padding: 26px 22px; border-radius: 16px; }
   .gm-offer:first-child .gm-offer-list { grid-template-columns: 1fr; }
   .gm-offer-text { font-size: 16px; }
+  .gm-offer-details { display: block; margin-top: 24px; }
+  .gm-offer-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 0;
+    border: 0;
+    border-top: 1px solid var(--line-2);
+    background: transparent;
+    color: var(--accent);
+    text-align: left;
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .gm-offer-toggle svg { transition: transform 0.25s var(--ease); }
+  .gm-offer-toggle[aria-expanded='true'] svg { transform: rotate(180deg); }
+  .gm-offer-list[data-open='false'] { display: none; }
+  .gm-offer-list[data-open='true'] { margin: 10px 0 24px; }
+  .gm-offer .gm-btn { margin-top: 18px; }
   .gm-offer .gm-btn { align-self: stretch; }
 
   .gm-projects-head { margin-bottom: clamp(34px, 6svh, 56px); }
@@ -1648,12 +1641,7 @@ html[data-intro='waiting']::after {
 .gm-intro-done .gm-hero-copy > .gm-hero-description { animation-delay: 0.4s; }
 .gm-intro-done .gm-hero-copy > .gm-hero-actions { animation-delay: 0.5s; }
 .gm-intro-done .gm-cue[data-mode='hero'] > * { animation-delay: 0.9s; }
-/* The night blue behind the hero opens once the page is there. */
-.gm-intro .gm-hero .gm-nebula { opacity: 0; }
-.gm-intro-done .gm-hero .gm-nebula { animation: gm-fade-in 1.2s var(--ease) 0.2s both; }
 @media (max-width: 600px) and (orientation: portrait) {
-  /* Night blue behind the opening's GM, at the centre of the screen. */
-  .gm-hero .gm-nebula { background: radial-gradient(80% 40% at 50% 46%, rgb(34 64 150 / 26%), rgb(13 31 74 / 14%) 50%, transparent 80%); }
   /* Without WebGL the header logo is the GM: no large one behind the words. */
   .starfield[data-failed='true'] { background-image: none; }
 }

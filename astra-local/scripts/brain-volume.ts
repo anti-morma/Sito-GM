@@ -5,8 +5,8 @@
  * appearance and sit on its near face; the same drawing covers the far
  * hemisphere, and a third set covers the rim between them, so rotating the
  * brain reveals the rest of it.
- * Every star carries a surface normal so the shader can hide the faces turned
- * away from the camera, as on an opaque object.
+ * Every star carries a surface normal. This runs offline; the display uses
+ * depth occlusion without animating the opacity of the hemispheres.
  */
 
 type BrainPoint = number[]; // [x, y, reliefZ, shade]
@@ -216,8 +216,7 @@ export function buildBrainVolume(points: BrainPoint[], random: () => number): Br
     return [gx / length, gy / length, gz / length];
   };
 
-  // Front face: each reference star moves onto the solid along z only; the
-  // shader keeps it on its original camera ray, so the resting view is unchanged.
+  // Front face: each reference star moves onto the solid along z only.
   const front = new Float32Array(points.length * 4);
   const far = new Float32Array(points.length * 4);
   points.forEach(([x, y], index) => {

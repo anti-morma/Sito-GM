@@ -21,7 +21,6 @@ export default function Bridge() {
     <section className="gm-bridge" aria-labelledby="idea-title">
       <span className="gm-story-anchor gm-bridge-stop" data-scroll-stop />
       <div className="gm-stage gm-bridge-stage">
-        <div className="gm-nebula gm-bridge-atmosphere" aria-hidden="true" />
         <div className="gm-bridge-copy">
           <h2 className="gm-bridge-line" id="idea-title">
             Hai un’idea? <em>Diamole forma.</em>

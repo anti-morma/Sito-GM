@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import AstraField, { type ParticleFrame } from './astra-field';
-import { METHOD_TRAVEL, methodStoryAt } from './method-timeline';
+import { METHOD_ENTRY, METHOD_TRAVEL, VILLA_START_HERO, methodStoryAt } from './method-timeline';
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const smoothStep = (value: number) => {
@@ -57,8 +57,10 @@ export default function ParticleJourney() {
           const travel = Math.max(1, method.offsetHeight - stageHeight);
           state.progress = methodStoryAt(clamp01(-methodBox.top / travel) * METHOD_TRAVEL);
         } else {
-          // The GM opens into loose stars; the villa waits for the method's words.
-          state.progress = METHOD_START;
+          // At 75% of the GM's dispersion its stars start the villa drawing.
+          // Reach the method's entry value exactly as the section begins.
+          state.progress = METHOD_START + (METHOD_ENTRY - METHOD_START)
+            * clamp01((state.hero - VILLA_START_HERO) / (1 - VILLA_START_HERO));
         }
         // The field leaves with the villa: the projects and services keep only the sky.
         opacity = clamp01(methodBox.bottom / vh);

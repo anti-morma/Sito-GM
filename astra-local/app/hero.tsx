@@ -8,8 +8,6 @@ import SectionLabel from './section-label';
 export default function Hero() {
   return (
     <section className="gm-hero" id="inizio" aria-labelledby="hero-title">
-      {/* Night blue, painted behind the canvas so it never dims a star. */}
-      <div className="gm-nebula" aria-hidden="true" />
       <div className="gm-hero-copy">
         {/* Phones show only "Studio digitale": the description below says the rest. */}
         <SectionLabel className="gm-hero-eyebrow">

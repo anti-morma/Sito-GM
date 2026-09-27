@@ -21,26 +21,22 @@ import {
   WebGLRenderer,
 } from 'three';
 import logoPoints from './gm-points.json';
-import brainPoints from './brain-points.json';
 import { buildBlueprintParticles } from './blueprint-geometry';
-import { buildBrainVolume } from './brain-volume';
+import { BRAIN_COUNT, BRAIN_MOBILE_COUNT, decodeBrainSculpture } from './brain-sculpture';
 import { springStep } from './gesture-spring';
 import { phonePixelRatio, reportFrame, watchPixelRatio } from './pixel-ratio';
 import { LOGO_MARK_SHARE } from './gm-constellation';
 
 const ANIMATION_SPEED = 1.25;
 // The background stars live in the site-wide sky (star-sky.tsx).
-// The villa's drawing and each layer of the brain use this many stars.
-const BASE_COUNT = brainPoints.length;
-// The brain: front, rim, far side, and a double inner fill.
-const BRAIN_COUNT = BASE_COUNT * 5;
-// Phones draw half of each (the samples are shuffled, so any half covers the
-// whole drawing): a lighter villa, and only the brain's surface layers.
+// The villa's drawing uses this many stars; the brain has one unified surface.
+const BASE_COUNT = 32768;
+// Phones draw fewer stars across the same complete 3D surface.
 const MOBILE_LAYER = BASE_COUNT / 2;
-const MOBILE_COUNT = MOBILE_LAYER * 3;
+const MOBILE_COUNT = BRAIN_MOBILE_COUNT;
 // Its drawing spans about this much, in scene units at scale 1.
-const BRAIN_WIDTH = 0.68;
-const BRAIN_HEIGHT = 0.6;
+const BRAIN_WIDTH = 0.80;
+const BRAIN_HEIGHT = 0.70;
 // The method's timeline starts from the loose stars (see method-story.tsx).
 const METHOD_START = 0.775;
 // The GM's height at scale 1, its dust included, and its letters' width (see gm-points.json).
@@ -52,13 +48,10 @@ const vertexShader = `
  attribute vec3 aOrigin;
  attribute vec3 aColor;
  attribute vec4 aStyle;
- // The brain: its star, the surface normal (w: original relief depth), and
- // its layer (0 front, 2 rim and far side, 3 inner fill) with its shade.
+ // Each brain star lives on the same 3D surface, with an outward normal.
  attribute vec3 aBrain;
- attribute vec4 aBrainNormal;
- attribute vec2 aBrainStyle;
- #define aDetail aBrainStyle.x
- #define aBrainShade aBrainStyle.y
+ attribute vec3 aBrainNormal;
+ attribute float aBrainShade;
  attribute vec4 aPlan;
  attribute vec4 aBuilding;
  attribute vec2 aArchitecture;
@@ -69,6 +62,7 @@ const vertexShader = `
  #define aSize aStyle.x
  #define aLight aStyle.y
  #define aPhase aStyle.z
+ #define aBrainWeight aStyle.w
  uniform float uTime;
  uniform float uDpr;
  uniform float uPixelScale;
@@ -82,7 +76,7 @@ const vertexShader = `
  uniform vec2 uPlan;
  uniform float uPlanWidth;
  uniform float uReduced;
- // The method's timeline, unchanged: 0.775 loose stars → 0.815 villa → 1 video.
+ // The method's timeline: loose stars → villa drawing → construction video.
  uniform float uScroll;
  // Share of the hero scrolled away.
  uniform float uHero;
@@ -93,6 +87,7 @@ const vertexShader = `
  uniform float uBrainTurn;
  uniform vec2 uBrainCenter;
  uniform float uBrainScale;
+ uniform float uBrainReady;
  uniform float uVideoReady;
  uniform float uCamDist;
  uniform sampler2D uSpringField;
@@ -144,17 +139,13 @@ const vertexShader = `
    float gather = mix(smoothstep(0.0, 0.3, uBridge), 1.0, uReduced);
    float melt = smoothstep(0.8 + fract(aPhase * 3.7) * 0.06, 0.94 + fract(aPhase * 3.7) * 0.06, uBridge) * motion;
    vec3 brain = aBrain * uBrainScale;
-   vec2 brainOverview = brain.xy + uBrainCenter;
-   // Front stars stay on the camera ray through their reference position, so
-   // the resting view matches the original drawing exactly.
-   brainOverview *= (2.0 - brain.z) / (2.0 - aBrainNormal.w * uBrainScale);
    mat3 brainRotation = mat3(
      cos(uBrainTurn), 0.0, -sin(uBrainTurn),
      0.0, 1.0, 0.0,
      sin(uBrainTurn), 0.0, cos(uBrainTurn)
    );
-   vec3 brainPivot = vec3(uBrainCenter, -0.12 * uBrainScale);
-   vec3 thought = brainPivot + brainRotation * (vec3(brainOverview, brain.z) - brainPivot);
+   vec3 brainPivot = vec3(uBrainCenter, 0.0);
+   vec3 thought = brainPivot + brainRotation * brain;
    thought += vec3(aOrigin.x * uAspect, aOrigin.y, aOrigin.z) * 0.18 * (1.0 - gather) * motion;
    thought.y -= (1.0 - gather) * 0.08 * motion;
    // Melting: each star drifts a little outward and upward as it fades.
@@ -169,7 +160,7 @@ const vertexShader = `
      sin(uTime * 0.7 + aPhase),
      cos(uTime * 0.55 + aPhase * 1.7),
      sin(uTime * 0.42 + aPhase)
-   ) * orbit;
+   ) * orbit * (1.0 - uBridgeMode);
    target.y += sin(position.x * 18.0 + uTime * 0.65) * mix(0.006, 0.0025, glyph) * motion * (1.0 - release) * (1.0 - uBridgeMode);
 
    vec3 origin = aOrigin;
@@ -216,19 +207,8 @@ const vertexShader = `
    float depthCue = clamp(pow(uCamDist / viewDist, 1.6), 0.4, 1.8);
    float nearFade = smoothstep(0.12, 0.45, viewDist);
    float depth = clamp(2.0 / -mv.z, 0.35, 2.5);
-   // An opaque-looking brain: hide the surface turned away from the camera.
-   float brainShell = step(0.25, dot(aBrainNormal.xyz, aBrainNormal.xyz));
-   float brainBack = step(1.5, aDetail) * brainShell;
-   vec3 brainNormal = normalize(mat3(modelViewMatrix) * brainRotation * (aBrainNormal.xyz + vec3(0.0, 0.0, 1e-4)));
-   float facing = dot(brainNormal, normalize(-mv.xyz));
-   // Reference stars on the near rim crowd into a seam when seen edge-on: soften
-   // them only once rotation turns them towards the camera (never at rest).
-   float rimSeam = (1.0 - smoothstep(0.0, 0.35, abs(aBrainNormal.z))) * smoothstep(0.2, 0.7, facing);
-   // Seen edge-on the near face collapses into a bright line; fade it only while
-   // the brain is turned away from its resting pose.
-   float brainTurned = smoothstep(0.02, 0.25, 1.0 - normalize(mat3(modelViewMatrix) * brainRotation * vec3(0.0, 0.0, 1.0)).z);
-   float nearVisible = mix(smoothstep(-0.3, 0.0, facing), smoothstep(-0.05, 0.3, facing), brainTurned);
-   float brainVisible = mix(nearVisible * (1.0 - 0.25 * rimSeam), smoothstep(-0.08, 0.22, facing), brainBack);
+   // The brain's hidden surfaces are rejected by its depth pass, without
+   // changing a sample's opacity as its normal or hemisphere rotates away.
    float looseSize = min(aSize, 12.0);
    #ifdef PHONE
    // A phone screen is small: the loose stars between the GM and the villa stay finer.
@@ -236,6 +216,7 @@ const vertexShader = `
    #endif
    float renderedSize = mix(aSize, looseSize, release);
    renderedSize = mix(renderedSize, 6.5, projectMix);
+   // Same fine particle footprint as astra-local-c0ox.vercel.app.
    renderedSize = mix(renderedSize, 7.5 + aBrainShade * 6.5, uBridgeMode);
    gl_PointSize = clamp(
      renderedSize * uDpr * uPixelScale * depth * (1.0 + influence * 0.12),
@@ -265,20 +246,17 @@ const vertexShader = `
    heroLight = mix(heroLight, blueprintLight, projectMix);
    heroLight *= 1.0 - smoothstep(0.84, 0.865, uScroll) * uVideoReady;
 
-   // Light: the brain's own shading from the reference drawing.
+   // The reference's actual fold pattern is baked onto the rounded sculpture.
    float thoughtLight = 0.035 + aBrainShade * aBrainShade * 1.6;
    thoughtLight *= clamp(pow(uBrainScale / 1.18, 0.8), 0.30, 1.0);
-   // The rim, the far side and the inner fill show only where the solid faces the camera.
-   if (aDetail > 1.5) thoughtLight *= brainBack;
-   thoughtLight *= mix(1.0, brainVisible, brainShell);
-   thoughtLight *= 0.65 * gather * (1.0 - melt);
+   thoughtLight *= 0.65 * aBrainWeight * gather * (1.0 - melt) * uBrainReady;
    #ifdef PHONE
-   // Phones draw only half of the surface layers: each star carries a little more light.
+   // Phones draw fewer stars: each one carries a little more light.
    thoughtLight *= 1.25;
    #endif
 
    vLight = mix(heroLight, thoughtLight, uBridgeMode);
-   vLight *= depthCue * nearFade;
+   vLight *= mix(depthCue * nearFade, 1.0, uBridgeMode);
 
    vec3 starColor = vec3(0.78, 0.85, 1.0);
    vec3 heroColor = mix(mix(aColor, starColor, release), vec3(0.94, 0.97, 1.0), projectMix);
@@ -328,8 +306,23 @@ const fragmentShader = `
  }
 `;
 
+// Draw only depth first: the nearest anatomical surface hides the far side.
+// A small depth allowance keeps neighbouring samples of the same fold visible.
+const brainDepthFragmentShader = `
+ precision highp float;
+ varying float vSpriteCrop;
+ void main() {
+   vec2 uv = (gl_PointCoord - 0.5) * vSpriteCrop;
+   // Occlude only the visible star core; a wide invisible disc would erase
+   // neighbouring fine particles and turn the texture into broken streaks.
+   if (dot(uv, uv) > 0.007225) discard;
+   gl_FragDepth = min(1.0, gl_FragCoord.z + 0.00012);
+   gl_FragColor = vec4(0.0);
+ }
+`;
+
 export type ParticleFrame = {
-  /** The method's timeline: 0.775 loose stars → 0.815 villa → 1 construction video. */
+  /** The method's timeline, from loose stars through the villa to the video. */
   progress: number;
   /** Share of the hero scrolled away (0 → 1): the GM rises and opens. */
   hero: number;
@@ -386,8 +379,9 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       return (seed - 1) / 2147483646;
     };
 
-    const count = phone.matches ? MOBILE_COUNT : BRAIN_COUNT;
-    const layer = phone.matches ? MOBILE_LAYER : BASE_COUNT;
+    const phoneDensity = phone.matches;
+    const count = phoneDensity ? MOBILE_COUNT : BRAIN_COUNT;
+    const layer = phoneDensity ? MOBILE_LAYER : BASE_COUNT;
     const positions: number[] = [];
     const origins: number[] = [];
     const colors: number[] = [];
@@ -399,7 +393,6 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
     const buildings: number[] = [];
     const buildingKinds: number[] = [];
     const glyphs: number[] = [];
-    const brainVolume = buildBrainVolume(brainPoints, random);
     const projectParticles = buildBlueprintParticles(BASE_COUNT, random);
 
     for (let i = 0; i < count; i++) {
@@ -428,35 +421,10 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       const size = bright > 0.993 ? 58 : bright > 0.94 ? 28 : 7 + random() * 10;
       const light = 0.32 + random() * 0.4;
       styles.push(size, light, random() * Math.PI * 2, 0);
-      const reference = brainPoints[i % layer];
-      if (i < layer) {
-        // Reference star on the solid's front face; w keeps its original depth.
-        const [z, nx, ny, nz] = brainVolume.front.subarray(i * 4, i * 4 + 4);
-        brains.push(reference[0], reference[1], z);
-        brainNormals.push(nx, ny, nz, reference[2]);
-        brainStyles.push(0, reference[3]);
-      } else if (i < layer * 2) {
-        // Rim of the solid (top, bottom, poles), revealed by rotation.
-        const k = (i - layer) * 7;
-        const [x, y, z, shade, nx, ny, nz] = brainVolume.rim.subarray(k, k + 7);
-        brains.push(x, y, z);
-        brainNormals.push(nx, ny, nz, z);
-        brainStyles.push(2, shade);
-      } else if (i < layer * 3) {
-        // Far hemisphere, carrying the same reference drawing.
-        const j = i - layer * 2;
-        const [z, nx, ny, nz] = brainVolume.far.subarray(j * 4, j * 4 + 4);
-        brains.push(reference[0], reference[1], z);
-        brainNormals.push(nx, ny, nz, z);
-        brainStyles.push(2, reference[3]);
-      } else {
-        // Continuous inner surface, including the dark folds.
-        const k = (i - layer * 3) * 7;
-        const [x, y, z, shade, nx, ny, nz] = brainVolume.fill.subarray(k, k + 7);
-        brains.push(x, y, z);
-        brainNormals.push(nx, ny, nz, z);
-        brainStyles.push(3, shade);
-      }
+      // Filled from the local, precomputed sculpture before the bridge enters.
+      brains.push(0, 0, 0);
+      brainNormals.push(0, 0, 1);
+      brainStyles.push(0);
     }
 
     const geometry = new BufferGeometry();
@@ -466,8 +434,8 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       ['aColor', colors, 3],
       ['aStyle', styles, 4],
       ['aBrain', brains, 3],
-      ['aBrainNormal', brainNormals, 4],
-      ['aBrainStyle', brainStyles, 2],
+      ['aBrainNormal', brainNormals, 3],
+      ['aBrainShade', brainStyles, 1],
       ['aPlan', plans, 4],
       ['aBuilding', buildings, 4],
       ['aArchitecture', buildingKinds, 2],
@@ -521,6 +489,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
         uBrainTurn: { value: 0 },
         uBrainCenter: { value: new Vector2() },
         uBrainScale: { value: 1 },
+        uBrainReady: { value: 0 },
         uVideoReady: { value: 0 },
         uCamDist: { value: 2 },
         uSpringField: { value: springTexture },
@@ -534,8 +503,70 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
 
     const field = new Points(geometry, material);
     field.frustumCulled = false;
+    const brainDepthMaterial = new ShaderMaterial({
+      defines: material.defines,
+      uniforms: material.uniforms,
+      vertexShader,
+      fragmentShader: brainDepthFragmentShader,
+      colorWrite: false,
+      depthWrite: true,
+      depthTest: true,
+    });
+    const brainDepth = new Points(geometry, brainDepthMaterial);
+    brainDepth.frustumCulled = false;
+    galaxy.add(brainDepth);
     galaxy.add(field);
     renderer.compile(scene, camera);
+    brainDepth.visible = false;
+
+    const brainAbort = new AbortController();
+    const position = geometry.getAttribute('aBrain') as Float32BufferAttribute;
+    const normal = geometry.getAttribute('aBrainNormal') as Float32BufferAttribute;
+    const shade = geometry.getAttribute('aBrainShade') as Float32BufferAttribute;
+    const brainPositions = position.array as Float32Array;
+    const brainNormalData = normal.array as Float32Array;
+    const brainShadeData = shade.array as Float32Array;
+    const revealBrain = () => {
+      if (brainAbort.signal.aborted) return;
+      position.needsUpdate = true;
+      normal.needsUpdate = true;
+      shade.needsUpdate = true;
+      material.uniforms.uBrainReady.value = 1;
+    };
+    let brainStarted = false;
+    const brainWatcher = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) startBrain();
+    }, { rootMargin: '300% 0px' });
+    const startBrain = async () => {
+      if (brainStarted) return;
+      brainStarted = true;
+      brainWatcher.disconnect();
+      for (const cache of ['force-cache', 'reload'] as const) {
+        try {
+          const response = await fetch('/brain-sculpture.bin', { signal: brainAbort.signal, cache });
+          if (!response.ok) throw new Error(`Brain stars: ${response.status}`);
+          const buffer = await response.arrayBuffer();
+          if (brainAbort.signal.aborted) return;
+          const dense = decodeBrainSculpture(buffer, phoneDensity);
+          if (brainAbort.signal.aborted) return;
+          brainPositions.set(dense.positions);
+          brainNormalData.set(dense.normals);
+          brainShadeData.set(dense.shades);
+          const style = geometry.getAttribute('aStyle') as Float32BufferAttribute;
+          for (let i = 0; i < count; i++) style.array[i * 4 + 3] = dense.weights[i];
+          style.needsUpdate = true;
+          revealBrain();
+          return;
+        } catch {
+          if (brainAbort.signal.aborted) return;
+        }
+      }
+      // Keep the surrounding scene usable if the local asset is unavailable.
+      console.warn('The brain model could not be loaded.');
+    };
+    const brainSection = document.querySelector('.gm-bridge');
+    if (brainSection) brainWatcher.observe(brainSection);
+    else startBrain();
 
     let frame = 0;
     let time = 0;
@@ -769,6 +800,8 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       material.uniforms.uHero.value = state.bridgeMode ? 1 : state.hero;
       material.uniforms.uBridge.value = state.bridge;
       material.uniforms.uBridgeMode.value = state.bridgeMode ? 1 : 0;
+      brainDepth.visible = state.bridgeMode;
+      material.depthTest = state.bridgeMode;
       // One full revolution every 18 seconds; it pauses while the visitor drags,
       // and starts again from the resting view each time the scene returns.
       if (media.matches || !state.bridgeMode) {
@@ -1055,6 +1088,8 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
     frame = requestAnimationFrame(render);
 
     return () => {
+      brainAbort.abort();
+      brainWatcher.disconnect();
       cancelAnimationFrame(frame);
       unwatch();
       visibility.disconnect();
@@ -1070,6 +1105,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       renderer.domElement.removeEventListener('webglcontextlost', contextLost);
       geometry.dispose();
       material.dispose();
+      brainDepthMaterial.dispose();
       springTexture.dispose();
       renderer.dispose();
       renderer.domElement.remove();
