@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "count": 196608,
+  "mobileCount": 98304,
+  "sourceSha256": "04e60b7ab500901735f7cb0db0be06a6197ef7b09548e007b6a4edf5cd795a9e",
+  "sha256": "d5598f4fd973c445cc5d33c17c9f5eba05d33dd6a41a9397ed9f4bab1b765cef",
+  "geometry": "Original positions and local barycentric interpolation; no silhouette deformation",
+  "material": "Constant star size and intensity; progressive blue-noise surface coverage",
+  "maxDistanceToSourceSample": 0.012749707886308583,
+  "bounds": [
+    [
+      -0.35909056229495684,
+      -0.33141069657434963,
+      -0.28120851453421836
+    ],
+    [
+      0.3597619592584116,
+      0.33131914244296934,
+      0.28163576714732597
+    ]
+  ],
+  "attribution": {
+    "source": "BodyParts3D v4.0, DBCLS, via Brain Atlas",
+    "url": "https://github.com/ssrpw2/brain-atlas",
+    "revision": "c20c30e9c4628b9d129ecf061ff8cce99f358490",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "changes": "Local anatomical surface resampling with uniform particle spacing and intensity."
+  }
+}
