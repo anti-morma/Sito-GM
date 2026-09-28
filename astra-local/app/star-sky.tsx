@@ -83,11 +83,12 @@ const fragmentShader = `
   }
 `;
 
-// Same density as the story sky had (astra-field.tsx), +10%.
+// Same density as the story sky had (astra-field.tsx), +10%, then +23%, then +15%.
+const SKY_DENSITY = 1.23 * 1.15;
 const starCount = (width: number, height: number, mobile = false) =>
   mobile
-    ? Math.round(Math.min(260, Math.max(180, (width * height) / 1800)))
-    : Math.round(Math.min(1800, Math.max(480, (width * height) / 700)) * 0.847);
+    ? Math.round(Math.min(260, Math.max(180, (width * height) / 1800)) * SKY_DENSITY)
+    : Math.round(Math.min(1800, Math.max(480, (width * height) / 700)) * 0.847 * SKY_DENSITY);
 const MAX_STARS = starCount(1e5, 1e5);
 
 /**

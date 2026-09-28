@@ -11,6 +11,7 @@ import {
   FloatType,
   Group,
   NearestFilter,
+  NormalBlending,
   PerspectiveCamera,
   Points,
   RGBAFormat,
@@ -26,6 +27,7 @@ import { BRAIN_COUNT, BRAIN_MOBILE_COUNT, decodeBrainSculpture, decodeBrainSurfa
 import { springStep } from './gesture-spring';
 import { phonePixelRatio, reportFrame, watchPixelRatio } from './pixel-ratio';
 import { LOGO_MARK_SHARE } from './gm-constellation';
+import { GM_RELEASE_END } from './method-timeline';
 
 const ANIMATION_SPEED = 1.25;
 // The background stars live in the site-wide sky (star-sky.tsx).
@@ -90,6 +92,11 @@ const vertexShader = `
  uniform float uBrainTurn;
  uniform vec2 uBrainCenter;
  uniform float uBrainScale;
+ // Brain star size: 1 on desktop; on phones it follows the smaller brain, so
+ // the surface texture keeps the desktop's proportions.
+ uniform float uBrainStarSize;
+ // The brain's exposure, measured from its size on screen (see resize).
+ uniform float uBrainLight;
  uniform float uBrainReady;
  uniform float uVideoReady;
  uniform float uCamDist;
@@ -100,6 +107,7 @@ const vertexShader = `
  varying float vStar;
  varying float vSparkle;
  varying float vSpriteCrop;
+ varying float vBrainSprite;
  void main() {
    float motion = 1.0 - uReduced;
    float scrolled = max(uHero, uBridgeMode);
@@ -111,7 +119,7 @@ const vertexShader = `
    // The GM rises with the page and opens into a loose cloud; its stars, joined
    // by the rest of the field, then draw the villa of the method.
    float isGlyph = step(-0.5, aGlyph);
-   float release = smoothstep(0.04, 0.5, uHero);
+   float release = smoothstep(0.04, ${GM_RELEASE_END.toFixed(3)}, uHero);
    vec3 logo = position * uLogoScale;
    logo.xy += uHeroOffset;
    logo.y += uHero * 0.8 * motion;
@@ -220,10 +228,10 @@ const vertexShader = `
    float renderedSize = mix(aSize, looseSize, release);
    renderedSize = mix(renderedSize, 6.5, projectMix);
    // The reference's fine Gaussian stars vary with its original image shade.
-   #ifdef PHONE
-   renderedSize = mix(renderedSize, 14.0, uBridgeMode);
-   #else
-   renderedSize = mix(renderedSize, 7.5 + aBrainShade * 6.5, uBridgeMode);
+   renderedSize = mix(renderedSize, (7.5 + aBrainShade * 6.5) * uBrainStarSize, uBridgeMode);
+   #ifdef BRAIN_DEPTH
+   // Occlusion coverage must not shrink with a faint star's material.
+   renderedSize = mix(renderedSize, 14.0 * uBrainStarSize, uBridgeMode);
    #endif
    gl_PointSize = clamp(
      renderedSize * uDpr * uPixelScale * depth * (1.0 + influence * 0.12),
@@ -253,41 +261,26 @@ const vertexShader = `
    heroLight = mix(heroLight, blueprintLight, projectMix);
    heroLight *= 1.0 - smoothstep(0.84, 0.865, uScroll) * uVideoReady;
 
-   // Binary back-face culling, as on a solid surface: opacity never eases
-   // with the turn angle. Visible stars all retain exactly the same light.
+   // Depth resolves the visible surface without back-face cuts.
    vec3 surfaceNormal = normalize(mat3(modelViewMatrix) * brainRotation * aBrainNormal);
-   float surfaceVisible = step(0.0, dot(surfaceNormal, normalize(-mv.xyz)));
-   float thoughtLight = 1.10;
-   #ifndef PHONE
-   thoughtLight = (0.08 + aBrainShade * aBrainShade * 1.4) * 1.10;
+   float thoughtLight = 0.26 + aBrainShade * aBrainShade * 3.0;
+   #ifndef BRAIN_DEPTH
    thoughtLight *= aSurfaceStar;
-   // The reference keeps a bright contour as it turns. Glancing cells also
-   // trace fold edges, while the softer front-facing cells retain the texture.
-   float facing = clamp(dot(surfaceNormal, normalize(-mv.xyz)), 0.0, 1.0);
-   thoughtLight *= 0.92 + 0.20 * max(dot(surfaceNormal, normalize(vec3(-0.35, 0.65, 0.68))), 0.0);
-   thoughtLight *= 1.0 + 0.55 * pow(1.0 - facing, 2.4);
+   // Surface points overlap more when a fold turns edge-on. Compensate that
+   // projected density so it does not become a white etched line. This is a
+   // continuous coverage correction, with no hemisphere switch or rim light.
+   float projectedArea = abs(dot(surfaceNormal, normalize(-mv.xyz)));
+   thoughtLight *= 0.35 + 0.65 * projectedArea;
    #endif
-   thoughtLight *= clamp(pow(uBrainScale / 1.18, 0.8), 0.30, 1.0);
-   thoughtLight *= surfaceVisible * gather * (1.0 - melt) * uBrainReady;
-   #ifdef PHONE
-   // Phones draw fewer stars: each one carries a little more light.
-   thoughtLight *= 1.25;
-   #endif
+   thoughtLight *= uBrainLight;
+   thoughtLight *= gather * (1.0 - melt) * uBrainReady;
 
    vLight = mix(heroLight, thoughtLight, uBridgeMode);
-   #ifdef PHONE
    vLight *= mix(depthCue * nearFade, 1.0, uBridgeMode);
-   #else
-   vLight *= depthCue * nearFade;
-   #endif
 
    vec3 starColor = vec3(0.78, 0.85, 1.0);
    vec3 heroColor = mix(mix(aColor, starColor, release), vec3(0.94, 0.97, 1.0), projectMix);
-   #ifdef PHONE
-   vColor = mix(heroColor, vec3(0.88, 0.93, 1.0), uBridgeMode);
-   #else
    vColor = mix(heroColor, aColor, uBridgeMode);
-   #endif
 
    // Loose stars glow with a halo.
    vStar = release * 0.85 * (1.0 - uBridgeMode);
@@ -297,6 +290,7 @@ const vertexShader = `
    // Compact dots (the GM, the brain) have no broad halo. Trim only transparent
    // sprite margins and remap UVs, preserving their pixel size, light and position.
    vSpriteCrop = (vStar == 0.0 && vSparkle == 0.0) ? 0.6 : 1.0;
+   vBrainSprite = uBridgeMode;
    gl_PointSize *= vSpriteCrop;
    if (vLight <= 0.0) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
  }
@@ -309,13 +303,15 @@ const fragmentShader = `
  varying float vStar;
  varying float vSparkle;
  varying float vSpriteCrop;
+ varying float vBrainSprite;
 
  void main() {
    vec2 uv = (gl_PointCoord - 0.5) * vSpriteCrop;
    float r2 = dot(uv, uv);
    if (vSpriteCrop < 1.0) {
-     float core = exp(-r2 * 850.0);
-     float alpha = (core + exp(-r2 * 200.0) * 0.25) * vLight;
+     float core = exp(-r2 * mix(850.0, 480.0, vBrainSprite));
+     float alpha = (core + exp(-r2 * mix(200.0, 115.0, vBrainSprite))
+       * mix(0.25, 0.30, vBrainSprite)) * vLight;
      if (alpha < 0.0003) discard;
      gl_FragColor = vec4(mix(vColor, vec3(1.0), core * 0.6), alpha);
      return;
@@ -333,24 +329,19 @@ const fragmentShader = `
  }
 `;
 
-// Draw only depth first: the nearest anatomical surface hides the far side.
+// The nearest anatomical surface hides the far side and supplies a dark base.
 // A small depth allowance keeps neighbouring samples of the same fold visible.
 const brainDepthFragmentShader = `
  precision highp float;
  varying float vSpriteCrop;
  void main() {
    vec2 uv = (gl_PointCoord - 0.5) * vSpriteCrop;
-   #ifdef PHONE
-   if (dot(uv, uv) > 0.007225) discard;
-   gl_FragDepth = min(1.0, gl_FragCoord.z + 0.00012);
-   #else
    // Cover gaps between front stars, but leave enough depth allowance for
    // neighbouring cells of the same gyrus. Rear folds remain hidden.
    if (dot(uv, uv) > 0.0196) discard;
-   gl_FragDepth = min(1.0, gl_FragCoord.z + 0.0015);
-   #endif
+   gl_FragDepth = min(1.0, gl_FragCoord.z + 0.0008);
    // A near-black front surface blocks the sky behind the cell cloud.
-   gl_FragColor = vec4(0.004, 0.008, 0.018, 1.0);
+   gl_FragColor = vec4(0.009, 0.016, 0.037, 1.0);
  }
 `;
 
@@ -522,6 +513,8 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
         uBrainTurn: { value: 0 },
         uBrainCenter: { value: new Vector2() },
         uBrainScale: { value: 1 },
+        uBrainStarSize: { value: 1 },
+        uBrainLight: { value: 1 },
         uBrainReady: { value: 0 },
         uVideoReady: { value: 0 },
         uCamDist: { value: 2 },
@@ -537,11 +530,10 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
     const field = new Points(geometry, material);
     field.frustumCulled = false;
     const brainDepthMaterial = new ShaderMaterial({
-      defines: material.defines,
+      defines: { ...material.defines, BRAIN_DEPTH: 1 },
       uniforms: material.uniforms,
       vertexShader,
       fragmentShader: brainDepthFragmentShader,
-      colorWrite: !phoneDensity,
       depthWrite: true,
       depthTest: true,
     });
@@ -583,20 +575,19 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
           if (brainAbort.signal.aborted) return;
           brainPositions.set(dense.positions);
           brainNormalData.set(dense.normals);
-          if (!phoneDensity) {
-            const texture = await fetch('/brain-surface.bin?v=7', { signal: brainAbort.signal, cache });
-            if (!texture.ok) throw new Error(`Brain surface: ${texture.status}`);
-            const surface = decodeBrainSurface(await texture.arrayBuffer());
-            if (brainAbort.signal.aborted) return;
-            const style = geometry.getAttribute('aStyle') as Float32BufferAttribute;
-            for (let i = 0; i < count; i++) {
-              // Five reference material layers use the unchanged anatomical
-              // surface: near, rim, far, and two soft inner fills.
-              style.array[i * 4 + 3] = i < BRAIN_SURFACE_STARS ? 1 : 0;
-              shade.array[i] = surface[i] / 255;
-            }
-            style.needsUpdate = true;
+          // The same surface material on every screen; phones use its first
+          // half, itself evenly spread across the whole surface.
+          const texture = await fetch('/brain-surface.bin?v=9', { signal: brainAbort.signal, cache });
+          if (!texture.ok) throw new Error(`Brain surface: ${texture.status}`);
+          const surface = decodeBrainSurface(await texture.arrayBuffer());
+          if (brainAbort.signal.aborted) return;
+          const style = geometry.getAttribute('aStyle') as Float32BufferAttribute;
+          for (let i = 0; i < count; i++) {
+            // A continuous material covers the unchanged anatomical surface.
+            style.array[i * 4 + 3] = i < BRAIN_SURFACE_STARS ? 1 : 0;
+            shade.array[i] = surface[i] / 255;
           }
+          style.needsUpdate = true;
           revealBrain();
           return;
         } catch {
@@ -789,6 +780,21 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
         0.65,
         Math.min(1.3, height / 720),
       );
+      // Phones: the brain is about half its desktop size. Its stars shrink with
+      // it, and it keeps the exposure of a desktop brain (scale 0.9 on a
+      // 1280×800 screen), so the surface texture reads as it does there.
+      const brainScale = material.uniforms.uBrainScale.value as number;
+      const exposure = (value: number) => Math.min(1, Math.max(0.3, (value / 1.18) ** 0.8));
+      if (phoneDensity) {
+        // Star size relative to the brain, against that desktop reference.
+        const onScreen = ((brainScale * height) / (0.9 * 800))
+          * ((800 / 720) / material.uniforms.uPixelScale.value);
+        material.uniforms.uBrainStarSize.value = Math.min(1, Math.max(0.4, onScreen));
+        material.uniforms.uBrainLight.value = exposure(0.9);
+      } else {
+        material.uniforms.uBrainStarSize.value = 1;
+        material.uniforms.uBrainLight.value = exposure(brainScale);
+      }
     };
 
     window.addEventListener('resize', resize);
@@ -842,8 +848,9 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       material.uniforms.uHero.value = state.bridgeMode ? 1 : state.hero;
       material.uniforms.uBridge.value = state.bridge;
       material.uniforms.uBridgeMode.value = state.bridgeMode ? 1 : 0;
-        brainDepth.visible = state.bridgeMode;
-        material.depthTest = state.bridgeMode;
+      brainDepth.visible = state.bridgeMode;
+      material.depthTest = state.bridgeMode;
+      material.blending = state.bridgeMode ? NormalBlending : AdditiveBlending;
       // One full revolution every 18 seconds; it pauses while the visitor drags,
       // and starts again from the resting view each time the scene returns.
       if (media.matches || !state.bridgeMode) {
@@ -889,7 +896,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       galaxy.rotation.y *= 1 - videoSettle;
       galaxy.rotation.z *= 1 - videoSettle;
       // Rotate the monogram around its own centre, not around the page centre.
-      const heroWeight = 1 - Math.min(1, state.hero / 0.5);
+      const heroWeight = 1 - Math.min(1, state.hero / GM_RELEASE_END);
       const logoCenter = material.uniforms.uHeroOffset.value as Vector2;
       const brainCenter = material.uniforms.uBrainCenter.value as Vector2;
       if (state.bridgeMode) pivot.set(brainCenter.x, brainCenter.y, 0);

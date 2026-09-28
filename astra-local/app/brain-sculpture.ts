@@ -7,7 +7,7 @@ export function decodeBrainSurface(buffer: ArrayBuffer) {
   const view = new DataView(buffer);
   if (buffer.byteLength !== 16 + BRAIN_COUNT
     || view.getUint32(0, false) !== 0x474d5346
-    || view.getUint32(4, true) !== 7
+    || view.getUint32(4, true) !== 9
     || view.getUint32(8, true) !== BRAIN_COUNT
     || view.getUint32(12, true) !== 1) throw new Error('Invalid brain surface texture');
   return new Uint8Array(buffer, 16);
