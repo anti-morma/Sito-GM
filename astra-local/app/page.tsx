@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import Bridge from './bridge';
-import ContactForm from './contact-form';
+import ContactForm from './_contact/form';
 import { PHONE_OPENING_QUERY } from './gm-constellation';
 import GoMoreMobileIntro from './gomore-mobile-intro';
 import Hero from './hero';

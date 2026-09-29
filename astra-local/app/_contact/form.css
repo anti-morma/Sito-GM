@@ -1,0 +1,91 @@
+/* gm-modulo-contatti · file del sito: modificalo liberamente, installa.mjs non lo sovrascrive.
+   Il form di GoMore: campi a filo, linea d'accento al focus, pulsante gm-btn. */
+
+.cf-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px clamp(20px, 3vw, 44px); }
+.cf-field { position: relative; display: flex; flex-direction: column; }
+.cf-field--wide { grid-column: 1 / -1; }
+
+.cf-field label { color: var(--ink-2); font-size: 14px; font-weight: 500; letter-spacing: 0.02em; transition: color 0.3s var(--ease); }
+.cf-field label small { color: var(--ink-3); font-size: inherit; font-weight: 400; }
+
+.cf-field input,
+.cf-field textarea {
+  width: 100%;
+  min-height: 60px;
+  margin: 0;
+  padding: 12px 0 14px;
+  border: 0;
+  border-bottom: 1px solid var(--line-2);
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: clamp(19px, 1.5vw, 23px);
+  line-height: 1.35;
+  transition: border-color 0.3s var(--ease);
+  appearance: none;
+}
+.cf-field textarea { min-height: 140px; resize: vertical; }
+.cf-field input:-webkit-autofill { -webkit-text-fill-color: var(--ink); transition: background-color 9999s ease-out; }
+
+.cf-field-line {
+  position: relative;
+  display: block;
+  height: 2px;
+  margin-top: -1.5px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s var(--ease), background-color 0.3s var(--ease);
+}
+
+.cf-field-error { min-height: 30px; padding-top: 8px; color: var(--error); font-size: 14px; line-height: 1.4; }
+
+.cf-field:hover :is(input, textarea) { border-color: rgb(243 241 236 / 45%); }
+.cf-field:focus-within label { color: var(--ink); }
+.cf-field:focus-within .cf-field-line { transform: scaleX(1); }
+.cf-field[data-filled] :is(input, textarea) { border-color: rgb(243 241 236 / 40%); }
+.cf-field[data-error] label { color: var(--error); }
+.cf-field[data-error] :is(input, textarea) { border-color: color-mix(in srgb, var(--error) 70%, transparent); }
+.cf-field[data-error] .cf-field-line { background: var(--error); }
+.cf-field :is(input, textarea):focus-visible { outline: none; }
+
+.cf-honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+.cf-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: 12px; }
+.cf-submit { min-width: 260px; }
+.cf-submit:disabled { cursor: progress; opacity: 0.9; }
+.cf-submit-arrow { display: inline-block; transition: transform 0.35s var(--ease); }
+.cf-submit:hover .cf-submit-arrow { transform: translateX(4px); }
+.cf-note { color: var(--ink-3); font-size: 14px; }
+.cf-note a { color: var(--ink-2); text-underline-offset: 4px; }
+
+.cf-submit-dots { display: inline-flex; gap: 4px; margin-left: -6px; }
+.cf-submit-dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: gm-dot 1.2s ease-in-out infinite; }
+.cf-submit-dots i:nth-child(2) { animation-delay: 0.15s; }
+.cf-submit-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes gm-dot {
+  0%, 60%, 100% { opacity: 0.25; transform: none; }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+.cf-status { flex-basis: 100%; color: var(--error); font-size: 15px; line-height: 1.5; }
+.cf-status:empty { display: none; }
+
+.cf-sent { padding-top: 8px; outline: none; animation: gm-rise 0.9s var(--ease) both; }
+.cf-sent-title { color: var(--ink); font-size: clamp(34px, 3.4vw, 56px); font-weight: 500; letter-spacing: -0.03em; }
+.cf-sent-title::before { content: ''; display: inline-block; width: 12px; height: 12px; margin-right: 16px; border-radius: 50%; background: var(--accent); vertical-align: middle; }
+.cf-sent-text { margin-top: 18px; color: var(--ink-2); font-size: 18px; line-height: 1.6; white-space: pre-line; }
+
+@media (max-width: 760px) {
+  .cf-form { grid-template-columns: 1fr; }
+  .cf-field input { font-size: 20px; }
+  .cf-submit { width: 100%; min-width: 0; }
+  .cf-note { width: 100%; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-sent { animation: none; }
+  .cf-submit-dots i { animation-duration: 2.4s; }
+}

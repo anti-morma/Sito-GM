@@ -11,13 +11,13 @@ export const metadata: Metadata = {
 export default function Cookie() {
   const o = owner();
   return (
-    <LegalPage title="Cookie Policy" updated="24 settembre 2026">
+    <LegalPage title="Cookie Policy" updated="29 settembre 2026">
       <p><strong>In breve: questo sito non usa cookie.</strong> Non installa cookie di profilazione, di analisi o di terze parti e non utilizza tecnologie simili (come local storage o pixel di tracciamento). Per questo non ti chiediamo alcun consenso e non mostriamo un banner.</p>
 
       <h2>Cosa abbiamo verificato</h2>
       <ul>
         <li>I caratteri tipografici, le immagini e i video sono ospitati direttamente sul nostro sito: nessuna richiesta a Google Fonts, YouTube o servizi simili.</li>
-        <li>Non sono presenti strumenti di statistica (ad esempio Google Analytics), mappe incorporate, pulsanti social o pubblicità.</li>
+        <li>Per le statistiche usiamo Vercel Web Analytics, che conta le visite in forma aggregata e anonima senza cookie e senza salvare informazioni sul tuo dispositivo (dettagli nella <Link href="/privacy">Privacy Policy</Link>). Non sono presenti Google Analytics, mappe incorporate, pulsanti social o pubblicità.</li>
         <li>Il modulo di contatto invia i dati direttamente al nostro server, senza cookie.</li>
       </ul>
 

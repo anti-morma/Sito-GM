@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Analytics } from '@vercel/analytics/next';
 import localFont from 'next/font/local';
 import { site } from './content';
 import StarSky from './star-sky';
@@ -83,6 +84,8 @@ export default function RootLayout({
         <StarSky />
         {children}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+        {/* Vercel Web Analytics: anonymous, aggregated visits, no cookies (see the privacy policy). */}
+        <Analytics />
       </body>
     </html>
   );
