@@ -51,7 +51,10 @@ if (typeof document !== 'undefined') {
   matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', elect);
 }
 
-export default function ProjectPreview({ src, name }: { src: string; name: string }) {
+/** `only` fixes the recording whatever the screen (case studies): the phone
+ *  version, or the desktop one. By default phones get theirs. */
+export default function ProjectPreview({ src, name, only }: { src: string; name: string; only?: 'phone' | 'wide' }) {
+  const phone = only === 'phone';
   const ref = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -65,7 +68,7 @@ export default function ProjectPreview({ src, name }: { src: string; name: strin
       if (loaded || !motionAllowed()) return;
       loaded = true;
       // Phones get the real mobile homepage, cropped to the square preview frame.
-      const variant = matchMedia(MOBILE).matches
+      const variant = phone || (!only && matchMedia(MOBILE).matches)
         ? 'm-720'
         : video.clientWidth * Math.min(devicePixelRatio || 1, 2) > 900 ? '1280' : '720';
       for (const [type, ext] of [['video/webm; codecs=vp9', 'webm'], ['video/mp4', 'mp4']]) {
@@ -107,13 +110,13 @@ export default function ProjectPreview({ src, name }: { src: string; name: strin
       if (active === entry) { active = null; clearTimeout(timer); timer = 0; }
       video.pause();
     };
-  }, [src]);
+  }, [src, phone, only]);
 
   return (
     <>
       <picture className="gm-project-poster">
-        <source media={MOBILE} srcSet={`${src}-m-poster.jpg`} />
-        <img src={`${src}-poster.jpg`} alt={`Homepage di ${name}`} loading="lazy" decoding="async" />
+        {!only && <source media={MOBILE} srcSet={`${src}-m-poster.jpg`} />}
+        <img src={`${src}-${phone ? 'm-' : ''}poster.jpg`} alt={`Homepage di ${name}${phone ? ' su telefono' : ''}`} loading="lazy" decoding="async" />
       </picture>
       <video
         ref={ref}

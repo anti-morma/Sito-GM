@@ -4,14 +4,25 @@ import { useEffect, useState } from 'react';
 
 // How long the visitor must stay still before the cue comes back.
 const IDLE_MS = 1100;
+// The stars of the trail, top to bottom.
+const STARS = 9;
+// Phones: a chevron of seven stars, its tip at the bottom (px from its centre),
+// joined by a faint line like a constellation.
+const CHEVRON: [number, number][] = [[-21, -8], [-14, -3], [-7, 2], [0, 7], [7, 2], [14, -3], [21, -8]];
+const CHEVRON_LINE = CHEVRON.map(([x, y]) => `${x + 24},${y + 10}`).join(' ');
 
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
- * One scroll cue for the whole page, always centred at the bottom.
- * At the top it invites exploration; afterwards it steps aside while the
- * visitor scrolls and returns whenever they pause, until the contact section.
- * It is a real control: it jumps to the next stop ([data-scroll-stop]).
+ * The scroll cue: a trail of stars down the right edge of the screen, with a
+ * shooting star that keeps falling along it and lights each star it passes.
+ * It says "scroll" without covering the page: bright at the opening, quiet
+ * while the visitor scrolls, back as soon as they pause, gone at the form.
+ * Phones get another shape (a thin edge is lost there): two chevrons of stars
+ * at the bottom centre that light up downwards, with "Scorri" at the opening.
+ * On phones it stays where scrolling moves a scene (the opening, the method,
+ * the idea), not over the sections people read. It is a real control: it
+ * jumps to the next stop ([data-scroll-stop]).
  */
 export default function ScrollCue() {
   const [atTop, setAtTop] = useState(true);
@@ -28,9 +39,6 @@ export default function ScrollCue() {
       setAtTop(scrollY < 8);
       const contact = document.getElementById('contatti');
       setEnded(!!contact && contact.getBoundingClientRect().top < innerHeight * 0.72);
-      // Phones: over the sections people read, the cue would cover their text.
-      // It stays in the hero and in the pinned scenes, where scrolling moves
-      // the scene rather than the page and a hint to keep going helps.
       const scene = [...document.querySelectorAll<HTMLElement>('.gm-hero, .gm-method-story, .gm-bridge')].some((section) => {
         const box = section.getBoundingClientRect();
         return box.top <= innerHeight * 0.1 && box.bottom >= innerHeight * 0.9;
@@ -68,24 +76,38 @@ export default function ScrollCue() {
     scrollTo({ top, behavior: reducedMotion() ? 'auto' : 'smooth' });
   };
 
-  const visible = !ended && !menuOpen && !overText && (atTop || !scrolling);
-  const label = atTop ? 'Scorri per esplorare' : 'Continua a scorrere';
+  const hidden = ended || menuOpen || overText;
+  const state = hidden ? 'hidden' : scrolling && !atTop ? 'quiet' : 'invite';
 
   return (
     <button
       type="button"
-      className="gm-cue"
+      className="gm-rail"
       data-mode={atTop ? 'hero' : 'compact'}
-      data-visible={visible}
-      inert={!visible}
+      data-state={state}
+      inert={hidden}
       onClick={next}
-      aria-label={`${label}: vai alla sezione successiva`}
+      aria-label="Scorri: vai alla sezione successiva"
     >
-      {/* Phones: a single word, a hint rather than a second call to action. */}
-      <span className="gm-cue-label">
-        {atTop ? <><span className="gm-cue-label-long">{label}</span><span className="gm-cue-label-short">Esplora</span></> : label}
+      <span className="gm-rail-label" aria-hidden="true">Scorri</span>
+      <span className="gm-rail-line" aria-hidden="true">
+        {Array.from({ length: STARS }, (_, index) => (
+          <i key={index} style={{ '--i': index / (STARS - 1) } as React.CSSProperties} />
+        ))}
+        <b className="gm-rail-comet" />
       </span>
-      <span className="gm-cue-track" aria-hidden="true"><i /></span>
+      <span className="gm-rail-end" aria-hidden="true" />
+      {/* Phones: two chevrons drawn with stars at the bottom of the screen,
+          lighting up one after the other, downwards. */}
+      <span className="gm-rail-chevrons" aria-hidden="true">
+        {[0, 1].map((row) => (
+          <span key={row} className="gm-rail-chevron" style={{ '--row': row } as React.CSSProperties}>
+            <svg viewBox="0 0 48 20" width="48" height="20"><polyline points={CHEVRON_LINE} /></svg>
+            {CHEVRON.map(([x, y], index) => <i key={index} style={{ '--x': `${x}px`, '--y': `${y}px` } as React.CSSProperties} />)}
+          </span>
+        ))}
+      </span>
+      <span className="gm-rail-word" aria-hidden="true">Scorri</span>
     </button>
   );
 }

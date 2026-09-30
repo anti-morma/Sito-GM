@@ -1,27 +1,21 @@
-import { Vector3 } from 'three';
-import referencePoints from './blueprint-points.json';
-
-export type BlueprintParticle = {
-  plan: Vector3;
-  built: Vector3;
-  shade: number;
-  phase: number;
-  kind: number;
-  draw: number;
-};
-
-/** White line samples from the supplied video's first frame, in its exact 16:9 plane.
- * Regenerate from the local video with scripts/sample-blueprint.py.
+/** White line samples from the construction video's first frame, in its exact
+ * 16:9 plane: x, z, shade and drawing order for each star of the villa.
+ * They live in public/blueprint-points.bin (header 'GMBP', version, count, then
+ * four int16 per star, value × 32767) and are fetched beside the page's code:
+ * a phone no longer parses a megabyte of numbers before its first frame.
  * Keeping the drawing flat until the video arrives prevents a perspective jump.
  */
-export function buildBlueprintParticles(count: number, _random: () => number): BlueprintParticle[] {
-  const total = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
-  return Array.from({ length: total }, (_, index) => {
-    const [x, z, shade, draw] = referencePoints[index % referencePoints.length];
-    return {
-      plan: new Vector3(x, 0, z),
-      built: new Vector3(x, 0, z),
-      shade, draw, phase: 0, kind: 0,
-    };
-  });
+export const BLUEPRINT_URL = '/blueprint-points.bin?v=1';
+
+/** Four values per star: x, z, shade, drawing order. */
+export function decodeBlueprint(buffer: ArrayBuffer) {
+  const view = new DataView(buffer);
+  const count = buffer.byteLength >= 12 ? view.getUint32(8, true) : 0;
+  if (view.getUint32(0, false) !== 0x474d4250 || view.getUint32(4, true) !== 1 || buffer.byteLength !== 12 + count * 8) {
+    throw new Error('Invalid blueprint points');
+  }
+  const values = new Int16Array(buffer, 12, count * 4);
+  const points = new Float32Array(count * 4);
+  for (let i = 0; i < points.length; i++) points[i] = values[i] / 32767;
+  return points;
 }

@@ -106,7 +106,7 @@ export default function MethodStory() {
         <div className="gm-house">
           <div className="gm-house-intro">
             <SectionLabel style={reveal(0)}>Il metodo</SectionLabel>
-            <h2 className="gm-house-title" id="metodo-title" style={reveal(7)}>Come creiamo il vostro sito web</h2>
+            <h2 className="gm-house-title" id="metodo-title" style={reveal(7)}>Come creiamo il tuo sito web</h2>
             <p className="gm-house-lead" style={reveal(15)}>Come una casa: prima le fondamenta, poi la struttura, la forma e i dettagli.</p>
           </div>
           <div className="gm-phases" style={{ '--in': phasesIn } as React.CSSProperties}>

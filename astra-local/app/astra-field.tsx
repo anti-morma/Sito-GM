@@ -3,11 +3,11 @@
 import { useEffect, useRef, type RefObject } from 'react';
 import {
   AdditiveBlending,
+  BufferAttribute,
   BufferGeometry,
   ClampToEdgeWrapping,
   DataTexture,
   DynamicDrawUsage,
-  Float32BufferAttribute,
   FloatType,
   Group,
   NearestFilter,
@@ -22,10 +22,10 @@ import {
   WebGLRenderer,
 } from 'three';
 import logoPoints from './gm-points.json';
-import { buildBlueprintParticles } from './blueprint-geometry';
+import { BLUEPRINT_URL, decodeBlueprint } from './blueprint-geometry';
 import { BRAIN_COUNT, BRAIN_MOBILE_COUNT, decodeBrainSculpture, decodeBrainSurface } from './brain-sculpture';
 import { springStep } from './gesture-spring';
-import { phonePixelRatio, reportFrame, watchPixelRatio } from './pixel-ratio';
+import { modestDevice, phonePixelRatio, reportFrame, watchPixelRatio } from './pixel-ratio';
 import { LOGO_MARK_SHARE } from './gm-constellation';
 import { GM_RELEASE_END } from './method-timeline';
 
@@ -39,6 +39,10 @@ const BRAIN_SURFACE_STARS = 163840;
 // Phones draw fewer stars across the same complete 3D surface.
 const MOBILE_LAYER = BASE_COUNT / 2;
 const MOBILE_COUNT = BRAIN_MOBILE_COUNT;
+// Modest phones (pixel-ratio.ts): two thirds of those, each a little larger,
+// so the brain keeps its surface with a third less work.
+const MODEST_COUNT = (BRAIN_MOBILE_COUNT * 2) / 3;
+const MODEST_STAR = 1.2;
 // Its drawing spans about this much, in scene units at scale 1.
 const BRAIN_WIDTH = 0.74;
 const BRAIN_HEIGHT = 0.76;
@@ -99,6 +103,8 @@ const vertexShader = `
  uniform float uBrainLight;
  uniform float uBrainReady;
  uniform float uVideoReady;
+ // The villa's points arrive apart from the code (blueprint-geometry.ts).
+ uniform float uPlanReady;
  uniform float uCamDist;
  uniform sampler2D uSpringField;
  uniform vec2 uFieldSize;
@@ -141,7 +147,7 @@ const vertexShader = `
    // Layered relief while drawing; flattens before the video so the crossfade stays exact.
    plan.z = aOrigin.z * 0.12 * (1.0 - smoothstep(0.815, 0.845, uScroll));
    // Each group of stars joins the progressive drawing in turn.
-   float assemble = smoothstep(0.775 + aDrawOrder * 0.037, 0.797 + aDrawOrder * 0.037, uScroll);
+   float assemble = smoothstep(0.775 + aDrawOrder * 0.037, 0.797 + aDrawOrder * 0.037, uScroll) * uPlanReady;
    target = mix(target, plan, assemble);
 
    // ---------- The idea, before the form ----------
@@ -404,51 +410,53 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
     };
 
     const phoneDensity = phone.matches;
-    const count = phoneDensity ? MOBILE_COUNT : BRAIN_COUNT;
+    const modest = phoneDensity && modestDevice();
+    const count = phoneDensity ? (modest ? MODEST_COUNT : MOBILE_COUNT) : BRAIN_COUNT;
     const layer = phoneDensity ? MOBILE_LAYER : BASE_COUNT;
-    const positions: number[] = [];
-    const origins: number[] = [];
-    const colors: number[] = [];
-    const styles: number[] = [];
-    const brains: number[] = [];
-    const brainNormals: number[] = [];
-    const brainShades: number[] = [];
-    const plans: number[] = [];
-    const buildings: number[] = [];
-    const buildingKinds: number[] = [];
-    const glyphs: number[] = [];
-    const projectParticles = buildBlueprintParticles(BASE_COUNT, random);
+    // Typed arrays filled in place: no intermediate lists, no copies. On a
+    // mid-range phone this was most of the page's start-up work.
+    const positions = new Float32Array(count * 3);
+    const origins = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const styles = new Float32Array(count * 4);
+    const brains = new Float32Array(count * 3);
+    const brainNormals = new Float32Array(count * 3);
+    const brainShades = new Float32Array(count);
+    // Filled when the villa's points arrive (plan: x, 0, z, phase; building:
+    // x, 0, z, shade; architecture: kind, drawing order).
+    const plans = new Float32Array(count * 4);
+    const buildings = new Float32Array(count * 4);
+    const buildingKinds = new Float32Array(count * 2);
+    const glyphs = new Float32Array(count);
+    const tints = [[0.94, 0.95, 1], [0.64, 0.82, 1], [1, 0.8, 0.59]];
 
     for (let i = 0; i < count; i++) {
-      const project = projectParticles[i % BASE_COUNT];
-      plans.push(project.plan.x, project.plan.y, project.plan.z, project.phase);
-      buildings.push(project.built.x, project.built.y, project.built.z, project.shade);
-      buildingKinds.push(project.kind, project.draw);
       const point = logoPoints[i % logoPoints.length];
       const glyph = i < logoPoints.length;
       // Monogram stars sit exactly on the sampled letters (see scripts/sample-gm.mjs).
       // An irregular edge: most monogram stars stay close to the outline, a few stray further.
       const roll = random();
       const scatter = glyph ? 0.0075 * (1 + 3 * roll ** 3) : roll < 0.20 ? 0.075 : 0.022;
-      positions.push(
-        point[0] + (random() - 0.5) * scatter,
-        point[1] + (random() - 0.5) * scatter,
-        // Shallow depth: perspective would otherwise smear the off-centre letters.
-        (random() - 0.5) * (glyph ? 0.03 : 0.16),
-      );
-      glyphs.push(glyph ? point[2] : -1);
-      origins.push((random() - 0.5) * 1.7, (random() - 0.5) * 1.3, (random() - 0.5) * 1.35);
+      positions[i * 3] = point[0] + (random() - 0.5) * scatter;
+      positions[i * 3 + 1] = point[1] + (random() - 0.5) * scatter;
+      // Shallow depth: perspective would otherwise smear the off-centre letters.
+      positions[i * 3 + 2] = (random() - 0.5) * (glyph ? 0.03 : 0.16);
+      glyphs[i] = glyph ? point[2] : -1;
+      origins[i * 3] = (random() - 0.5) * 1.7;
+      origins[i * 3 + 1] = (random() - 0.5) * 1.3;
+      origins[i * 3 + 2] = (random() - 0.5) * 1.35;
 
       const heat = random();
-      colors.push(...(heat < 0.65 ? [0.94, 0.95, 1] : heat < 0.85 ? [0.64, 0.82, 1] : [1, 0.8, 0.59]));
+      colors.set(tints[heat < 0.65 ? 0 : heat < 0.85 ? 1 : 2], i * 3);
       const bright = random();
       const size = bright > 0.993 ? 58 : bright > 0.94 ? 28 : 7 + random() * 10;
       const light = 0.32 + random() * 0.4;
-      styles.push(size, light, random() * Math.PI * 2, phoneDensity || i < BRAIN_SURFACE_STARS ? 1 : 0);
+      styles[i * 4] = size;
+      styles[i * 4 + 1] = light;
+      styles[i * 4 + 2] = random() * Math.PI * 2;
+      styles[i * 4 + 3] = phoneDensity || i < BRAIN_SURFACE_STARS ? 1 : 0;
       // Filled from the local, precomputed sculpture before the bridge enters.
-      brains.push(0, 0, 0);
-      brainNormals.push(0, 0, 1);
-      brainShades.push(0);
+      brainNormals[i * 3 + 2] = 1;
     }
 
     const geometry = new BufferGeometry();
@@ -464,13 +472,13 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       ['aBuilding', buildings, 4],
       ['aArchitecture', buildingKinds, 2],
       ['aGlyph', glyphs, 1],
-    ] as [string, number[], number][]) {
-      geometry.setAttribute(name, new Float32BufferAttribute(array, size));
+    ] as [string, Float32Array, number][]) {
+      geometry.setAttribute(name, new BufferAttribute(array, size));
     }
 
     const offsets = new Float32Array((positions.length / 3) * 2);
     const velocities = new Float32Array(logoPoints.length * 2);
-    const offsetAttribute = new Float32BufferAttribute(offsets, 2);
+    const offsetAttribute = new BufferAttribute(offsets, 2);
     offsetAttribute.setUsage(DynamicDrawUsage);
     geometry.setAttribute('aOffset', offsetAttribute);
 
@@ -517,6 +525,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
         uBrainLight: { value: 1 },
         uBrainReady: { value: 0 },
         uVideoReady: { value: 0 },
+        uPlanReady: { value: 0 },
         uCamDist: { value: 2 },
         uSpringField: { value: springTexture },
         uFieldSize: { value: new Vector2(fieldWidth, fieldHeight) },
@@ -545,11 +554,28 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
     brainDepth.visible = false;
 
     const brainAbort = new AbortController();
-    const position = geometry.getAttribute('aBrain') as Float32BufferAttribute;
-    const normal = geometry.getAttribute('aBrainNormal') as Float32BufferAttribute;
-    const shade = geometry.getAttribute('aBrainShade') as Float32BufferAttribute;
-    const brainPositions = position.array as Float32Array;
-    const brainNormalData = normal.array as Float32Array;
+    const position = geometry.getAttribute('aBrain') as BufferAttribute;
+    const normal = geometry.getAttribute('aBrainNormal') as BufferAttribute;
+    const shade = geometry.getAttribute('aBrainShade') as BufferAttribute;
+
+    // The villa's drawing: its points arrive beside the code; until then its
+    // stars simply stay loose.
+    fetch(BLUEPRINT_URL, { signal: brainAbort.signal })
+      .then((response) => (response.ok ? response.arrayBuffer() : Promise.reject(new Error(`Blueprint: ${response.status}`))))
+      .then((buffer) => {
+        const points = decodeBlueprint(buffer);
+        const total = points.length / 4;
+        for (let i = 0; i < count; i++) {
+          const j = (i % total) * 4;
+          plans[i * 4] = buildings[i * 4] = points[j];
+          plans[i * 4 + 2] = buildings[i * 4 + 2] = points[j + 1];
+          buildings[i * 4 + 3] = points[j + 2];
+          buildingKinds[i * 2 + 1] = points[j + 3];
+        }
+        for (const name of ['aPlan', 'aBuilding', 'aArchitecture']) geometry.getAttribute(name).needsUpdate = true;
+        material.uniforms.uPlanReady.value = 1;
+      })
+      .catch(() => { if (!brainAbort.signal.aborted) console.warn('The villa drawing could not be loaded.'); });
     const revealBrain = () => {
       if (brainAbort.signal.aborted) return;
       position.needsUpdate = true;
@@ -571,21 +597,21 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
           if (!response.ok) throw new Error(`Brain stars: ${response.status}`);
           const buffer = await response.arrayBuffer();
           if (brainAbort.signal.aborted) return;
-          const dense = decodeBrainSculpture(buffer, phoneDensity);
+          const dense = decodeBrainSculpture(buffer, count);
           if (brainAbort.signal.aborted) return;
-          brainPositions.set(dense.positions);
-          brainNormalData.set(dense.normals);
+          brains.set(dense.positions);
+          brainNormals.set(dense.normals);
           // The same surface material on every screen; phones use its first
           // half, itself evenly spread across the whole surface.
           const texture = await fetch('/brain-surface.bin?v=9', { signal: brainAbort.signal, cache });
           if (!texture.ok) throw new Error(`Brain surface: ${texture.status}`);
           const surface = decodeBrainSurface(await texture.arrayBuffer());
           if (brainAbort.signal.aborted) return;
-          const style = geometry.getAttribute('aStyle') as Float32BufferAttribute;
+          const style = geometry.getAttribute('aStyle') as BufferAttribute;
           for (let i = 0; i < count; i++) {
             // A continuous material covers the unchanged anatomical surface.
-            style.array[i * 4 + 3] = i < BRAIN_SURFACE_STARS ? 1 : 0;
-            shade.array[i] = surface[i] / 255;
+            styles[i * 4 + 3] = i < BRAIN_SURFACE_STARS ? 1 : 0;
+            brainShades[i] = surface[i] / 255;
           }
           style.needsUpdate = true;
           revealBrain();
@@ -789,7 +815,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
         // Star size relative to the brain, against that desktop reference.
         const onScreen = ((brainScale * height) / (0.9 * 800))
           * ((800 / 720) / material.uniforms.uPixelScale.value);
-        material.uniforms.uBrainStarSize.value = Math.min(1, Math.max(0.4, onScreen));
+        material.uniforms.uBrainStarSize.value = Math.min(1, Math.max(0.4, onScreen)) * (modest ? MODEST_STAR : 1);
         material.uniforms.uBrainLight.value = exposure(0.9);
       } else {
         material.uniforms.uBrainStarSize.value = 1;

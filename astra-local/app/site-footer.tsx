@@ -20,7 +20,7 @@ export default function SiteFooter({ cta = true }: { cta?: boolean }) {
           {/* The studio and its legal details. */}
           <div className="gm-footer-studio">
             <p className="gm-footer-brand">{site.name}</p>
-            <p>Studio digitale indipendente · Italia</p>
+            <p>Studio digitale indipendente · {site.city ? `${site.city}, Italia` : 'Italia'}</p>
             {legal.length > 0 && (
               <p className="gm-footer-legal">
                 {legal.map((item) => <span key={item.key}><DetailText item={item} /></span>)}

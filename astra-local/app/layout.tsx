@@ -2,58 +2,33 @@ import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import localFont from 'next/font/local';
 import { site } from './content';
+import { openGraphBase, siteDescription, siteSummary } from './seo';
 import StarSky from './star-sky';
 import './globals.css';
-
-const description = 'GoMore è uno studio digitale indipendente: progettiamo e sviluppiamo siti web su misura, dalla strategia al design, dallo sviluppo al 3D, perché il tuo progetto venga percepito per ciò che vale.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: { default: 'GoMore — Siti web su misura e design digitale', template: '%s — GoMore' },
-  description,
-  alternates: { canonical: '/' },
+  description: siteDescription,
+  applicationName: site.name,
+  authors: [{ name: site.name, url: site.url }],
+  creator: site.name,
+  publisher: site.name,
+  category: 'Web design',
+  // Numbers in the copy are not phone numbers unless they are links.
+  formatDetection: { telephone: false, address: false, email: false },
   openGraph: {
-    type: 'website',
-    locale: 'it_IT',
-    url: '/',
-    siteName: site.name,
+    ...openGraphBase,
     title: 'GoMore — Diamo forma a ciò che ti rende unico',
-    description,
+    description: siteSummary,
   },
-  twitter: { card: 'summary_large_image', title: 'GoMore — Diamo forma a ciò che ti rende unico', description },
-  robots: { index: true, follow: true },
+  twitter: { card: 'summary_large_image', title: 'GoMore — Diamo forma a ciò che ti rende unico', description: siteSummary },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 } },
 };
 
 export const viewport: Viewport = {
   themeColor: '#050606',
   colorScheme: 'dark',
-};
-
-const structuredData = {
-  '@context': 'https://schema.org',
-  '@graph': [
-    {
-      '@type': 'Organization',
-      '@id': `${site.url}/#organization`,
-      name: site.name,
-      url: site.url,
-      logo: `${site.url}/icon.png`,
-      description,
-      ...(site.email ? { email: site.email } : {}),
-      ...(site.phone ? { telephone: site.phone } : {}),
-      ...(site.address ? { address: site.address } : {}),
-      ...(site.legalName ? { legalName: site.legalName } : {}),
-      ...(site.vat ? { vatID: site.vat } : {}),
-    },
-    {
-      '@type': 'WebSite',
-      '@id': `${site.url}/#website`,
-      url: site.url,
-      name: site.name,
-      inLanguage: 'it-IT',
-      publisher: { '@id': `${site.url}/#organization` },
-    },
-  ],
 };
 
 // Hero typography: a clean contemporary sans against a sharp display italic
@@ -83,7 +58,6 @@ export default function RootLayout({
         {/* Moving stars behind every page and section. */}
         <StarSky />
         {children}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
         {/* Vercel Web Analytics: anonymous, aggregated visits, no cookies (see the privacy policy). */}
         <Analytics />
       </body>

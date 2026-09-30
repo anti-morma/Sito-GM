@@ -17,20 +17,45 @@ export default function ConstructionVideo({ progress, onReady }: { progress: num
   // The whole file in memory before scrubbing starts, so a jump never waits
   // for the network (on a slow connection the frame would otherwise freeze
   // while that part downloads). Until then the stars' drawing stands in.
+  // The download waits for the page to be ready and for the visitor to start
+  // scrolling (or a few quiet seconds): whoever only reads the opening never
+  // pays for the film, and the first screen never competes with it. With
+  // "save data" on, the stars' drawing is the whole method.
   useEffect(() => {
     const file = innerWidth <= 760 ? FILES.phone : FILES.wide;
+    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+    if (saveData) return;
     let url = '';
     let cancelled = false;
-    fetch(file)
-      .then((response) => (response.ok ? response.blob() : Promise.reject(new Error(`${response.status}`))))
-      .then((blob) => {
-        if (cancelled) return;
-        url = URL.createObjectURL(blob);
-        setSrc(url);
-      })
-      .catch(() => { if (!cancelled) setSrc(file); });
+    let started = false;
+    let timer = 0;
+    const start = () => {
+      if (started || cancelled) return;
+      started = true;
+      removeEventListener('scroll', start);
+      clearTimeout(timer);
+      fetch(file)
+        .then((response) => (response.ok ? response.blob() : Promise.reject(new Error(`${response.status}`))))
+        .then((blob) => {
+          if (cancelled) return;
+          url = URL.createObjectURL(blob);
+          setSrc(url);
+        })
+        .catch(() => { if (!cancelled) setSrc(file); });
+    };
+    const whenLoaded = () => {
+      // Already past the opening (a reload mid-page, a link to a section): now.
+      if (scrollY > innerHeight * 0.25) return start();
+      addEventListener('scroll', start, { passive: true, once: true });
+      timer = window.setTimeout(start, 3500);
+    };
+    if (document.readyState === 'complete') whenLoaded();
+    else addEventListener('load', whenLoaded, { once: true });
     return () => {
       cancelled = true;
+      clearTimeout(timer);
+      removeEventListener('load', whenLoaded);
+      removeEventListener('scroll', start);
       if (url) URL.revokeObjectURL(url);
     };
   }, []);
@@ -77,10 +102,10 @@ export default function ConstructionVideo({ progress, onReady }: { progress: num
     <video
       ref={ref}
       src={src ?? undefined}
-      poster="/video/blueprint-poster.jpg"
+      poster={src ? '/video/blueprint-poster.jpg' : undefined}
       muted
       playsInline
-      preload="auto"
+      preload={src ? 'auto' : 'none'}
       disablePictureInPicture
       disableRemotePlayback
       aria-hidden="true"

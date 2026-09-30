@@ -9,9 +9,9 @@
   --bg-raised: #0b0c0d;
   --ink: #f3f1ec;
   --ink-2: #c4c3bd;
-  --ink-3: #8e8f89;
+  --ink-3: #9a9b95;
   --warm: #e0d8c1;
-  --line: rgb(243 241 236 / 10%);
+  --line: rgb(243 241 236 / 12%);
   --line-2: rgb(243 241 236 / 22%);
   --accent: #8fb1ff;
   --accent-hover: #b4caff;
@@ -236,7 +236,7 @@ em { font-style: normal; }
   width: 60px;
   height: 44px;
   margin-left: -8px;
-  background: url('/gm-logo.png') center / 176% auto no-repeat;
+  background: url('/gm-logo.webp') center / 176% auto no-repeat;
 }
 
 .gm-header-cta { justify-self: end; }
@@ -549,6 +549,7 @@ em { font-style: normal; }
 .gm-hero { position: relative; height: 100svh; min-height: 520px; overflow: clip; }
 .gm-method-story { position: relative; }
 .gm-particle-journey { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+/* Stellar nebulae are rendered by the shared sky, behind every scene. */
 .gm-particle-journey .starfield { width: 100%; height: 100%; }
 .gm-particle-journey .starfield-gesture { pointer-events: auto; }
 @media (pointer: coarse) {
@@ -572,7 +573,7 @@ em { font-style: normal; }
 .starfield-gesture { position: absolute; z-index: 1; transform: translate(-50%, -50%); touch-action: none; cursor: grab; user-select: none; }
 .starfield-gesture[data-dragging='true'] { cursor: grabbing; }
 .webgl-error { display: none; }
-.starfield[data-failed='true'] { background: var(--bg) url('/gm-logo.png') 78% 50% / min(44vw, 520px) auto no-repeat; }
+.starfield[data-failed='true'] { background: var(--bg) url('/gm-logo.webp') 78% 50% / min(44vw, 520px) auto no-repeat; }
 
 /* ---------- Hero ---------- */
 .gm-hero-copy {
@@ -643,62 +644,245 @@ em { font-style: normal; }
 
 .gm-hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: clamp(28px, 4.4vh, 44px); }
 
-.gm-hero-copy > * { animation: gm-rise 1.1s var(--ease) both; }
-.gm-hero-copy > .gm-hero-eyebrow { animation-delay: 0.5s; }
-.gm-hero-copy > .gm-hero-title { animation-delay: 0.65s; }
-.gm-hero-copy > .gm-hero-description { animation-delay: 0.9s; }
-.gm-hero-copy > .gm-hero-actions { animation-delay: 1.05s; }
+.gm-hero-copy > * { animation: gm-hero-rise 1s var(--ease) both; }
+.gm-hero-copy > .gm-hero-eyebrow { animation-delay: 0.1s; }
+.gm-hero-copy > .gm-hero-title { animation-delay: 0.18s; }
+.gm-hero-copy > .gm-hero-description { animation-delay: 0.34s; }
+.gm-hero-copy > .gm-hero-actions { animation-delay: 0.46s; }
 
 @keyframes gm-rise {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
 }
+/* The hero's words start all but invisible rather than at zero: the browser
+   then counts them as painted from the first frame (the page's Largest
+   Contentful Paint), instead of treating the headline as absent. */
+@keyframes gm-hero-rise {
+  from { opacity: 0.01; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
 @keyframes gm-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gm-peek-shine {
+  0% { background-position: 120% 0; }
+  40%, 100% { background-position: -20% 0; }
+}
 
-/* ---------- Scroll cue: one for the whole page, centred, unmistakable ----------
-   A falling star runs down a short track towards a chevron. At the top of the
-   page it is large and labelled; afterwards it becomes a small pill that steps
-   aside while the visitor scrolls and returns as soon as they pause. */
-.gm-cue {
-  --track: 52px;
+/* ---------- Scroll cue: a trail of stars down the right edge ----------
+   (scroll-cue.tsx) A dotted route, like the ascent in the header, with nine
+   small stars on it; a shooting star keeps falling along it and lights each
+   star as it passes, towards a small chevron. Bright at the opening, quiet
+   while the visitor scrolls, back when they pause. */
+.gm-rail {
+  --rail: clamp(150px, 28vh, 260px);
+  --fall: 2.8s;
   position: fixed;
   z-index: 40;
-  left: 50%;
-  bottom: max(clamp(18px, 3.4vh, 34px), env(safe-area-inset-bottom));
+  top: 50%;
+  right: max(6px, calc(var(--gutter) * 0.3 - 18px));
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 10px 18px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ink);
-  transform: translateX(-50%);
-  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease), visibility 0s linear 0s,
-    background-color 0.4s var(--ease), border-color 0.4s var(--ease);
+  gap: 14px;
+  width: 44px;
+  padding: 14px 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  transform: translateY(-50%);
+  transition: opacity 0.6s var(--ease), visibility 0s linear 0s;
   touch-action: manipulation;
 }
-/* Entrance on the children, after the GM has formed. */
-.gm-cue[data-mode='hero'] > * { animation: gm-fade-in 1s var(--ease) 1.4s both; }
-.gm-cue[data-visible='false'] {
+.gm-rail[data-mode='compact'] { --rail: clamp(110px, 18vh, 170px); }
+.gm-rail[data-state='quiet'] { opacity: 0.3; }
+.gm-rail[data-state='hidden'] {
   opacity: 0;
-  transform: translate(-50%, 14px);
   visibility: hidden;
-  transition: opacity 0.35s var(--ease), transform 0.35s var(--ease), visibility 0s linear 0.35s;
+  transition: opacity 0.4s var(--ease), visibility 0s linear 0.4s;
 }
+/* Entrance, after the opening has settled. At the opening it speaks up. */
+.gm-rail[data-mode='hero'] > * { animation: gm-fade-in 1.2s var(--ease) 1.1s both; }
+.gm-rail[data-mode='hero'] { color: var(--ink); }
 
-.gm-cue-label {
-  font-size: 14px;
+.gm-rail-label {
+  font-size: 10.5px;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.32em;
   line-height: 1;
   text-transform: uppercase;
-  white-space: nowrap;
-  text-shadow: 0 0 18px var(--bg), 0 0 6px var(--bg);
+  writing-mode: vertical-rl;
+  text-shadow: 0 0 12px var(--bg);
   transition: color 0.3s var(--ease);
 }
 
+.gm-rail-line {
+  position: relative;
+  width: 9px;
+  height: var(--rail);
+  /* The route: fine dots, as under the section names. */
+  background: repeating-linear-gradient(to bottom, rgb(243 241 236 / 30%) 0 1px, transparent 1px 6px) center / 1px 100% no-repeat;
+  -webkit-mask: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+  mask: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+}
+/* Its stars: lit in turn by the falling one. */
+.gm-rail-line i {
+  position: absolute;
+  top: calc(var(--i) * 100%);
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0.45;
+  animation: gm-rail-lit var(--fall) linear infinite;
+  animation-delay: calc(var(--i) * var(--fall) * 0.72 + 0.1s);
+}
+.gm-rail-line i:nth-child(3n + 2) { width: 2px; height: 2px; margin: -1px 0 0 -1px; }
+.gm-rail-line i:nth-child(4n + 1) { box-shadow: 0 0 4px rgb(143 177 255 / 60%); }
+/* The shooting star and its tail. */
+.gm-rail-comet {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 7px 2px rgb(143 177 255 / 95%), 0 0 20px 6px rgb(143 177 255 / 40%);
+  animation: gm-rail-fall var(--fall) cubic-bezier(0.45, 0, 0.35, 1) infinite;
+}
+.gm-rail-comet::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 1px;
+  height: 34px;
+  background: linear-gradient(rgb(143 177 255 / 0%), rgb(143 177 255 / 90%));
+  transform: translateX(-50%);
+}
+/* The chevron the trail leads to. */
+.gm-rail-end {
+  width: 8px;
+  height: 8px;
+  margin-top: -6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+.gm-rail[data-state='quiet'] .gm-rail-comet { opacity: 0; animation-play-state: paused; }
+.gm-rail[data-state='quiet'] .gm-rail-line i { animation-play-state: paused; }
+.gm-rail:hover { color: var(--ink); }
+.gm-rail:hover .gm-rail-label { color: var(--accent); }
+.gm-rail:focus-visible { outline-offset: 0; border-radius: 999px; }
+
+@keyframes gm-rail-fall {
+  0% { transform: translateY(-6px); opacity: 0; }
+  12% { opacity: 1; }
+  76% { opacity: 1; }
+  90%, 100% { transform: translateY(var(--rail)); opacity: 0; }
+}
+@keyframes gm-rail-lit {
+  0% { opacity: 1; transform: scale(1.9); filter: drop-shadow(0 0 3px rgb(143 177 255 / 95%)); }
+  18% { opacity: 0.55; transform: scale(1.1); filter: none; }
+  40%, 100% { opacity: 0.45; transform: none; filter: none; }
+}
+
+/* The phones' shape, hidden on wide screens. */
+.gm-rail-chevrons,
+.gm-rail-word { display: none; }
+
+/* Phones: a thin edge is lost on a small screen. At the bottom centre, two
+   chevrons drawn with stars light up one after the other, downwards, over a
+   soft glow; at the opening "Scorri" sits under them. */
+@media (max-width: 760px) {
+  .gm-rail {
+    top: auto;
+    right: auto;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: 50%;
+    gap: 8px;
+    width: 96px;
+    padding: 12px 0 6px;
+    transform: translateX(-50%);
+  }
+  .gm-rail-label,
+  .gm-rail-line,
+  .gm-rail-end { display: none; }
+  .gm-rail-chevrons {
+    position: relative;
+    display: block;
+    width: 56px;
+    height: 42px;
+  }
+  /* The glow the stars rise from. */
+  .gm-rail-chevrons::before {
+    content: '';
+    position: absolute;
+    inset: -14px -22px -10px;
+    background: radial-gradient(closest-side, rgb(143 177 255 / 20%), transparent);
+    animation: gm-chevron-glow 2.4s ease-in-out infinite;
+  }
+  .gm-rail-chevron {
+    position: absolute;
+    top: calc(var(--row) * 17px + 10px);
+    left: 50%;
+    animation: gm-chevron-lit 2.4s var(--ease) infinite;
+    animation-delay: calc(var(--row) * 0.32s);
+  }
+  .gm-rail-chevron svg {
+    position: absolute;
+    top: -10px;
+    left: -24px;
+    overflow: visible;
+    fill: none;
+    stroke: rgb(200 216 255 / 32%);
+    stroke-width: 1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .gm-rail-chevron i {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: 3px;
+    height: 3px;
+    margin: -1.5px 0 0 -1.5px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 5px 1px rgb(143 177 255 / 75%);
+  }
+  /* The tip of each chevron: the brightest star. */
+  .gm-rail-chevron i:nth-of-type(4) { width: 4px; height: 4px; margin: -2px 0 0 -2px; box-shadow: 0 0 7px 2px rgb(143 177 255 / 90%), 0 0 16px 4px rgb(143 177 255 / 30%); }
+  .gm-rail-word {
+    display: block;
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    line-height: 1;
+    text-indent: 0.3em;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px var(--bg);
+  }
+  /* In the scenes: the chevrons alone, a little smaller. */
+  .gm-rail[data-mode='compact'] .gm-rail-word { display: none; }
+  .gm-rail[data-mode='compact'] .gm-rail-chevrons { transform: scale(0.85); }
+  .gm-rail[data-state='quiet'] .gm-rail-chevron { animation-play-state: paused; }
+  .gm-rail[data-state='quiet'] { opacity: 0; }
+}
+@keyframes gm-chevron-lit {
+  0%, 100% { opacity: 0.25; transform: translateY(-2px); }
+  30% { opacity: 1; transform: translateY(2px); }
+  60% { opacity: 0.45; transform: translateY(3px); }
+}
+@keyframes gm-chevron-glow {
+  0%, 100% { opacity: 0.5; }
+  40% { opacity: 1; }
+}
+
+/* The shooting star of the idea's arrow (bridge.tsx): a star falling to a chevron. */
 .gm-cue-track {
   position: relative;
   width: 1px;
@@ -748,48 +932,6 @@ em { font-style: normal; }
   100% { transform: translateY(calc(var(--track) - 6px)); opacity: 0; }
 }
 
-.gm-cue:hover .gm-cue-label { color: var(--accent); }
-.gm-cue:focus-visible { outline-offset: 2px; border-radius: 999px; }
-
-/* After the hero: a compact pill that stays readable over any section. */
-.gm-cue[data-mode='compact'] {
-  --track: 18px;
-  flex-direction: row-reverse;
-  gap: 12px;
-  min-height: 44px;
-  padding: 0 20px 0 18px;
-  border-color: var(--line-2);
-  background: rgb(5 6 8 / 86%);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 8px 30px rgb(0 0 0 / 40%);
-}
-.gm-cue[data-mode='compact'] .gm-cue-label { font-size: 12px; letter-spacing: 0.14em; text-shadow: none; }
-.gm-cue[data-mode='compact'] .gm-cue-track { margin: -4px 0 0; }
-.gm-cue[data-mode='compact'] .gm-cue-track::after { width: 7px; height: 7px; }
-.gm-cue[data-mode='compact'] .gm-cue-track i { width: 4px; height: 4px; margin-left: -2px; animation-delay: 0s; }
-.gm-cue[data-mode='compact'] .gm-cue-track i::before { height: 12px; }
-.gm-cue[data-mode='compact']:hover { border-color: rgb(143 177 255 / 55%); }
-
-/* The one-word label, for phones. */
-.gm-cue-label-short { display: none; }
-
-@media (max-width: 600px) and (orientation: portrait) {
-  /* Phones: the hero cue is a quiet hint in a single row under the copy:
-     one word, finer and dimmer, a shorter fall, a full tap area. */
-  .gm-cue[data-mode='hero'] { --track: 24px; flex-direction: row-reverse; gap: 12px; min-height: 44px; bottom: max(10px, env(safe-area-inset-bottom)); }
-  .gm-cue[data-mode='hero'] .gm-cue-label { color: var(--ink-2); font-size: 11px; font-weight: 400; }
-  .gm-cue-label-long { display: none; }
-  .gm-cue-label-short { display: inline; }
-  .gm-cue[data-mode='hero'] .gm-cue-track { margin: -6px 0 0; }
-  .gm-cue[data-mode='hero'] .gm-cue-track::after { width: 7px; height: 7px; border-color: var(--ink-2); border-width: 0 1px 1px 0; }
-  .gm-cue[data-mode='hero'] .gm-cue-track i { width: 4px; height: 4px; margin-left: -2px; box-shadow: 0 0 5px 1px rgb(143 177 255 / 70%), 0 0 12px 3px rgb(143 177 255 / 22%); }
-  .gm-cue[data-mode='hero'] .gm-cue-track i::before { height: 16px; }
-  .gm-cue[data-mode='compact'] { bottom: max(14px, env(safe-area-inset-bottom)); }
-  /* Over the video and the stars a blur would be redrawn every frame: a
-     slightly deeper background reads the same, for nothing. */
-  .gm-cue[data-mode='compact'] { background: rgb(5 6 8 / 92%); -webkit-backdrop-filter: none; backdrop-filter: none; }
-}
 
 /* Tall screens and tablets in portrait: the GM rises, the copy sits below it. */
 @media (max-aspect-ratio: 21/20) {
@@ -831,11 +973,9 @@ em { font-style: normal; }
   }
 }
 
-/* Short phones: the words take the whole screen and the cue steps aside,
-   in the hero and in the pinned scenes alike. */
+/* Short phones: the words take the whole screen. */
 @media (max-width: 600px) and (orientation: portrait) and (max-height: 600px) {
   .gm-hero { min-height: 0; }
-  .gm-cue { display: none; }
 }
 /* The shortest: the headline and its action. */
 @media (max-width: 600px) and (orientation: portrait) and (max-height: 500px) {
@@ -851,9 +991,8 @@ em { font-style: normal; }
   .gm-hero-title { font-size: clamp(30px, 10.5vh, 44px); }
   .gm-hero-description { display: none; }
   .gm-hero-actions { margin-top: 18px; }
-  .gm-cue[data-mode='hero'] { --track: 24px; flex-direction: row-reverse; gap: 12px; bottom: max(8px, env(safe-area-inset-bottom)); }
-  .gm-cue[data-mode='hero'] .gm-cue-track { margin: -6px 0 0; }
-  .gm-cue[data-mode='hero'] .gm-cue-label { font-size: 11px; }
+  .gm-rail { --rail: 90px; }
+  .gm-rail-label { display: none; }
 }
 
 /* ---------- The idea: from the services to the form ----------
@@ -1189,6 +1328,10 @@ em { font-style: normal; }
 }
 .gm-reveal-ready [data-reveal].is-visible { opacity: 1; transform: none; }
 
+.gm-page { position: relative; }
+/* A lit screen spills its light around it. */
+.gm-project-media { box-shadow: 0 40px 120px -48px rgb(120 155 255 / 34%), 0 0 0 1px rgb(143 177 255 / 6%); }
+
 /* ---------- Services: two offers ---------- */
 .gm-services-head { max-width: 760px; margin-bottom: clamp(48px, 8vh, 88px); }
 .gm-offers {
@@ -1204,7 +1347,7 @@ em { font-style: normal; }
   padding: clamp(28px, 3.4vw, 48px);
   border: 1px solid var(--line-2);
   border-radius: 20px;
-  background: linear-gradient(160deg, rgb(13 31 74 / 38%), rgb(5 6 8 / 55%) 55%);
+  background: linear-gradient(160deg, rgb(22 44 104 / 46%), rgb(9 12 20 / 62%) 58%);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   transition: border-color 0.4s var(--ease), transform 0.45s var(--ease);
@@ -1370,6 +1513,24 @@ em { font-style: normal; }
 /* A studio detail not filled in yet (development only, see studio-details.tsx). */
 .gm-detail-missing { opacity: 0.5; text-decoration: underline dashed; text-underline-offset: 4px; }
 
+/* ---------- Project cards: the case study first, the live site beside it ---------- */
+.gm-project-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; }
+.gm-project-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ink-2);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--line-2);
+  text-underline-offset: 6px;
+  transition: color 0.3s var(--ease), text-decoration-color 0.3s var(--ease);
+}
+.gm-project-live:hover { color: var(--ink); text-decoration-color: var(--accent); }
+.gm-project-live:hover .gm-btn-arrow { transform: translate(2px, -2px); }
+
 /* ---------- Legal pages ---------- */
 .gm-legal-header { display: flex; align-items: center; justify-content: space-between; height: var(--header-h); padding: 0 var(--gutter); }
 .gm-legal { max-width: 860px; padding-block: clamp(64px, 12vh, 128px) clamp(64px, 12vh, 120px); }
@@ -1430,54 +1591,123 @@ em { font-style: normal; }
   .gm-offer .gm-btn { margin-top: 18px; }
   .gm-offer .gm-btn { align-self: stretch; }
 
-  /* Phones: the heading and both offers on one screen, the site on the left
-     and the maintenance on the right. Sizes follow the screen's width and height. */
+  /* Phones: the heading and the offers on one screen. The offers are a deck
+     (offer-deck.tsx): the website in front, its care right behind it, whose
+     edge shows above with its name. A tap there brings it forward. */
   .gm-services {
     display: flex;
     flex-direction: column;
     justify-content: center;
     min-height: 100svh;
-    padding-block: calc(var(--header-h) + clamp(8px, 2svh, 20px)) clamp(16px, 3svh, 32px);
+    padding-block: calc(var(--header-h) + clamp(8px, 2svh, 20px)) clamp(20px, 4svh, 40px);
   }
-  .gm-services-head { margin-bottom: clamp(16px, 3svh, 32px); }
+  .gm-services-head { margin-bottom: clamp(18px, 3svh, 32px); }
   .gm-services-head .gm-label { margin-bottom: clamp(10px, 1.6svh, 18px); }
-  .gm-services-head .gm-h2 { font-size: clamp(26px, min(8.4vw, 4.6svh), 40px); }
-  .gm-services-head .gm-lead { margin-top: clamp(10px, 1.6svh, 18px); font-size: clamp(14px, min(3.9vw, 2.1svh), 17px); line-height: 1.45; }
-  /* The two cards share their rows, so titles, texts and actions line up. */
-  .gm-offers { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(5, auto); gap: 0 clamp(8px, 2.6vw, 14px); }
-  .gm-offer { display: grid; grid-row: span 5; grid-template-rows: subgrid; align-content: start; padding: clamp(14px, 2svh, 20px) clamp(10px, 3.2vw, 16px); border-radius: 14px; }
-  .gm-offer-kicker { gap: 6px; align-items: baseline; font-size: clamp(9px, 2.6vw, 11px); letter-spacing: 0.06em; line-height: 1.35; }
-  .gm-offer h3 { margin-top: clamp(8px, 1.2svh, 12px); font-size: clamp(15px, 4.9vw, 21px); letter-spacing: -0.02em; }
-  .gm-offer-text { margin-top: clamp(6px, 1svh, 10px); font-size: clamp(12px, min(3.6vw, 1.85svh), 15px); line-height: 1.42; }
-  .gm-offer-details { margin: clamp(10px, 1.6svh, 16px) 0 10px; }
-  .gm-offer-toggle { min-height: 40px; padding: 8px 0; font-size: clamp(12px, 3.4vw, 14px); }
-  .gm-offer-toggle svg { flex: none; width: 16px; height: 16px; }
-  .gm-offer-list[data-open='true'] { gap: 8px; margin: 6px 0 12px; }
-  .gm-offer-list li { padding-left: 14px; font-size: clamp(11.5px, 3.2vw, 13px); line-height: 1.35; }
-  .gm-offer-list li::before { left: 0; width: 6px; height: 6px; }
-  /* Both actions line up at the bottom of their cards. */
-  .gm-offer .gm-btn {
-    justify-content: center;
-    min-height: 44px;
-    align-self: end;
-    margin-top: 0;
-    padding: 10px 8px;
-    font-size: clamp(11.5px, 3.2vw, 14px);
-    line-height: 1.2;
-    text-align: center;
-    white-space: normal;
-  }
-  .gm-offer .gm-btn .gm-btn-arrow { display: none; }
-  /* An open list grows only its own card: the other keeps its height. The
-     kicker and title keep their room, so the texts still start level. */
-  .gm-offers:has(.gm-offer-list[data-open='true']) { align-items: start; }
-  .gm-offers:has(.gm-offer-list[data-open='true']) .gm-offer { display: flex; grid-row: 1; }
-  .gm-offers:has(.gm-offer-list[data-open='true']) .gm-offer-kicker { min-height: 4.05em; }
-  .gm-offers:has(.gm-offer-list[data-open='true']) .gm-offer h3 { min-height: 2.1em; }
-  .gm-offers:has(.gm-offer-list[data-open='true']) .gm-offer .gm-btn { align-self: stretch; }
-  /* The shortest phones keep the title and the two offers on screen. */
-  @media (max-height: 600px) {
+  .gm-services-head .gm-h2 { font-size: clamp(28px, min(8.6vw, 4.8svh), 40px); }
+  .gm-services-head .gm-lead { margin-top: clamp(10px, 1.6svh, 18px); font-size: clamp(15px, min(4vw, 2.2svh), 17px); line-height: 1.45; }
+  @media (max-height: 640px) {
     .gm-services-head .gm-lead { display: none; }
+  }
+
+  .gm-offers[data-deck] {
+    --peek: 58px;
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding-top: var(--peek);
+    touch-action: pan-y;
+  }
+  .gm-offers[data-deck] > .gm-offer {
+    grid-area: 1 / 1;
+    padding: clamp(20px, 2.8svh, 26px) 20px clamp(18px, 2.6svh, 22px);
+    border-radius: 18px;
+    /* Opaque: the card behind must not show through. */
+    background: linear-gradient(165deg, #0d1c42 0%, #080b12 56%, #07080b 100%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transform-origin: 50% 0;
+    transition: translate 0.6s var(--ease), scale 0.6s var(--ease), border-color 0.5s var(--ease),
+      box-shadow 0.6s var(--ease), opacity 1s var(--ease), transform 1s var(--ease);
+  }
+  .gm-offers[data-deck] > .gm-offer > * { transition: opacity 0.35s var(--ease) 0.2s; }
+  .gm-offers[data-deck] > [data-place='front'] {
+    z-index: 2;
+    border-color: rgb(143 177 255 / 38%);
+    box-shadow: 0 -14px 30px -18px rgb(0 0 0 / 90%), 0 30px 70px -40px rgb(143 177 255 / 40%);
+  }
+  .gm-offers[data-deck] > [data-place='back'] {
+    z-index: 1;
+    translate: 0 calc(var(--peek) * -1);
+    scale: 0.93;
+    border-color: var(--line-2);
+    box-shadow: none;
+    background: linear-gradient(180deg, #121a2e 0%, #0a0d15 40%);
+  }
+  .gm-offers[data-deck] > [data-place='back'] > * { opacity: 0; transition-delay: 0s; transition-duration: 0.2s; }
+
+  .gm-offer-kicker { font-size: 11px; letter-spacing: 0.1em; }
+  .gm-offers[data-deck] .gm-offer h3 { margin-top: 12px; font-size: clamp(26px, 7.4vw, 32px); }
+  .gm-offers[data-deck] .gm-offer-text { margin-top: 10px; font-size: clamp(15px, min(4.1vw, 2.2svh), 16px); line-height: 1.5; }
+  .gm-offers[data-deck] .gm-offer-details { margin-top: clamp(14px, 2svh, 20px); }
+  .gm-offers[data-deck] .gm-offer .gm-btn { min-height: 50px; margin-top: 4px; }
+
+  /* The edge of the card behind: its number, its name, a quiet invitation. */
+  .gm-deck-peek {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    left: 3.5%;
+    right: 3.5%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: var(--peek);
+    padding: 0 12px 6px 18px;
+    border: 0;
+    border-radius: 16px 16px 0 0;
+    background: transparent;
+    color: var(--ink);
+    text-align: left;
+    touch-action: manipulation;
+  }
+  .gm-deck-peek-number { align-self: flex-start; margin-top: 14px; color: var(--accent); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; }
+  .gm-deck-peek-name { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+  .gm-deck-peek-name strong { overflow: hidden; font-size: 17px; font-weight: 500; letter-spacing: -0.01em; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+  .gm-deck-peek-kicker { color: var(--ink-3); font-size: 10px; font-weight: 500; letter-spacing: 0.12em; line-height: 1.2; text-transform: uppercase; white-space: nowrap; }
+  /* Two small arcs: this card and the one behind trade places. */
+  .gm-deck-peek i {
+    position: relative;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--line-2);
+    border-radius: 50%;
+    transition: border-color 0.3s var(--ease), transform 0.6s var(--ease);
+  }
+  .gm-deck-peek i::before,
+  .gm-deck-peek i::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    border-top: 1.5px solid var(--ink);
+    border-left: 1.5px solid var(--ink);
+  }
+  .gm-deck-peek i::before { top: 8px; transform: translateX(-50%) rotate(45deg); }
+  .gm-deck-peek i::after { bottom: 8px; transform: translateX(-50%) rotate(225deg); }
+  .gm-deck-peek:active i { border-color: var(--accent); transform: rotate(180deg); }
+  /* A soft light runs across the edge now and then: there is more here. */
+  .gm-deck-peek::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 6px;
+    border-radius: inherit;
+    background: linear-gradient(100deg, transparent 30%, rgb(143 177 255 / 12%) 50%, transparent 70%) no-repeat;
+    background-size: 220% 100%;
+    animation: gm-peek-shine 5.5s var(--ease) 2.5s infinite;
+    pointer-events: none;
   }
 
   .gm-projects-head { margin-bottom: clamp(34px, 6svh, 56px); }
@@ -1557,6 +1787,8 @@ em { font-style: normal; }
   .gm-project-category { margin-top: 8px; font-size: 11px; }
   .gm-project-description { margin: 12px 0 18px; font-size: 15px; }
   .gm-project-text .gm-btn { width: auto; min-height: 44px; padding-inline: 20px; font-size: 14px; }
+  .gm-project-actions { justify-content: center; gap: 2px 18px; }
+  .gm-project-live { font-size: 14px; }
 
   .gm-project-arrow {
     position: absolute;
@@ -1610,10 +1842,11 @@ html[data-intro='waiting']::after {
 .gm-opening canvas { display: block; width: 100%; height: 100%; }
 .gm-intro .gm-header { animation: none; }
 .gm-intro .gm-header > :not(.gm-logo),
-.gm-intro .gm-hero-copy > *,
-.gm-intro .gm-cue > * { animation: none; opacity: 0; }
+.gm-intro .gm-rail > * { animation: none; opacity: 0; }
+/* Under the opening's black: painted from the first frame, not yet seen. */
+.gm-intro .gm-hero-copy > * { animation: none; opacity: 0.01; }
 .gm-intro .gm-header > :not(.gm-logo),
-.gm-intro .gm-cue { pointer-events: none; }
+.gm-intro .gm-rail { pointer-events: none; }
 .gm-intro-done .gm-header { animation: none; }
 .gm-intro-done .gm-header > :not(.gm-logo) { animation: gm-fade-in 0.45s var(--ease) both; }
 .gm-intro-done .gm-hero-copy > * { animation-duration: 0.9s; }
@@ -1621,7 +1854,7 @@ html[data-intro='waiting']::after {
 .gm-intro-done .gm-hero-copy > .gm-hero-title { animation-delay: 0.25s; }
 .gm-intro-done .gm-hero-copy > .gm-hero-description { animation-delay: 0.4s; }
 .gm-intro-done .gm-hero-copy > .gm-hero-actions { animation-delay: 0.5s; }
-.gm-intro-done .gm-cue[data-mode='hero'] > * { animation-delay: 0.9s; }
+.gm-intro-done .gm-rail[data-mode='hero'] > * { animation-delay: 0.9s; }
 @media (max-width: 600px) and (orientation: portrait) {
   /* Without WebGL the header logo is the GM: no large one behind the words. */
   .starfield[data-failed='true'] { background-image: none; }
@@ -1631,7 +1864,11 @@ html[data-intro='waiting']::after {
 @media (prefers-reduced-motion: reduce) {
   .gm-hero-copy > *,
   .gm-header,
-  .gm-cue > * { animation: none; }
+  .gm-rail > * { animation: none; }
+  .gm-rail-line i { animation: none; }
+  .gm-rail-comet { animation: none; top: auto; bottom: 0; }
+  .gm-rail-chevron,
+  .gm-rail-chevrons::before { animation: none; opacity: 0.9; }
   .gm-cue-track i { animation: none; top: auto; bottom: 8px; }
   .gm-ascent-star-body { animation: none; }
   .gm-ascent-dust,
@@ -1641,4 +1878,6 @@ html[data-intro='waiting']::after {
   .gm-house-intro > *, .gm-phases { translate: none; }
   .gm-reveal-ready [data-reveal] { transform: none; transition: opacity 0.4s linear; }
   .gm-reveal-ready .gm-offer.is-visible:hover { transform: none; }
+  .gm-deck-peek::after { animation: none; }
+  .gm-offers[data-deck] > .gm-offer { transition-duration: 0.01s; }
 }

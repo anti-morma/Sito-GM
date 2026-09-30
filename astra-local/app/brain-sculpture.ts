@@ -13,7 +13,8 @@ export function decodeBrainSurface(buffer: ArrayBuffer) {
   return new Uint8Array(buffer, 16);
 }
 
-export function decodeBrainSculpture(buffer: ArrayBuffer, phone: boolean) {
+/** The first `count` points: any prefix is itself spread across the whole surface. */
+export function decodeBrainSculpture(buffer: ArrayBuffer, count: number) {
   const view = new DataView(buffer);
   if (buffer.byteLength !== 16 + BRAIN_COUNT * 16
     || view.getUint32(0, false) !== 0x474d4252
@@ -22,7 +23,6 @@ export function decodeBrainSculpture(buffer: ArrayBuffer, phone: boolean) {
     || view.getUint32(12, true) !== 8) {
     throw new Error('Invalid brain sculpture');
   }
-  const count = phone ? BRAIN_MOBILE_COUNT : BRAIN_COUNT;
   const positions = new Float32Array(count * 3);
   const normals = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) {

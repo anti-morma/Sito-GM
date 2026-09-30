@@ -21,6 +21,14 @@ const startingStep = () => {
   return 0;
 };
 
+/** A phone that says it is modest (Chrome: 4 GB of memory or less) or asks to
+ *  save data. Safari says nothing and is never treated as modest. */
+export const modestDevice = () => {
+  if (typeof navigator === 'undefined') return false;
+  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+  return !!nav.connection?.saveData || (nav.deviceMemory !== undefined && nav.deviceMemory <= 4);
+};
+
 let step = startingStep();
 let samples: number[] = [];
 let settleUntil = 0;
