@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import AstraField, { type ParticleFrame } from './astra-field';
+import { nebulaJourney } from './nebula-field';
 import { METHOD_ENTRY, METHOD_TRAVEL, VILLA_DRAWN_HERO, VILLA_START_HERO, methodStoryAt } from './method-timeline';
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
@@ -35,6 +36,7 @@ export default function ParticleJourney() {
     const method = document.querySelector<HTMLElement>('.gm-method-story');
     const bridge = document.querySelector<HTMLElement>('.gm-bridge');
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    nebulaJourney.enabled = true;
     let previousOpacity = -1;
     let previousBridge = -1;
 
@@ -46,12 +48,12 @@ export default function ParticleJourney() {
       state.videoReady = method.dataset.videoReady === 'true';
 
       const bridgeBox = bridge.getBoundingClientRect();
+      const methodBox = method.getBoundingClientRect();
       let opacity: number;
       if (bridgeBox.top >= vh) {
         state.bridgeMode = false;
         state.bridge = 0;
         state.hero = clamp01(-hero.getBoundingClientRect().top / Math.max(1, hero.offsetHeight));
-        const methodBox = method.getBoundingClientRect();
         if (methodBox.top < 0) {
           const stageHeight = method.querySelector<HTMLElement>('.gm-stage')?.offsetHeight ?? vh;
           const travel = Math.max(1, method.offsetHeight - stageHeight);
@@ -84,6 +86,18 @@ export default function ParticleJourney() {
       if (host.current && opacity !== previousOpacity) host.current.style.opacity = String(opacity);
       previousOpacity = opacity;
       state.active = opacity > 0.001;
+      // One reversible journey for the background's own stars. GM opens first;
+      // they gather below the villa, then fill every intervening section before
+      // gathering below the brain. Its exit releases them through the footer.
+      const heroDispersion = smoothStep((state.hero - 0.04) / 0.27)
+        * (1 - smoothStep((state.hero - 0.36) / (VILLA_DRAWN_HERO - 0.36)));
+      const villaExit = smoothStep((vh * 1.15 - methodBox.bottom) / (vh * 0.8));
+      const brainEntry = 1 - smoothStep(state.bridge / 0.3);
+      const brainExit = smoothStep((state.bridge - 0.8) / 0.2);
+      nebulaJourney.dispersion = still ? 0 : state.bridgeMode
+        ? Math.max(brainEntry, brainExit)
+        : Math.max(heroDispersion, villaExit);
+      nebulaJourney.scroll = scrollY / Math.max(1, vh);
     };
 
     // Publish before the renderer's next frame, without a React commit/effect
@@ -103,6 +117,9 @@ export default function ParticleJourney() {
       reduced.removeEventListener('change', update);
       observer.disconnect();
       clearTimeout(timer);
+      nebulaJourney.enabled = false;
+      nebulaJourney.dispersion = 0;
+      nebulaJourney.scroll = 0;
     };
   }, []);
 

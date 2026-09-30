@@ -27,7 +27,8 @@ import { BRAIN_COUNT, BRAIN_MOBILE_COUNT, decodeBrainSculpture, decodeBrainSurfa
 import { springStep } from './gesture-spring';
 import { modestDevice, phonePixelRatio, reportFrame, watchPixelRatio } from './pixel-ratio';
 import { LOGO_MARK_SHARE } from './gm-constellation';
-import { GM_RELEASE_END } from './method-timeline';
+import { GM_RELEASE_END, VILLA_DRAWN_HERO, VILLA_START_HERO } from './method-timeline';
+import { nebulaSubject } from './nebula-field';
 
 const ANIMATION_SPEED = 1.25;
 // The background stars live in the site-wide sky (star-sky.tsx).
@@ -849,6 +850,27 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       const dt = Math.min(0.04, elapsed / 1000);
       last = now;
       const state = frameState.current;
+      // Dim the gas inside the current sculpture, keeping its edges luminous.
+      const logoCenterForSky = material.uniforms.uHeroOffset.value as Vector2;
+      const planCenterForSky = material.uniforms.uPlan.value as Vector2;
+      const brainCenterForSky = material.uniforms.uBrainCenter.value as Vector2;
+      const arrival = Math.max(0, Math.min(1, (state.hero - VILLA_START_HERO) / (VILLA_DRAWN_HERO - VILLA_START_HERO)));
+      const villaMix = arrival * arrival * (3 - 2 * arrival);
+      const compact = material.uniforms.uCompact.value;
+      const villaX = compact ? planCenterForSky.x : -camera.aspect * 0.20;
+      const villaY = compact ? planCenterForSky.y : 0;
+      nebulaSubject.x = state.bridgeMode ? brainCenterForSky.x
+        : logoCenterForSky.x + (villaX - logoCenterForSky.x) * villaMix;
+      nebulaSubject.y = state.bridgeMode ? brainCenterForSky.y
+        : logoCenterForSky.y + (villaY - logoCenterForSky.y) * villaMix;
+      nebulaSubject.radius = state.bridgeMode
+        ? material.uniforms.uBrainScale.value * 0.36
+        : material.uniforms.uLogoScale.value * 0.48 * (1 - villaMix)
+          + camera.aspect * (compact ? material.uniforms.uPlanWidth.value : 0.52) * 0.40 * villaMix;
+      nebulaSubject.strength = state.active
+        ? state.bridgeMode ? Math.min(1, state.bridge / 0.3, (1 - state.bridge) / 0.2)
+          : Math.max(Math.max(0, 1 - state.hero / 0.8), villaMix)
+        : 0;
       scrollRef.current = state.bridgeMode ? METHOD_START : state.progress;
       videoReadyRef.current = state.videoReady;
       if (document.hidden || !onScreen || !state.active) return;
@@ -1181,6 +1203,7 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       geometry.dispose();
       material.dispose();
       brainDepthMaterial.dispose();
+      nebulaSubject.strength = 0;
       springTexture.dispose();
       renderer.dispose();
       renderer.domElement.remove();
