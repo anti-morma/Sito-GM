@@ -82,15 +82,26 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
             </dl>
           </section>
 
-          {/* The site at work, in a browser window. */}
+          {/* The site at work, in a browser window: it plays as soon as it
+              appears, and a click opens the live site. */}
           {project.preview && (
             <section className="gm-case-showcase gm-wrap" aria-label={`Il sito di ${project.name}`}>
-              <div className="gm-case-screen" data-reveal>
-                <div className="gm-case-screen-bar" aria-hidden="true"><i /><i /><i /><span>{host}</span></div>
-                <div className="gm-case-screen-view">
-                  <ProjectPreview src={project.preview} name={project.name} only="wide" />
+              {project.href ? (
+                <a className="gm-case-screen" href={project.href} target="_blank" rel="noopener" aria-label={`Apri il sito di ${project.name} in una nuova scheda`} data-reveal data-cta="sito-cliente" data-project={project.name}>
+                  <div className="gm-case-screen-bar" aria-hidden="true"><i /><i /><i /><span>{host}</span></div>
+                  <div className="gm-case-screen-view">
+                    <ProjectPreview src={project.preview} name={project.name} only="wide" focus={0.05} />
+                    <span className="gm-project-hover" aria-hidden="true">Visita il sito <span>↗</span></span>
+                  </div>
+                </a>
+              ) : (
+                <div className="gm-case-screen" data-reveal>
+                  <div className="gm-case-screen-bar" aria-hidden="true"><i /><i /><i /><span>{host}</span></div>
+                  <div className="gm-case-screen-view">
+                    <ProjectPreview src={project.preview} name={project.name} only="wide" focus={0.05} />
+                  </div>
                 </div>
-              </div>
+              )}
             </section>
           )}
 

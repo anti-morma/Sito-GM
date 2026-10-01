@@ -9,7 +9,7 @@ const FOCUS = 0.6; // share of the preview that must be on screen
 const START_DELAY = 550; // ms between arriving and the site starting to move
 export const MOBILE = '(max-width: 760px)';
 
-type Entry = { video: HTMLVideoElement; ratio: number; load: () => void };
+type Entry = { video: HTMLVideoElement; ratio: number; focus: number; load: () => void };
 const previews = new Set<Entry>();
 let active: Entry | null = null;
 let timer = 0;
@@ -23,7 +23,7 @@ function elect() {
   let next: Entry | null = null;
   if (motionAllowed() && !document.hidden) {
     for (const entry of previews) {
-      if (entry.ratio < FOCUS) continue;
+      if (entry.ratio < entry.focus) continue;
       if (!next || entry.ratio > next.ratio + 0.05 || (entry === active && entry.ratio >= next.ratio - 0.05)) next = entry;
     }
   }
@@ -53,8 +53,10 @@ if (typeof document !== 'undefined') {
 }
 
 /** `only` fixes the recording whatever the screen (case studies): the phone
- *  version, or the desktop one. By default phones get theirs. */
-export default function ProjectPreview({ src, name, only }: { src: string; name: string; only?: 'phone' | 'wide' }) {
+ *  version, or the desktop one. By default phones get theirs. `focus` is the
+ *  share that must be on screen before it plays (a case study's first
+ *  screen plays as soon as it appears). */
+export default function ProjectPreview({ src, name, only, focus = FOCUS }: { src: string; name: string; only?: 'phone' | 'wide'; focus?: number }) {
   const phone = only === 'phone';
   const ref = useRef<HTMLVideoElement>(null);
 
@@ -85,7 +87,7 @@ export default function ProjectPreview({ src, name, only }: { src: string; name:
     // The poster underneath stays until the first frame is actually playing.
     const shown = () => video.classList.add('is-playing');
     video.addEventListener('playing', shown);
-    const entry: Entry = { video, ratio: 0, load };
+    const entry: Entry = { video, ratio: 0, focus, load };
     previews.add(entry);
     // Some hardware decoders reject VP9: fall back to the H.264 file.
     const fallback = () => {
@@ -97,21 +99,21 @@ export default function ProjectPreview({ src, name, only }: { src: string; name:
     };
     video.addEventListener('error', fallback);
 
-    const focus = new IntersectionObserver(([hit]) => {
+    const sight = new IntersectionObserver(([hit]) => {
       entry.ratio = hit.isIntersecting ? hit.intersectionRatio : 0;
       elect();
-    }, { threshold: [0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.9, 1] });
-    focus.observe(video);
+    }, { threshold: [0, 0.05, 0.2, 0.4, 0.6, 0.7, 0.8, 0.9, 1] });
+    sight.observe(video);
 
     return () => {
-      focus.disconnect();
+      sight.disconnect();
       video.removeEventListener('error', fallback);
       video.removeEventListener('playing', shown);
       previews.delete(entry);
       if (active === entry) { active = null; clearTimeout(timer); timer = 0; }
       video.pause();
     };
-  }, [src, phone, only]);
+  }, [src, phone, only, focus]);
 
   return (
     <>

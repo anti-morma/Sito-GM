@@ -1,0 +1,5 @@
+node_modules/
+clienti/
+modello/anteprima-*.png
+modello/report.html
+.DS_Store

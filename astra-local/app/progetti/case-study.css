@@ -107,6 +107,12 @@
   isolation: isolate;
 }
 .gm-case-screen-view { aspect-ratio: 16 / 10; --media-radius: 0px; }
+/* The window is a link to the live site: a lit edge and the label on hover. */
+a.gm-case-screen { display: block; color: inherit; text-decoration: none; transition: border-color 0.4s var(--ease); }
+@media (hover: hover) {
+  a.gm-case-screen:hover { border-color: rgb(143 177 255 / 45%); }
+  a.gm-case-screen:hover .gm-project-hover { opacity: 1; transform: none; }
+}
 
 /* The story: a number and a title, the text beside it. */
 .gm-case-story { display: grid; gap: clamp(56px, 10vh, 112px); padding-block: clamp(80px, 14vh, 168px); }

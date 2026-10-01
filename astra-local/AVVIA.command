@@ -16,7 +16,7 @@ if ! command -v node &> /dev/null; then
 fi
 
 # Se node_modules manca o proviene da Windows (ha file .cmd/.exe), reinstalliamo per Mac
-if [ ! -d "node_modules" ] || [ -f "node_modules/.bin/vite.cmd" ]; then
+if [ ! -d "node_modules" ] || [ -f "node_modules/.bin/next.cmd" ]; then
     echo ""
     echo "Rilevate dipendenze mancanti o create su Windows."
     echo "Installazione dipendenze native per Mac (npm install)..."

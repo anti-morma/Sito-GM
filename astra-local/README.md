@@ -40,7 +40,7 @@ Su macOS usa `AVVIA.command`. Al primo avvio vengono installate le dipendenze.
 - `app/_contact/` e `app/api/contact/route.ts`: form e invio, dal template dello studio (vedi sotto, *Modulo contatti*).
 - `app/fonts/`: Instrument Sans e Instrument Serif Italic (OFL), ospitati localmente.
 - `app/gomore-points.json`: le stelle della scritta GOMORE per l'apertura su telefono, una per ogni stella del GM.
-- `app/gm-points.json`: stelle del monogramma, ricavate da `public/gm-logo.png` (contorno, riempimento e polvere, per lettere sempre leggibili).
+- `app/gm-points.json`: stelle del monogramma (contorno, riempimento e polvere, per lettere sempre leggibili).
 - `app/icon.png`, `app/opengraph-image.png`, `app/robots.ts`, `app/sitemap.ts`: favicon, anteprima social, SEO tecnica.
 - Luce: apertura e metodo restano cielo notturno. Da progetti in poi, nebulose nei blu del sito dietro ogni sezione e schermi dei progetti che fanno luce; in fondo un'alba sotto il form e il footer (`globals.css`, *Light*).
 
