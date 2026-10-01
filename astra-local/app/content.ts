@@ -76,11 +76,13 @@ export const offers = [
     cta: primaryCta,
   },
   {
-    title: 'Manutenzione',
+    title: 'Hosting e manutenzione',
     kicker: 'Dopo il lancio · servizio a pagamento',
     price: '',
-    text: 'Il sito non si ferma alla messa online. Ce ne occupiamo noi, così resta sicuro, aggiornato e al passo con la tua attività.',
+    text: 'Ospitiamo il sito, gestiamo il dominio e ce ne prendiamo cura. Il prezzo non è fisso: dipende dalle tue esigenze.',
     includes: [
+      'Hosting: il sito sempre online, veloce e sicuro',
+      'Registrazione e gestione del dominio',
       'Aggiornamenti tecnici e di sicurezza',
       'Modifiche a testi, immagini e contenuti',
       'Nuove sezioni e funzioni quando servono',

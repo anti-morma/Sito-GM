@@ -110,7 +110,7 @@ export default function Home() {
               <header className="gm-services-head" data-reveal>
                 <SectionLabel>Cosa facciamo</SectionLabel>
                 <h2 id="servizi-title" className="gm-h2">Un sito su misura.<br /> <span className="gm-h2-line">Seguito anche dopo il lancio.</span></h2>
-                <p className="gm-lead">Non vendiamo pacchetti: ogni sito nasce da una consulenza e viene costruito sul tuo progetto. Dopo il lancio, possiamo continuare a seguirlo noi.</p>
+                <p className="gm-lead">Non vendiamo pacchetti: ogni sito nasce da una consulenza e viene costruito sul tuo progetto. Dopo il lancio possiamo continuare a seguirlo noi: hosting, dominio e manutenzione.</p>
               </header>
               {/* Phones: the two offers as a deck of cards, the site in front and
                   its care right behind it (offer-deck.tsx). */}

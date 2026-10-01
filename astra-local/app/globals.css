@@ -1703,7 +1703,7 @@ em { font-style: normal; }
   }
   .gm-deck-peek-number { align-self: flex-start; margin-top: 14px; color: var(--accent); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; }
   .gm-deck-peek-name { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
-  .gm-deck-peek-name strong { overflow: hidden; font-size: 17px; font-weight: 500; letter-spacing: -0.01em; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+  .gm-deck-peek-name strong { overflow: hidden; font-size: clamp(14.5px, 4.6vw, 17px); font-weight: 500; letter-spacing: -0.01em; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
   .gm-deck-peek-kicker { color: var(--ink-3); font-size: 10px; font-weight: 500; letter-spacing: 0.12em; line-height: 1.2; text-transform: uppercase; white-space: nowrap; }
   /* Two small arcs: this card and the one behind trade places. */
   .gm-deck-peek i {
