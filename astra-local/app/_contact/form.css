@@ -11,9 +11,9 @@
 .cf-field input,
 .cf-field textarea {
   width: 100%;
-  min-height: 60px;
   margin: 0;
-  padding: 12px 0 14px;
+  /* The words rest on the line, as on paper, not in the middle of a box. */
+  padding: 18px 0 4px;
   border: 0;
   /* At least 3:1 against the page (WCAG 1.4.11): the fields never vanish. */
   border-bottom: 1px solid rgb(243 241 236 / 42%);
@@ -27,7 +27,13 @@
   transition: border-color 0.3s var(--ease);
   appearance: none;
 }
-.cf-field textarea { min-height: 140px; resize: vertical; }
+.cf-field textarea {
+  /* One line, like the others; it grows with what is written (grow-textarea.tsx). */
+  height: calc(1.35em + 23px);
+  max-height: 320px;
+  overflow-y: hidden;
+  resize: none;
+}
 .cf-field input:-webkit-autofill { -webkit-text-fill-color: var(--ink); transition: background-color 9999s ease-out; }
 
 .cf-field-line {
@@ -81,7 +87,7 @@
 
 @media (max-width: 760px) {
   .cf-form { grid-template-columns: 1fr; }
-  .cf-field input { font-size: 20px; }
+  .cf-field :is(input, textarea) { font-size: 20px; }
   .cf-submit { width: 100%; min-width: 0; }
   .cf-note { width: 100%; text-align: center; }
 }

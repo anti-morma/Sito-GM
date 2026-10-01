@@ -48,6 +48,10 @@
     radial-gradient(50% 40vh at 90% 70vh, rgb(88 70 170 / 14%), transparent 72%);
   pointer-events: none;
 }
+/* Phones: no blue nebula, here as on the home page (star-sky-scene.ts). */
+@media (max-width: 760px), (max-height: 500px) {
+  .gm-case::before { content: none; }
+}
 
 .gm-case-hero { padding-top: clamp(40px, 9vh, 104px); }
 .gm-case-crumbs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: clamp(28px, 5vh, 48px); color: var(--ink-3); font-size: 13px; }

@@ -19,6 +19,10 @@ const delay = (ms: number) => ({ '--reveal-delay': `${ms}ms` }) as React.CSSProp
 export default function OfferDeck({ offers }: { offers: Offer[] }) {
   const [deck, setDeck] = useState(false);
   const [front, setFront] = useState(0);
+  // The card whose "Cosa include" is open. Turning the deck closes it: the
+  // cards share one height, so a list left open behind would stretch the
+  // front card as if it were open too.
+  const [open, setOpen] = useState<number | null>(null);
   const swipe = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -31,7 +35,10 @@ export default function OfferDeck({ offers }: { offers: Offer[] }) {
 
   const back = (front + 1) % offers.length;
   const behind = offers[back];
-  const turn = () => setFront(back);
+  const turn = () => {
+    setFront(back);
+    setOpen(null);
+  };
 
   // A horizontal swipe on the front card turns the deck; vertical ones scroll.
   const onPointerDown = (event: React.PointerEvent) => {
@@ -71,7 +78,7 @@ export default function OfferDeck({ offers }: { offers: Offer[] }) {
             <h3>{offer.title}</h3>
             <p className="gm-offer-text">{offer.text}</p>
             {offer.price && <p className="gm-offer-price">{offer.price}</p>}
-            <OfferList title={offer.title} items={offer.includes} />
+            <OfferList title={offer.title} items={offer.includes} open={open === index} onToggle={() => setOpen(open === index ? null : index)} />
             <a className={index === 0 ? 'gm-btn gm-btn--primary' : 'gm-btn gm-btn--ghost'} href="#contatti" data-cta={index === 0 ? 'servizio-sito' : 'servizio-manutenzione'}>
               {offer.cta} <span className="gm-btn-arrow" aria-hidden="true">→</span>
             </a>

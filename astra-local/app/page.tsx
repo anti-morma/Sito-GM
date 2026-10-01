@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Bridge from './bridge';
 import ContactForm from './_contact/form';
 import GoMoreMobileIntro from './gomore-mobile-intro';
+import GrowTextarea from './grow-textarea';
 import Hero from './hero';
 import MethodStory from './method-story';
 import OfferDeck from './offer-deck';
@@ -146,6 +147,7 @@ export default function Home() {
               </header>
               <div id="modulo" className="gm-contact-form" data-reveal style={delay(120)}>
                 <ContactForm />
+                <GrowTextarea selector="#modulo textarea" />
               </div>
             </div>
           </section>

@@ -159,9 +159,19 @@ export function mountStarSky(host: HTMLElement) {
   points.frustumCulled = false;
   const scene = new Scene();
   scene.add(points);
-  const nebula = createNebulaField();
-  scene.add(nebula.backdrop);
-  scene.add(nebula.stars);
+  // Phones: no blue nebula at all, on every page, only the stars. It is the
+  // sky's heaviest part (its gas textures and 13,000 stars), so it is not
+  // even created there; a screen that grows past a phone's gets it then.
+  const phone = matchMedia('(max-width: 760px), (max-height: 500px)');
+  let nebula: ReturnType<typeof createNebulaField> | null = null;
+  const placeNebula = () => {
+    if (!phone.matches && !nebula) {
+      nebula = createNebulaField();
+      scene.add(nebula.backdrop, nebula.stars);
+    }
+    if (nebula) nebula.backdrop.visible = nebula.stars.visible = !phone.matches;
+  };
+  placeNebula();
   const camera = new PerspectiveCamera(28.072486, 1, 0.1, 20);
   camera.position.z = 2;
 
@@ -175,7 +185,8 @@ export function mountStarSky(host: HTMLElement) {
     u.uAspect.value = camera.aspect;
     u.uPixelScale.value = Math.max(0.65, Math.min(1.3, height / 720));
     geometry.setDrawRange(0, Math.min(MAX_STARS, starCount(width, height, mobile.matches)));
-    nebula.resize(width, height, mobile.matches, isLite());
+    placeNebula();
+    nebula?.resize(width, height, mobile.matches, isLite());
   };
   resize();
 
@@ -187,7 +198,7 @@ export function mountStarSky(host: HTMLElement) {
     u.uTime.value = reduced.matches ? 10 : time;
     u.uMotion.value = reduced.matches ? 0 : 1;
     u.uScroll.value = (scrollY / Math.max(1, innerHeight)) * SCROLL_DRIFT;
-    nebula.render(renderer, camera, reduced.matches ? 0 : time);
+    if (nebula?.stars.visible) nebula.render(renderer, camera, reduced.matches ? 0 : time);
     renderer.render(scene, camera);
   };
   // Slow drifts: phones and the lite rung draw 30 frames a second, the rest
@@ -233,7 +244,7 @@ export function mountStarSky(host: HTMLElement) {
     removeEventListener('scroll', onScroll);
     reduced.removeEventListener('change', onMotion);
     geometry.dispose();
-    nebula.dispose();
+    nebula?.dispose();
     material.dispose();
     renderer.dispose();
     renderer.domElement.remove();
