@@ -4,7 +4,7 @@ import { studyPath } from './seo';
 
 // A fixed date, moved by hand when the content changes: a sitemap that claims
 // every page changed today teaches search engines to ignore the field.
-const UPDATED = new Date('2026-09-29');
+const UPDATED = new Date('2026-09-30');
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

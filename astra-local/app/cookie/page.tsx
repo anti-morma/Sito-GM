@@ -11,8 +11,11 @@ export const metadata: Metadata = {
 export default function Cookie() {
   const o = owner();
   return (
-    <LegalPage title="Cookie Policy" updated="29 settembre 2026">
-      <p><strong>In breve: questo sito non usa cookie.</strong> Non installa cookie di profilazione, di analisi o di terze parti e non utilizza tecnologie simili (come local storage o pixel di tracciamento). Per questo non ti chiediamo alcun consenso e non mostriamo un banner.</p>
+    <LegalPage title="Cookie Policy" updated="30 settembre 2026">
+      <p><strong>In breve: questo sito non usa cookie.</strong> Non installa cookie di profilazione, di analisi o di terze parti e non utilizza pixel o altri sistemi di tracciamento. Per questo non ti chiediamo alcun consenso e non mostriamo un banner.</p>
+
+      <h2>L’unica cosa che il sito ricorda</h2>
+      <p>Durante la visita il sito usa la memoria di sessione del tuo browser (<em>sessionStorage</em>) per due informazioni tecniche: che su telefono hai già visto l’animazione di apertura, così non la ripete, e, se lo scegli, che vuoi le animazioni ferme. Restano sul tuo dispositivo, non vengono inviate a noi né a terzi e si cancellano quando chiudi la scheda. Servono solo a darti il servizio che hai chiesto: per questo la legge non richiede il consenso.</p>
 
       <h2>Cosa abbiamo verificato</h2>
       <ul>

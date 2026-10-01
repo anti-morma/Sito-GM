@@ -1,5 +1,7 @@
 'use client';
 
+import { isReducedMotion } from './motion';
+
 /**
  * The idea, between the services and the form: one pinned scene. Beside the
  * words, a brain of stars gathers and turns slowly on itself, then melts away
@@ -12,8 +14,7 @@ export default function Bridge() {
     const form = document.getElementById('modulo');
     if (!form) return;
     event.preventDefault();
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    form.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+    form.scrollIntoView({ behavior: isReducedMotion() ? 'auto' : 'smooth', block: 'start' });
     history.replaceState(null, '', '#modulo');
   };
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { isReducedMotion as reducedMotion } from './motion';
 
 // How long the visitor must stay still before the cue comes back.
 const IDLE_MS = 1100;
@@ -10,8 +11,6 @@ const STARS = 9;
 // joined by a faint line like a constellation.
 const CHEVRON: [number, number][] = [[-21, -8], [-14, -3], [-7, 2], [0, 7], [7, 2], [14, -3], [21, -8]];
 const CHEVRON_LINE = CHEVRON.map(([x, y]) => `${x + 24},${y + 10}`).join(' ');
-
-const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * The scroll cue: a trail of stars down the right edge of the screen, with a

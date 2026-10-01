@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { isReducedMotion } from './motion';
 
 /**
  * Phones: the projects side by side in a swipeable row, one at a time, with an
@@ -30,7 +31,7 @@ export default function ProjectCarousel({ count, children }: { count: number; ch
   const go = (next: number) => {
     const row = track.current;
     if (!row) return;
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const still = isReducedMotion();
     row.scrollTo({ left: Math.max(0, Math.min(count - 1, next)) * row.clientWidth, behavior: still ? 'auto' : 'smooth' });
   };
 

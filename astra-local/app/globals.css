@@ -167,6 +167,7 @@ em { font-style: normal; }
 
 .gm-btn-arrow { display: inline-block; transition: transform 0.35s var(--ease); }
 .gm-btn:hover .gm-btn-arrow { transform: translateX(4px); }
+.gm-btn:hover .gm-btn-arrow--down { transform: translateY(3px); }
 .gm-btn:active { transform: scale(0.98); }
 
 .gm-btn--primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 1px rgb(143 177 255 / 30%), 0 10px 36px -12px rgb(143 177 255 / 55%); }
@@ -461,8 +462,8 @@ em { font-style: normal; }
 .gm-mobile-menu-contacts .gm-detail-missing { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); font-size: 17px; }
 .gm-mobile-menu-legal span:not(:last-child)::after,
 .gm-footer-legal span:not(:last-child)::after { content: '·'; margin-inline: 0.5em; }
-.gm-mobile-menu-pages { display: flex; justify-content: center; gap: 24px; }
-.gm-mobile-menu-pages a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); font-size: 13px; }
+.gm-mobile-menu-pages { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 24px; }
+.gm-mobile-menu-pages :is(a, .gm-motion-toggle) { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); font-size: 13px; }
 
 @media (max-width: 960px) {
   .gm-header { display: flex; justify-content: space-between; }
@@ -973,6 +974,23 @@ em { font-style: normal; }
   }
 }
 
+/* The second action (for whoever wants the proof first) is a quiet text link
+   on phones, under the main one, and only where the screen has room for it. */
+@media (max-width: 600px) and (orientation: portrait) {
+  .gm-hero-actions { gap: 4px; }
+  .gm-hero-actions .gm-hero-secondary {
+    min-height: 44px;
+    border-color: transparent;
+    background: none;
+    box-shadow: none;
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+}
+@media (max-width: 600px) and (orientation: portrait) and (max-height: 700px), (orientation: landscape) and (max-height: 500px) {
+  .gm-hero-secondary { display: none; }
+}
+
 /* Short phones: the words take the whole screen. */
 @media (max-width: 600px) and (orientation: portrait) and (max-height: 600px) {
   .gm-hero { min-height: 0; }
@@ -1117,8 +1135,9 @@ em { font-style: normal; }
   grid-template-columns: 40px 1fr;
   padding: var(--pad) 0 var(--pad) 26px;
 }
-.gm-phases li > * { opacity: 0.4; transition: opacity 0.6s var(--ease); }
-.gm-phases li.is-done > * { opacity: 0.55; }
+/* Phases still to come stay readable (≥ 4.5:1): the lit one leads by its light, not by hiding the rest. */
+.gm-phases li > * { opacity: 0.55; transition: opacity 0.6s var(--ease); }
+.gm-phases li.is-done > * { opacity: 0.7; }
 .gm-phases li.is-active > * { opacity: 1; }
 .gm-phases li:not(:last-child)::after {
   content: '';
@@ -1224,8 +1243,8 @@ em { font-style: normal; }
     opacity: 1;
     transform: none;
   }
-  .gm-phases li > * { opacity: 0.42; }
-  .gm-phases li.is-done > * { opacity: 0.62; }
+  .gm-phases li > * { opacity: 0.55; }
+  .gm-phases li.is-done > * { opacity: 0.7; }
   .gm-phases li.is-active > * { opacity: 1; }
   .gm-phases li:not(:last-child)::after { display: block; }
   .gm-phases li::before { display: block; top: calc(var(--dot) - 3.5px); left: -3px; width: 7px; height: 7px; }
@@ -1323,8 +1342,8 @@ em { font-style: normal; }
 /* Section reveal: opacity and a short rise, once. */
 .gm-reveal-ready [data-reveal] {
   opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 1s var(--ease) var(--reveal-delay, 0ms), transform 1s var(--ease) var(--reveal-delay, 0ms);
+  transform: translateY(18px);
+  transition: opacity 0.7s var(--ease) var(--reveal-delay, 0ms), transform 0.7s var(--ease) var(--reveal-delay, 0ms);
 }
 .gm-reveal-ready [data-reveal].is-visible { opacity: 1; transform: none; }
 
@@ -1357,6 +1376,8 @@ em { font-style: normal; }
 .gm-offer-kicker span { color: var(--accent); }
 .gm-offer h3 { margin-top: 18px; color: var(--ink); font-size: clamp(30px, 2.8vw, 46px); font-weight: 500; line-height: 1.05; letter-spacing: -0.03em; }
 .gm-offer-text { max-width: 44ch; margin-top: 16px; color: var(--ink-2); font-size: 17px; line-height: 1.55; }
+/* The price, once there is one (content.ts): the visitor's first question. */
+.gm-offer-price { margin-top: 14px; color: var(--ink); font-size: 16px; font-weight: 500; }
 .gm-offer-list { display: grid; gap: 12px; margin: 28px 0 36px; padding: 0; list-style: none; }
 .gm-offer:first-child .gm-offer-list { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }
 .gm-offer-list li { position: relative; padding-left: 22px; color: var(--ink); font-size: 16px; line-height: 1.45; }
@@ -1414,7 +1435,8 @@ em { font-style: normal; }
 }
 .gm-project:nth-child(even) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-areas: 'media text'; }
 
-.gm-project-text { grid-area: text; }
+/* Positioned: its screen-reader text stays inside the phone carousel's clip. */
+.gm-project-text { position: relative; grid-area: text; }
 .gm-project h3 { margin-top: 18px; color: var(--ink); font-size: clamp(36px, 3.6vw, 60px); font-weight: 500; line-height: 1; letter-spacing: -0.035em; }
 .gm-project-category { margin-top: 16px; color: var(--ink-3); font-size: 14px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
 .gm-project-description { max-width: 40ch; margin: 22px 0 32px; color: var(--ink-2); font-size: 17px; line-height: 1.55; }
@@ -1497,7 +1519,15 @@ em { font-style: normal; }
 .gm-contact-head { position: sticky; top: calc(var(--header-h) + 48px); }
 .gm-contact-form { scroll-margin-top: calc(var(--header-h) + 24px); }
 .gm-contact-mail { margin-top: 28px; color: var(--ink-2); font-size: 17px; }
-.gm-contact-mail a { color: var(--ink); text-underline-offset: 5px; }
+.gm-contact-mail a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 5px; }
+.gm-contact-mail a:hover { text-decoration-color: var(--accent); }
+/* What happens after the form, before anyone has to ask. */
+.gm-next-steps { max-width: 40ch; margin-top: clamp(32px, 5vh, 48px); padding-top: 24px; border-top: 1px solid var(--line); }
+.gm-next-steps h3 { color: var(--ink-3); font-size: 13px; font-weight: 500; letter-spacing: 0.14em; line-height: 1.4; text-transform: uppercase; }
+.gm-next-steps ol { display: grid; gap: 10px; margin: 16px 0 0; padding: 0; }
+.gm-next-steps li { display: grid; grid-template-columns: 36px 1fr; color: var(--ink-2); font-size: 16px; line-height: 1.45; }
+.gm-next-steps li span { padding-top: 2px; color: var(--accent); font-size: 13px; font-weight: 500; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.gm-next-steps-time { margin-top: 14px; color: var(--ink); font-size: 16px; }
 
 /* ---------- Footer ---------- */
 .gm-footer { padding-block: 0 max(28px, env(safe-area-inset-bottom)); }
@@ -1536,13 +1566,13 @@ em { font-style: normal; }
 .gm-legal { max-width: 860px; padding-block: clamp(64px, 12vh, 128px) clamp(64px, 12vh, 120px); }
 .gm-legal .gm-h2 { font-size: clamp(40px, 5vw, 72px); }
 .gm-legal-updated { margin-top: 16px; color: var(--ink-3); font-size: 15px; }
-.gm-legal-body { margin-top: 48px; color: var(--ink-2); font-size: 17px; line-height: 1.7; }
+.gm-legal-body { max-width: 68ch; margin-top: 48px; color: var(--ink-2); font-size: 17px; line-height: 1.7; }
 .gm-legal-body h2 { margin: 44px 0 12px; color: var(--ink); font-size: 24px; font-weight: 500; letter-spacing: -0.01em; }
 .gm-legal-body p + p { margin-top: 14px; }
 .gm-legal-body ul { margin: 12px 0 0; padding-left: 20px; }
 .gm-legal-body li + li { margin-top: 8px; }
 .gm-legal-body strong { color: var(--ink); font-weight: 500; }
-.gm-legal-body a { color: var(--ink); text-underline-offset: 4px; }
+.gm-legal-body a { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
 
 /* ---------- Content: tablets and phones ---------- */
 @media (max-width: 1024px) {
@@ -1818,7 +1848,7 @@ em { font-style: normal; }
   .gm-project-dots button[aria-current]::before { width: 18px; background: var(--accent); }
 }
 
-/* ---------- The phone opening (page.tsx, gomore-mobile-intro.tsx) ----------
+/* ---------- The phone opening (opening.ts, gomore-mobile-intro.tsx) ----------
    Black before the first paint; then the opening's canvas over the page.
    GOMORE's stars become the GM, which rises into the header logo. Until it
    lands the rest of the header and the hero copy wait unseen; the logo, drawn
@@ -1860,6 +1890,25 @@ html[data-intro='waiting']::after {
   .starfield[data-failed='true'] { background-image: none; }
 }
 
+/* ---------- Lite (quality.ts) ----------
+   A device that cannot keep up, or says it is modest, gets the same page
+   without the effects that cost the most on every frame: frosted glass over
+   the moving sky (blurred again at each frame), the rocket's flickering
+   flames and the trail stars' glow. Nothing moves or changes place. */
+:root.gm-lite .gm-nav { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(5 6 8 / 86%); }
+:root.gm-lite .gm-offer { -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root.gm-lite .gm-project-arrow { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(5 6 8 / 82%); }
+:root.gm-lite .gm-rocket { filter: none; }
+:root.gm-lite :is(.gm-rocket-flame, .gm-rocket-heat, .gm-ascent-dust i) { animation: none; }
+@media (prefers-reduced-motion: no-preference) {
+  :root.gm-lite:not([data-motion='still']) .gm-rail-line i { animation-name: gm-rail-lit-lite; }
+}
+@keyframes gm-rail-lit-lite {
+  0% { opacity: 1; transform: scale(1.9); }
+  18% { opacity: 0.55; transform: scale(1.1); }
+  40%, 100% { opacity: 0.45; transform: none; }
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .gm-hero-copy > *,
@@ -1881,3 +1930,49 @@ html[data-intro='waiting']::after {
   .gm-deck-peek::after { animation: none; }
   .gm-offers[data-deck] > .gm-offer { transition-duration: 0.01s; }
 }
+
+/* ---------- "Ferma le animazioni" (motion.ts, motion-toggle.tsx) ----------
+   The visitor's own switch: the same stillness as the system setting above. */
+:root[data-motion='still'] :is(.gm-hero-copy > *, .gm-header, .gm-rail > *) { animation: none; }
+:root[data-motion='still'] :is(.gm-rail-line i, .gm-cue-track i, .gm-ascent-star-body, .gm-rocket-flame, .gm-rocket-heat) { animation: none; }
+:root[data-motion='still'] .gm-rail-comet { animation: none; top: auto; bottom: 0; }
+:root[data-motion='still'] .gm-rail-chevron,
+:root[data-motion='still'] .gm-rail-chevrons::before { animation: none; opacity: 0.9; }
+:root[data-motion='still'] .gm-cue-track i { top: auto; bottom: 8px; }
+:root[data-motion='still'] :is(.gm-ascent-dust, .gm-ascent-sparks) { display: none; }
+:root[data-motion='still'] :is(.gm-house-intro > *, .gm-phases) { translate: none; }
+:root[data-motion='still'].gm-reveal-ready [data-reveal] { transform: none; transition: opacity 0.4s linear; }
+:root[data-motion='still'].gm-reveal-ready .gm-offer.is-visible:hover { transform: none; }
+:root[data-motion='still'] .gm-deck-peek::after { animation: none; }
+:root[data-motion='still'] .gm-offers[data-deck] > .gm-offer { transition-duration: 0.01s; }
+:root[data-motion='still'] .gm-bridge { --bridge-travel: 0svh; }
+:root[data-motion='still'] .gm-bridge-copy { opacity: 1; transform: translateY(-50%); }
+@media (max-width: 760px), (max-aspect-ratio: 21/20) {
+  :root[data-motion='still'] .gm-bridge-copy { transform: none; }
+}
+@media (max-width: 767px) and (orientation: portrait) {
+  :root[data-motion='still'] :is(.gm-phases li, .gm-phases li.is-done) { transform: none; transition: opacity 0.2s linear; }
+}
+
+/* The switch itself: a quiet text button in the footer and the phone menu. */
+.gm-motion-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font-size: inherit;
+  text-align: left;
+}
+.gm-motion-toggle:hover { color: var(--ink); }
+/* Pause bars while moving, a play triangle once still. */
+.gm-motion-toggle-icon { position: relative; flex: none; width: 10px; height: 10px; }
+.gm-motion-toggle-icon::before,
+.gm-motion-toggle-icon::after { content: ''; position: absolute; top: 0; width: 3px; height: 10px; border-radius: 1px; background: currentColor; }
+.gm-motion-toggle-icon::before { left: 1px; }
+.gm-motion-toggle-icon::after { right: 1px; }
+.gm-motion-toggle-icon[data-state='still']::after { display: none; }
+.gm-motion-toggle-icon[data-state='still']::before { left: 1px; width: 9px; border-radius: 0; clip-path: polygon(0 0, 100% 50%, 0 100%); }

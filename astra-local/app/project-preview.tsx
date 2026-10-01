@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { isReducedMotion, reducedMotion } from './motion';
 
 // One preview plays at a time: the one the visitor is actually looking at.
 // Videos are not tied to page scroll; they only play, pause and resume.
@@ -15,7 +16,7 @@ let timer = 0;
 
 const motionAllowed = () => {
   const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
-  return !matchMedia('(prefers-reduced-motion: reduce)').matches && !saveData;
+  return !isReducedMotion() && !saveData;
 };
 
 function elect() {
@@ -48,7 +49,7 @@ function play() {
 
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', elect);
-  matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', elect);
+  reducedMotion().addEventListener('change', elect);
 }
 
 /** `only` fixes the recording whatever the screen (case studies): the phone

@@ -2,8 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 import AstraField, { type ParticleFrame } from './astra-field';
-import { nebulaJourney } from './nebula-field';
+import { nebulaJourney } from './nebula-state';
 import { METHOD_ENTRY, METHOD_TRAVEL, VILLA_DRAWN_HERO, VILLA_START_HERO, methodStoryAt } from './method-timeline';
+import { reducedMotion } from './motion';
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const smoothStep = (value: number) => {
@@ -35,7 +36,7 @@ export default function ParticleJourney() {
     const hero = document.querySelector<HTMLElement>('.gm-hero');
     const method = document.querySelector<HTMLElement>('.gm-method-story');
     const bridge = document.querySelector<HTMLElement>('.gm-bridge');
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const reduced = reducedMotion();
     nebulaJourney.enabled = true;
     let previousOpacity = -1;
     let previousBridge = -1;

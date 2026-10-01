@@ -81,7 +81,7 @@ export function homeLd() {
         '@type': 'WebPage',
         '@id': `${site.url}/#webpage`,
         url: site.url,
-        name: `${site.name} — Siti web su misura e design digitale`,
+        name: `Siti web su misura e design digitale — ${site.name}`,
         description: siteDescription,
         inLanguage: 'it-IT',
         isPartOf: { '@id': websiteId },

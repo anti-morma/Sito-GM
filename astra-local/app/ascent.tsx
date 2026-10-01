@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import Rocket from './rocket';
+import { isReducedMotion as reducedMotion } from './motion';
 
 export type Point = { x: number; y: number };
 
@@ -19,7 +20,6 @@ export function setAscentProgress(progress: number) {
 
 // Critically damped spring: the light follows the scroll with a little inertia.
 const STIFFNESS = 6.5;
-const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Monotone cubic (Fritsch–Carlson) through the points: it only ever climbs. */
 function ascentPath(points: Point[]) {

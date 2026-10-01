@@ -70,8 +70,9 @@ export default function OfferDeck({ offers }: { offers: Offer[] }) {
             <p className="gm-offer-kicker"><span>{pad(index)}</span>{offer.kicker}</p>
             <h3>{offer.title}</h3>
             <p className="gm-offer-text">{offer.text}</p>
+            {offer.price && <p className="gm-offer-price">{offer.price}</p>}
             <OfferList title={offer.title} items={offer.includes} />
-            <a className={index === 0 ? 'gm-btn gm-btn--primary' : 'gm-btn gm-btn--ghost'} href="#contatti">
+            <a className={index === 0 ? 'gm-btn gm-btn--primary' : 'gm-btn gm-btn--ghost'} href="#contatti" data-cta={index === 0 ? 'servizio-sito' : 'servizio-manutenzione'}>
               {offer.cta} <span className="gm-btn-arrow" aria-hidden="true">→</span>
             </a>
           </article>

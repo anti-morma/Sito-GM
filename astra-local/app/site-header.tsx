@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Ascent, { setAscentProgress, type Point } from './ascent';
-import { site } from './content';
+import { primaryCta, site } from './content';
 import DynamicGMLogo from './dynamic-gm-logo';
+import { isReducedMotion as reducedMotion } from './motion';
+import MotionToggle from './motion-toggle';
 import { contactDetails, DetailText, legalDetails } from './studio-details';
 
 // Every section of the page, in order: the one on screen lights up.
@@ -13,7 +15,7 @@ const NAV = [
   { id: 'metodo', label: 'Metodo' },
   { id: 'progetti', label: 'Progetti' },
   { id: 'servizi', label: 'Servizi' },
-  { id: 'contatti', label: 'Parliamo del progetto' },
+  { id: 'contatti', label: 'Contatti' },
 ];
 
 // THE ASCENT: the further you go, the higher you climb. The route runs level
@@ -26,8 +28,6 @@ const MINI = { width: 168, height: 40 };
 const MINI_STOPS: Point[] = NAV.map((_, index) => ({ x: 12 + index * 28, y: 29 }));
 const MINI_BEND: Point = { x: 136, y: 28 };
 const MINI_STAR: Point = { x: 160, y: 7 };
-
-const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // The contact CTA lands on the form itself, not on the section heading above it.
 const scrollToSection = (id: string, anchor = id) => {
@@ -126,6 +126,14 @@ export default function SiteHeader() {
 
   useEffect(() => {
     if (!menuOpen) return;
+    // The menu covers the page: what lies behind it leaves the keyboard's and
+    // the screen reader's path until it closes, and the focus moves in.
+    const header = toggleRef.current?.closest('header');
+    const menu = document.getElementById('gm-mobile-menu');
+    const behind = [...document.body.children].filter((element) =>
+      element !== header && element !== menu && !(element instanceof HTMLScriptElement) && !element.hasAttribute('inert'));
+    behind.forEach((element) => element.setAttribute('inert', ''));
+    menu?.querySelector<HTMLElement>('nav a')?.focus();
     const close = (event: KeyboardEvent) => { if (event.key === 'Escape') { setMenuOpen(false); toggleRef.current?.focus(); } };
     const wide = matchMedia('(min-width: 961px)');
     const onWide = () => { if (wide.matches) setMenuOpen(false); };
@@ -133,6 +141,7 @@ export default function SiteHeader() {
     wide.addEventListener('change', onWide);
     document.documentElement.classList.add('gm-menu-open');
     return () => {
+      behind.forEach((element) => element.removeAttribute('inert'));
       removeEventListener('keydown', close);
       wide.removeEventListener('change', onWide);
       document.documentElement.classList.remove('gm-menu-open');
@@ -180,8 +189,8 @@ export default function SiteHeader() {
 
         <Ascent className="gm-ascent-mini" stops={MINI_STOPS} bend={MINI_BEND} star={MINI_STAR} arrive={10} width={MINI.width} height={MINI.height} active={NAV.findIndex((item) => item.id === active)} />
 
-        <a className="gm-btn gm-btn--primary gm-btn--small gm-header-cta" href="#modulo" onClick={(event) => go(event, 'contatti', 'modulo')}>
-          Contattaci
+        <a className="gm-btn gm-btn--primary gm-btn--small gm-header-cta" href="#modulo" onClick={(event) => go(event, 'contatti', 'modulo')} data-cta="header">
+          {primaryCta}
         </a>
 
         <button ref={toggleRef} className="gm-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="gm-mobile-menu" onClick={() => setMenuOpen((open) => !open)}>
@@ -202,8 +211,8 @@ export default function SiteHeader() {
               </li>
             ))}
           </ol>
-          <a className="gm-btn gm-btn--primary gm-btn--large gm-btn--block" href="#modulo" onClick={(event) => go(event, 'contatti', 'modulo')}>
-            Contattaci <span className="gm-btn-arrow" aria-hidden="true">→</span>
+          <a className="gm-btn gm-btn--primary gm-btn--large gm-btn--block" href="#modulo" onClick={(event) => go(event, 'contatti', 'modulo')} data-cta="menu">
+            {primaryCta} <span className="gm-btn-arrow" aria-hidden="true">→</span>
           </a>
           {/* Contacts, then the studio's legal details and pages, quietly. */}
           <div className="gm-mobile-menu-info">
@@ -220,6 +229,7 @@ export default function SiteHeader() {
             <p className="gm-mobile-menu-pages">
               <Link href="/privacy" onClick={() => setMenuOpen(false)}>Privacy</Link>
               <Link href="/cookie" onClick={() => setMenuOpen(false)}>Cookie</Link>
+              <MotionToggle />
             </p>
           </div>
         </nav>

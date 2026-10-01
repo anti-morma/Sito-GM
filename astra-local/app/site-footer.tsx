@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { site } from './content';
+import MotionToggle from './motion-toggle';
+import { primaryCta, site } from './content';
 import { contactDetails, DetailText, legalDetails } from './studio-details';
 
 export default function SiteFooter({ cta = true }: { cta?: boolean }) {
@@ -11,8 +12,8 @@ export default function SiteFooter({ cta = true }: { cta?: boolean }) {
         {cta && (
           <div className="gm-footer-cta">
             <p>Hai un progetto in mente?</p>
-            <Link className="gm-btn gm-btn--primary gm-btn--large" href="/#contatti">
-              Parliamo del tuo progetto <span className="gm-btn-arrow" aria-hidden="true">→</span>
+            <Link className="gm-btn gm-btn--primary gm-btn--large" href="/#contatti" data-cta="footer">
+              {primaryCta} <span className="gm-btn-arrow" aria-hidden="true">→</span>
             </Link>
           </div>
         )}
@@ -35,6 +36,8 @@ export default function SiteFooter({ cta = true }: { cta?: boolean }) {
           <ul aria-label="Informazioni legali">
             <li><Link href="/privacy">Privacy</Link></li>
             <li><Link href="/cookie">Cookie</Link></li>
+            {/* Stars, rocket and previews stand still on request (WCAG 2.2.2). */}
+            <li><MotionToggle /></li>
             <li><span>© {new Date().getFullYear()} {site.name}</span></li>
           </ul>
         </div>

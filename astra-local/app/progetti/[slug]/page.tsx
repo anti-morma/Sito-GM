@@ -5,7 +5,7 @@ import ProjectPreview from '../../project-preview';
 import Reveal from '../../reveal';
 import SectionLabel from '../../section-label';
 import SiteFooter from '../../site-footer';
-import { caseStudies, site } from '../../content';
+import { caseStudies, primaryCta, site } from '../../content';
 import { jsonLd, openGraphBase, studyLd, studyPath } from '../../seo';
 import '../case-study.css';
 
@@ -54,7 +54,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
       <header className="gm-case-header">
         <Link className="gm-logo" href="/" aria-label={`${site.name} — torna alla home`} />
         <Link className="gm-case-back" href="/#progetti"><span aria-hidden="true">←</span> Tutti i progetti</Link>
-        <Link className="gm-btn gm-btn--primary gm-btn--small gm-case-cta" href="/#modulo">Contattaci</Link>
+        <Link className="gm-btn gm-btn--primary gm-btn--small gm-case-cta" href="/#modulo" data-cta="caso-studio-header">{primaryCta}</Link>
       </header>
 
       {/* The page and its footer share one light at the bottom: the dawn. */}
@@ -77,7 +77,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
               <div><dt>Il nostro lavoro</dt><dd>{study.services.join(' · ')}</dd></div>
               {study.year && <div><dt>Anno</dt><dd>{study.year}</dd></div>}
               {project.href && (
-                <div><dt>Online</dt><dd><a className="gm-case-live" href={project.href} target="_blank" rel="noopener">{host} <span aria-hidden="true">↗</span></a></dd></div>
+                <div><dt>Online</dt><dd><a className="gm-case-live" href={project.href} target="_blank" rel="noopener" data-cta="sito-cliente" data-project={project.name}>{host} <span aria-hidden="true">↗</span><span className="gm-sr-only"> (si apre in una nuova scheda)</span></a></dd></div>
               )}
             </dl>
           </section>
@@ -135,8 +135,8 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
               </figure>
             )}
             {project.href && (
-              <a className="gm-btn gm-btn--ghost gm-case-visit" href={project.href} target="_blank" rel="noopener" data-reveal>
-                Visita {host} <span className="gm-btn-arrow" aria-hidden="true">↗</span>
+              <a className="gm-btn gm-btn--ghost gm-case-visit" href={project.href} target="_blank" rel="noopener" data-reveal data-cta="sito-cliente" data-project={project.name}>
+                Visita {host} <span className="gm-btn-arrow" aria-hidden="true">↗</span><span className="gm-sr-only"> (si apre in una nuova scheda)</span>
               </a>
             )}
           </section>

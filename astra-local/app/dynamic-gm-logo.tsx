@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { drawLogo, LOGO_STARS, logoBridge, makeSprites, PHONE_LOGO_QUERY } from './gm-constellation';
+import { reducedMotion } from './motion';
 
 // The logo lives slowly: two dozen frames a second are plenty for drifts of
 // less than a pixel, and leave the phone's GPU to the page.
@@ -35,7 +36,7 @@ export default function DynamicGMLogo() {
     const ctx = canvas?.getContext('2d');
     if (!phone || !canvas || !ctx) return;
     const root = document.documentElement;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const reduced = reducedMotion();
     const sprites = makeSprites();
     let width = 0;
     let height = 0;
@@ -75,7 +76,7 @@ export default function DynamicGMLogo() {
     const loop = (now: number) => {
       frame = requestAnimationFrame(loop);
       if (mode === 'wait') {
-        // The opening gave up before it started (page.tsx): light up as usual.
+        // The opening gave up before it started (opening.ts): light up as usual.
         if (!root.classList.contains('gm-intro')) {
           mode = 'light';
           lightFrom = now;

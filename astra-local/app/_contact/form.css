@@ -15,7 +15,8 @@
   margin: 0;
   padding: 12px 0 14px;
   border: 0;
-  border-bottom: 1px solid var(--line-2);
+  /* At least 3:1 against the page (WCAG 1.4.11): the fields never vanish. */
+  border-bottom: 1px solid rgb(243 241 236 / 42%);
   border-radius: 0;
   outline: none;
   background: transparent;
@@ -42,10 +43,10 @@
 
 .cf-field-error { min-height: 30px; padding-top: 8px; color: var(--error); font-size: 14px; line-height: 1.4; }
 
-.cf-field:hover :is(input, textarea) { border-color: rgb(243 241 236 / 45%); }
+.cf-field:hover :is(input, textarea) { border-color: rgb(243 241 236 / 62%); }
 .cf-field:focus-within label { color: var(--ink); }
 .cf-field:focus-within .cf-field-line { transform: scaleX(1); }
-.cf-field[data-filled] :is(input, textarea) { border-color: rgb(243 241 236 / 40%); }
+.cf-field[data-filled] :is(input, textarea) { border-color: rgb(243 241 236 / 55%); }
 .cf-field[data-error] label { color: var(--error); }
 .cf-field[data-error] :is(input, textarea) { border-color: color-mix(in srgb, var(--error) 70%, transparent); }
 .cf-field[data-error] .cf-field-line { background: var(--error); }
@@ -59,7 +60,7 @@
 .cf-submit-arrow { display: inline-block; transition: transform 0.35s var(--ease); }
 .cf-submit:hover .cf-submit-arrow { transform: translateX(4px); }
 .cf-note { color: var(--ink-3); font-size: 14px; }
-.cf-note a { color: var(--ink-2); text-underline-offset: 4px; }
+.cf-note a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 4px; white-space: nowrap; }
 
 .cf-submit-dots { display: inline-flex; gap: 4px; margin-left: -6px; }
 .cf-submit-dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: gm-dot 1.2s ease-in-out infinite; }
@@ -89,3 +90,6 @@
   .cf-sent { animation: none; }
   .cf-submit-dots i { animation-duration: 2.4s; }
 }
+/* The same when the visitor stops the animations (motion.ts). */
+:root[data-motion='still'] .cf-sent { animation: none; }
+:root[data-motion='still'] .cf-submit-dots i { animation-duration: 2.4s; }

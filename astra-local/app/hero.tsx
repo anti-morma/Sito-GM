@@ -1,9 +1,11 @@
 import SectionLabel from './section-label';
+import { primaryCta } from './content';
 
 /**
- * The opening screen: one headline, one action. The GM beside it is drawn by
- * the page-wide particle field (particle-journey.tsx), which carries its stars
- * on into the method as the visitor scrolls.
+ * The opening screen: one headline, one main action and, for whoever is not
+ * ready to talk yet, a quieter one towards the proof. The GM beside it is
+ * drawn by the page-wide particle field (particle-journey.tsx), which carries
+ * its stars on into the method as the visitor scrolls.
  */
 export default function Hero() {
   return (
@@ -19,8 +21,11 @@ export default function Hero() {
         </h1>
         <p className="gm-hero-description">Progettiamo e sviluppiamo siti web su misura che fanno capire in pochi secondi chi sei, cosa offri e perché sceglierti.</p>
         <div className="gm-hero-actions">
-          <a className="gm-btn gm-btn--primary gm-btn--large" href="#contatti">
-            Parliamo del tuo progetto <span className="gm-btn-arrow" aria-hidden="true">→</span>
+          <a className="gm-btn gm-btn--primary gm-btn--large" href="#contatti" data-cta="hero">
+            {primaryCta} <span className="gm-btn-arrow" aria-hidden="true">→</span>
+          </a>
+          <a className="gm-btn gm-btn--ghost gm-btn--large gm-hero-secondary" href="#progetti" data-cta="hero-progetti">
+            Guarda i progetti <span className="gm-btn-arrow gm-btn-arrow--down" aria-hidden="true">↓</span>
           </a>
         </div>
       </div>

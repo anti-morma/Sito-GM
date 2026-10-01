@@ -3,7 +3,6 @@ import { Fragment } from 'react';
 import Link from 'next/link';
 import Bridge from './bridge';
 import ContactForm from './_contact/form';
-import { PHONE_OPENING_QUERY } from './gm-constellation';
 import GoMoreMobileIntro from './gomore-mobile-intro';
 import Hero from './hero';
 import MethodStory from './method-story';
@@ -16,38 +15,10 @@ import ScrollCue from './scroll-cue';
 import SectionLabel from './section-label';
 import SiteFooter from './site-footer';
 import SiteHeader from './site-header';
-import { offers, projects, type Project } from './content';
+import { nextSteps, offers, projects, site, type Project } from './content';
 import { homeLd, jsonLd, openGraphBase, siteSummary, studyPath } from './seo';
 import { contactDetails, DetailText } from './studio-details';
 
-// Phones, first visit of the session: black before the first paint, for the
-// opening (gomore-mobile-intro.tsx), which ends in the header logo. Never on a
-// reload, a return or a link to a section (sessionStorage: a new session plays
-// it again); with reduced motion, a short version of fades. Modest phones
-// (Chrome: 4 GB of memory or less) and "save data" skip it: the page is there
-// at once. If the opening is not under way in time, the page simply appears.
-// To preview it again, add ?intro to the address: it then plays on every load.
-const OPENING = `(() => { try {
-  const root = document.documentElement;
-  const visit = performance.getEntriesByType('navigation')[0];
-  const preview = new URLSearchParams(location.search).has('intro');
-  if (!matchMedia('${PHONE_OPENING_QUERY}').matches) return;
-  const memory = navigator.deviceMemory, link = navigator.connection;
-  if (!preview && ((link && link.saveData) || (memory && memory <= 4))) return;
-  if (!preview && (location.hash || (visit && visit.type !== 'navigate')
-    || sessionStorage.getItem('gm-intro'))) return;
-  sessionStorage.setItem('gm-intro', '1');
-  root.classList.add('gm-intro');
-  root.dataset.intro = 'waiting';
-  const show = () => {
-    if (!root.classList.contains('gm-intro')) return;
-    root.classList.remove('gm-intro');
-    root.classList.add('gm-intro-done');
-    delete root.dataset.intro;
-  };
-  setTimeout(() => { if (root.dataset.intro === 'waiting') show(); }, 2500);
-  setTimeout(show, 6500);
-} catch (error) {} })();`;
 
 export const metadata: Metadata = {
   alternates: { canonical: '/' },
@@ -55,6 +26,9 @@ export const metadata: Metadata = {
 };
 
 const delay = (ms: number) => ({ '--reveal-delay': `${ms}ms` }) as React.CSSProperties;
+const pad = (index: number) => String(index + 1).padStart(2, '0');
+// Links that open another tab say so to screen readers too (the arrow is only drawn).
+const NEW_TAB = <span className="gm-sr-only"> (si apre in una nuova scheda)</span>;
 
 // Each project: the case study on this site first, the live site beside it.
 function ProjectCard({ project }: { project: Project }) {
@@ -71,24 +45,24 @@ function ProjectCard({ project }: { project: Project }) {
         <p className="gm-project-description">{project.description}</p>
         <div className="gm-project-actions">
           {study && (
-            <Link className="gm-btn gm-btn--ghost" href={study}>
+            <Link className="gm-btn gm-btn--ghost" href={study} data-cta="progetto" data-project={project.name}>
               Scopri il progetto <span className="gm-btn-arrow" aria-hidden="true">→</span>
             </Link>
           )}
           {project.href && (
-            <a className={study ? 'gm-project-live' : 'gm-btn gm-btn--ghost'} href={project.href} target="_blank" rel="noopener">
-              Visita {host} <span className="gm-btn-arrow" aria-hidden="true">↗</span>
+            <a className={study ? 'gm-project-live' : 'gm-btn gm-btn--ghost'} href={project.href} target="_blank" rel="noopener" data-cta="sito-cliente" data-project={project.name}>
+              Visita {host} <span className="gm-btn-arrow" aria-hidden="true">↗</span>{NEW_TAB}
             </a>
           )}
         </div>
       </div>
       {study ? (
-        <Link className="gm-project-media" href={study} aria-label={`${project.name}: scopri il progetto`}>
+        <Link className="gm-project-media" href={study} aria-label={`${project.name}: scopri il progetto`} data-cta="progetto" data-project={project.name}>
           {media}
           <span className="gm-project-hover" aria-hidden="true">Scopri il progetto <span>→</span></span>
         </Link>
       ) : project.href ? (
-        <a className="gm-project-media" href={project.href} target="_blank" rel="noopener" aria-label={`Apri il sito di ${project.name} in una nuova scheda`}>
+        <a className="gm-project-media" href={project.href} target="_blank" rel="noopener" aria-label={`Apri il sito di ${project.name} in una nuova scheda`} data-cta="sito-cliente" data-project={project.name}>
           {media}
           <span className="gm-project-hover" aria-hidden="true">Visita il sito <span>↗</span></span>
         </a>
@@ -103,7 +77,6 @@ export default function Home() {
   const contacts = contactDetails();
   return (
     <>
-      <script dangerouslySetInnerHTML={{ __html: OPENING }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(homeLd())} />
       <SiteHeader />
       <GoMoreMobileIntro />
@@ -154,7 +127,7 @@ export default function Home() {
               <header className="gm-contact-head" data-reveal>
                 <SectionLabel>Contatti</SectionLabel>
                 <h2 id="contatti-title" className="gm-h2 gm-h2--xl">Parliamo del tuo progetto.</h2>
-                <p className="gm-lead">Il tuo progetto merita di essere percepito per ciò che vale. Raccontaci cosa hai in mente: anche solo un’idea, bastano poche righe.</p>
+                <p className="gm-lead">Raccontaci che attività hai e cosa vorresti ottenere dal sito: bastano poche righe, anche solo un’idea.</p>
                 {contacts.length > 0 && (
                   <p className="gm-contact-mail">
                     Oppure {contacts.map((item, index) => (
@@ -162,6 +135,14 @@ export default function Home() {
                     ))}
                   </p>
                 )}
+                {/* The answer to "and then?", before the form is sent. */}
+                <div className="gm-next-steps">
+                  <h3>Cosa succede dopo</h3>
+                  <ol>
+                    {nextSteps.map((step, index) => <li key={step}><span aria-hidden="true">{pad(index)}</span>{step}</li>)}
+                  </ol>
+                  {site.responseTime && <p className="gm-next-steps-time">Ti rispondiamo entro {site.responseTime}.</p>}
+                </div>
               </header>
               <div id="modulo" className="gm-contact-form" data-reveal style={delay(120)}>
                 <ContactForm />

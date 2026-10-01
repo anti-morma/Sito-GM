@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { phonePixelRatio } from './pixel-ratio';
+import { sceneRatio } from './quality';
 import {
   drawStar,
   LIVING_AMP,
@@ -14,7 +14,7 @@ import {
   tintFor,
 } from './gm-constellation';
 
-// ---------- The phone opening, once per session (page.tsx decides) ----------
+// ---------- The phone opening, once per session (opening.ts decides) ----------
 // Seconds from its start. Darkness; a few stars, then more, surface around
 // GOMORE (Didot capitals, the GM's own letters: scripts/render-gomore.swift);
 // the word loses its hold and its stars, with the cloud's, converge and build
@@ -182,7 +182,7 @@ function buildStars(word: number[][], gm: number[][], share: number) {
 
 /**
  * GoMore's phone opening: a full-screen canvas over the page, played once per
- * session (page.tsx marks <html> before the first paint). It ends by handing
+ * session (opening.ts marks <html> before the first paint). It ends by handing
  * its monogram to the header logo (gm-constellation.ts).
  */
 export default function GoMoreMobileIntro() {
@@ -221,7 +221,7 @@ export default function GoMoreMobileIntro() {
     const measure = () => {
       width = canvas.clientWidth;
       height = canvas.clientHeight;
-      ratio = phonePixelRatio();
+      ratio = sceneRatio();
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
       stage.x = width / 2;
@@ -463,7 +463,7 @@ export default function GoMoreMobileIntro() {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       clock += dt * speed;
-      // The page gave up on the opening (page.tsx's safety net).
+      // The page gave up on the opening (opening.ts's safety net).
       if (!root.classList.contains('gm-intro') && !landed) return finish();
       // A phone that falls behind in the first frames draws fewer stars.
       if (!still && slowFrames.length < 16 && clock > 0.2) {
@@ -471,6 +471,9 @@ export default function GoMoreMobileIntro() {
         if (slowFrames.length === 16) {
           const median = slowFrames.sort((a, b) => a - b)[8];
           if (median > 0.024) share = Math.min(share, 0.55);
+          // Far behind (under about 22 frames a second): the opening plays
+          // on at the pace of a tap, rather than stutter for three seconds.
+          if (median > 0.045) speed = Math.max(speed, 2.2);
         }
       }
       const t = clock;
@@ -526,7 +529,7 @@ export default function GoMoreMobileIntro() {
     addEventListener('resize', measure);
     Promise.all([import('./gomore-points.json'), import('./gm-points.json')]).then(([word, gm]) => {
       if (cancelled) return;
-      // The page stopped waiting (page.tsx): no opening today.
+      // The page stopped waiting (opening.ts): no opening today.
       if (root.dataset.intro !== 'waiting') return finish();
       stars = buildStars(word.default as number[][], gm.default as number[][], share);
       addEventListener('pointerdown', hurry, { passive: true });
