@@ -1,8 +1,10 @@
 import Link from 'next/link';
-import MotionToggle from './motion-toggle';
 import { primaryCta, site } from './content';
 import { contactDetails, DetailText, legalDetails } from './studio-details';
+import WhereLink from './where-link';
 
+/** The same footer on every page: the last call (where the page has none of
+ *  its own), the studio's details and the legal pages. */
 export default function SiteFooter({ cta = true }: { cta?: boolean }) {
   const contacts = contactDetails();
   const legal = legalDetails();
@@ -12,16 +14,19 @@ export default function SiteFooter({ cta = true }: { cta?: boolean }) {
         {cta && (
           <div className="gm-footer-cta">
             <p>Hai un progetto in mente?</p>
-            <Link className="gm-btn gm-btn--primary gm-btn--large" href="/#contatti" data-cta="footer">
+            <Link className="gm-btn gm-btn--primary gm-btn--large" href="/contatti" data-cta="footer">
               {primaryCta} <span className="gm-btn-arrow" aria-hidden="true">→</span>
             </Link>
           </div>
         )}
+
         <div className="gm-footer-bottom">
           {/* The studio and its legal details. */}
           <div className="gm-footer-studio">
             <p className="gm-footer-brand">{site.name}</p>
-            <p>Studio digitale indipendente · {site.city ? `${site.city}, Italia` : 'Italia'}</p>
+            <p>Studio digitale indipendente{site.city ? ` · ${site.city}` : ''}</p>
+            {/* Where we work, from every page (where-link.tsx). */}
+            <WhereLink />
             {legal.length > 0 && (
               <p className="gm-footer-legal">
                 {legal.map((item) => <span key={item.key}><DetailText item={item} /></span>)}
@@ -36,8 +41,6 @@ export default function SiteFooter({ cta = true }: { cta?: boolean }) {
           <ul aria-label="Informazioni legali">
             <li><Link href="/privacy">Privacy</Link></li>
             <li><Link href="/cookie">Cookie</Link></li>
-            {/* Stars, rocket and previews stand still on request (WCAG 2.2.2). */}
-            <li><MotionToggle /></li>
             <li><span>© {new Date().getFullYear()} {site.name}</span></li>
           </ul>
         </div>

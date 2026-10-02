@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type RefObject } from 'react';
-import { whenIdle } from './idle';
+import { afterOpening } from './idle';
 
 export type ParticleFrame = {
   /** The method's timeline, from loose stars through the villa to the video. */
@@ -17,8 +17,8 @@ export type ParticleFrame = {
 
 /**
  * The page's particle scenes: the GM, the villa's drawing, the brain. The
- * scene and its 3D library (astra-scene.ts) load after the page: the words
- * and their links never wait for the stars.
+ * scene and its 3D library (astra-scene.ts) load after the page, and after
+ * the phone opening: the words, their links and the opening never wait.
  */
 export default function AstraField({ frameState, onFailed }: { frameState: RefObject<ParticleFrame>; onFailed?: () => void }) {
   const onFailedRef = useRef(onFailed);
@@ -34,9 +34,8 @@ export default function AstraField({ frameState, onFailed }: { frameState: RefOb
       host.dataset.failed = 'true';
       onFailedRef.current?.();
     };
-    const scene = import('./astra-scene');
-    const cancelIdle = whenIdle(() => {
-      scene.then(({ mountAstraField }) => {
+    const cancelIdle = afterOpening(() => {
+      import('./astra-scene').then(({ mountAstraField }) => {
         if (cancelled) return;
         cleanup = mountAstraField(host, frameState, failed);
         if (cleanup) host.dataset.failed = 'false';

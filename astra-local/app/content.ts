@@ -64,6 +64,7 @@ export const offers = [
     title: 'Sito web su misura',
     kicker: 'Il progetto',
     price: '',
+    monthlyFrom: 0,
     text: 'Nessun modello pronto: ogni sito nasce da una consulenza e viene progettato e sviluppato da zero sul tuo progetto.',
     includes: [
       'Consulenza e strategia iniziale',
@@ -77,9 +78,11 @@ export const offers = [
   },
   {
     title: 'Hosting e manutenzione',
-    kicker: 'Dopo il lancio · servizio a pagamento',
-    price: '',
-    text: 'Ospitiamo il sito, gestiamo il dominio e ce ne prendiamo cura. Il prezzo non è fisso: dipende dalle tue esigenze.',
+    kicker: 'Dopo il lancio',
+    price: 'A partire da 19,99 € al mese',
+    /** The same price as a number, for the structured data (seo.ts). */
+    monthlyFrom: 19.99,
+    text: 'Ospitiamo il sito, gestiamo il dominio e ce ne prendiamo cura, con un prezzo che segue le tue esigenze.',
     includes: [
       'Hosting: il sito sempre online, veloce e sicuro',
       'Registrazione e gestione del dominio',
@@ -92,6 +95,32 @@ export const offers = [
   },
 ];
 
+// "Chi siamo" (app/chi-siamo): the two founders, as they are. No portraits
+// until real ones exist: the page is typographic on purpose.
+export const founders = [
+  {
+    name: 'Ludovico Gusmano',
+    role: 'Strategy · Business · UX',
+    text: 'Business, economia e finanza, user experience. Definisce gli obiettivi e la logica del sito: i percorsi delle persone, i passaggi che portano a una scelta, ciò che fa funzionare un’esperienza digitale chiara.',
+    knowsAbout: ['Strategia digitale', 'Business', 'Economia e finanza', 'UX design', 'User flow'],
+  },
+  {
+    name: 'Alessandro Mormandi',
+    role: 'Development · 3D · Creative Technology',
+    text: 'Sviluppo e scrittura del codice, front-end, performance, 3D e WebGL, animazioni e interazioni. Trasforma il progetto in un sito veloce, solido e curato in ogni dettaglio.',
+    knowsAbout: ['Sviluppo web', 'Front-end', 'Performance web', '3D e WebGL', 'Creative technology'],
+  },
+];
+
+// How the studio thinks: five sides of every project (chi-siamo).
+export const principles = [
+  { title: 'Psicologia', text: 'Capire come le persone percepiscono, scelgono e agiscono.' },
+  { title: 'UX', text: 'Ridurre attrito, confusione e passaggi inutili.' },
+  { title: 'Design', text: 'Trasformare strategia e identità in un’esperienza visiva coerente.' },
+  { title: 'Tecnologia', text: 'Usare codice, 3D, WebGL e AI quando aggiungono un valore reale, non per stupire.' },
+  { title: 'Business', text: 'Costruire un’esperienza che non sia solo bella, ma utile all’obiettivo.' },
+];
+
 // What happens after the form, said before it is sent: nobody should wonder.
 export const nextSteps = [
   'Leggiamo la tua richiesta.',
@@ -99,12 +128,16 @@ export const nextSteps = [
   'Ti proponiamo un progetto su misura.',
 ];
 
-/** A project told in full on its own page, /progetti/<slug>. Facts only:
- *  figures and the client's words appear once they are real and approved. */
+/** A project told in full on its own page, /progetti/<slug>: the same model
+ *  for every case study, PROBLEM → DECISION → SOLUTION → EXPERIENCE. Facts
+ *  only: an optional chapter left empty is simply not shown, and figures and
+ *  the client's words appear once they are real and approved. */
 export type CaseStudy = {
   slug: string;
-  /** The page's title in search results: what was made, for whom, where. */
+  /** The page's title in search results (the layout adds "| GoMore"), under ~50 characters. */
   seoTitle: string;
+  /** Meta description, under 155 characters. */
+  seoDescription: string;
   /** Who the client is, in one sentence. */
   client: string;
   place: string;
@@ -113,10 +146,26 @@ export type CaseStudy = {
   year?: string;
   /** The page's promise, under the name. */
   headline: string;
+  /** The project in a few lines: what was made, how big. */
+  overview: string;
+  /** The problem. */
   challenge: string;
+  goals?: string[];
+  /** The decision: the idea the whole site follows. */
   idea: string;
+  strategy?: string;
+  ux?: string;
+  design?: string;
+  technology?: string[];
+  /** 3D, motion, interactive elements. */
+  motion?: string;
+  mobile?: string;
+  seo?: string[];
+  /** Deliverables. */
   work: string[];
   result: string;
+  /** Service pages this project shows (services.ts slugs). */
+  serviceSlugs: string[];
   /** Real, verifiable figures only, e.g. { value: '+40%', label: 'richieste dal sito in sei mesi' }. */
   metrics?: { value: string; label: string }[];
   /** The client's own words, with their approval. */
@@ -143,20 +192,45 @@ export type Project = {
 export const projects: Project[] = [
   {
     name: 'Lalinga Oro',
-    category: 'Gioielleria · Brand experience · Web design',
+    category: 'Gioielleria · Taranto',
     description: 'Tre generazioni di orafi a Taranto, dal 1950. Un orologio che prende vita allo scroll racconta la loro precisione e porta ognuno, in pochi secondi, al servizio che cerca.',
     href: 'https://lalingaoro.it',
     preview: '/projects/lalinga',
     study: {
       slug: 'lalinga-oro',
-      seoTitle: 'Lalinga Oro: sito web per una gioielleria di Taranto',
+      seoTitle: 'Lalinga Oro, gioielleria a Taranto: caso studio',
+      seoDescription: 'Il sito di Lalinga Oro, gioielleria di famiglia a Taranto dal 1950: sei mestieri in un solo percorso e un orologio che si apre allo scroll.',
       client: 'Gioielleria, orologeria e laboratorio orafo di famiglia, a Taranto dal 1950.',
       place: 'Taranto',
       sector: 'Gioielleria · Orologeria',
       services: ['Strategia e struttura', 'Brand experience', 'Web design', 'Sviluppo e animazioni'],
       headline: 'Tre generazioni di mestiere, in un solo scroll.',
+      overview: 'Un sito nuovo per una gioielleria, orologeria e laboratorio orafo di famiglia, in via Anfiteatro a Taranto dal 1950. Nove pagine: una per ciascuno dei sei mestieri della maison, la sua storia e i contatti.',
       challenge: 'Una maison di famiglia dal 1950 e sei mestieri diversi: orologi, oreficeria, gioielli, pelletteria, compro oro e un laboratorio interno. Il rischio era un catalogo. Serviva un sito che trasmettesse fiducia e precisione, e che facesse trovare a ognuno la propria strada.',
+      goals: [
+        'Trasmettere la fiducia e la precisione di settant’anni di mestiere.',
+        'Far trovare a ognuno, in pochi secondi, il servizio che cerca.',
+        'Portare le persone dallo schermo alla vetrina di via Anfiteatro.',
+      ],
       idea: 'Una gioielleria vive di precisione e di fiducia: per questo il sito parla la lingua dell’orologeria. Il primo scroll apre un orologio e ne svela il meccanismo, pezzo per pezzo. Come i suoi ingranaggi, i sei servizi della maison lavorano insieme, ognuno al suo posto.',
+      strategy: 'Sei mestieri, sei porte d’ingresso. Invece di un catalogo unico, ogni servizio ha una pagina sua, raggiungibile dalla prima schermata: chi cerca un orologio non deve attraversare il compro oro per trovarlo.',
+      ux: 'Dopo l’apertura la home presenta i sei servizi, numerati da 01 a 06: per ciascuno una riga che dice che cosa offre e un link alla sua pagina. Indirizzo e telefono sono nel menu e in fondo alla pagina, a un tocco da chi è già pronto a passare in negozio.',
+      design: 'Il carattere di una maison del 1950, senza nostalgia: due caratteri tipografici di impronta classica, Italiana e Cormorant Garamond, e un racconto che prende il ritmo preciso dell’orologeria.',
+      technology: [
+        'HTML, CSS e JavaScript scritti su misura: nessun CMS, nessun tema, nessun framework',
+        'Caratteri tipografici ospitati sul sito, senza servizi esterni',
+        'L’apertura disegnata su un canvas e guidata dallo scroll',
+      ],
+      motion: 'Al primo scroll un orologio si apre e svela il suo meccanismo, pezzo per pezzo: un’animazione disegnata e programmata su misura, che avanza al ritmo di chi scorre.',
+      mobile: 'Pensato prima di tutto per il telefono: dal menu, indirizzo e numero della boutique sono sempre a un tocco.',
+      seo: [
+        'Titolo e descrizione costruiti sulla ricerca locale: «Gioielleria a Taranto dal 1950»',
+        'Una pagina per ciascun servizio, perché ognuno possa essere trovato per ciò che offre',
+        'Dati strutturati da gioielleria (JewelryStore) con indirizzo, orari, telefono e dati aziendali',
+        'Sitemap e robots.txt per guidare l’indicizzazione',
+      ],
+      // The clock is motion on a 2D canvas, not WebGL: the 3D page cites it as motion only.
+      serviceSlugs: ['web-design', 'sviluppo-web', 'ux-ui'],
       work: [
         'Un sito nuovo, progettato e sviluppato da zero: nessun tema, nessun modello già pronto',
         'Strategia e architettura dei contenuti: sei servizi diversi ordinati in un percorso chiaro, in cui ognuno trova subito il suo',
@@ -170,20 +244,36 @@ export const projects: Project[] = [
   },
   {
     name: 'Residenza Vedovelli',
-    category: 'Hospitality · Web design · Digital experience',
+    category: 'Casa vacanze · Lago di Garda',
     description: 'Una residenza sul Lago di Garda, da visitare piano per piano in tre lingue. Un sito che porta gli ospiti a prenotare direttamente dai proprietari, senza commissioni ai portali.',
     href: 'https://www.residenzavedovelli.it',
     preview: '/projects/vedovelli',
     study: {
       slug: 'residenza-vedovelli',
-      seoTitle: 'Residenza Vedovelli: sito web per una casa vacanze sul Lago di Garda',
+      seoTitle: 'Residenza Vedovelli, Lago di Garda: caso studio',
+      seoDescription: 'Il sito di Residenza Vedovelli, sul Lago di Garda: la casa piano per piano, in tre lingue, con la prenotazione diretta senza commissioni.',
       client: 'Una residenza ricavata da un’antica limonaia a Torri del Benaco, sulla sponda veronese del Lago di Garda.',
       place: 'Torri del Benaco · Lago di Garda',
       sector: 'Hospitality · Affitti brevi',
       services: ['Web design', 'Digital experience', 'Sviluppo', 'Sito in tre lingue'],
       headline: 'La casa sul lago, piano per piano.',
+      overview: 'Il sito di una residenza ricavata da un’antica limonaia a Torri del Benaco: la villa intera e i suoi tre piani, prenotabili insieme o da soli, raccontati in italiano, inglese e tedesco.',
       challenge: 'Tre piani che si prenotano da soli o insieme, ospiti da tutta Europa e portali che trattengono una commissione su ogni notte. Serviva un sito che aiutasse a scegliere la soluzione giusta e desse un motivo per prenotare direttamente.',
+      goals: [
+        'Aiutare a scegliere la soluzione giusta, tra la villa intera e i singoli piani.',
+        'Dare un motivo per prenotare direttamente, senza le commissioni dei portali.',
+        'Parlare agli ospiti da tutta Europa nella loro lingua.',
+      ],
       idea: 'Visitare la casa prima di arrivare: la villa, poi i piani uno per uno, il territorio intorno e la voce di chi c’è già stato.',
+      ux: 'Un percorso semplice per scegliere tra la villa intera e i singoli piani e arrivare alla prenotazione in pochi passaggi. La prenotazione diretta resta sempre a portata di mano.',
+      design: 'Il carattere di un’antica limonaia affacciata sul lago: la casa raccontata spazio per spazio, dal piano terra alla mansarda.',
+      technology: [
+        'Sviluppo su misura, senza modelli già pronti',
+        'Tre lingue: italiano, inglese e tedesco',
+        'Recensioni degli ospiti collegate a quelle verificate',
+      ],
+      mobile: 'Sviluppato su misura, veloce e pensato prima di tutto per il telefono.',
+      serviceSlugs: ['web-design', 'sviluppo-web', 'ux-ui'],
       work: [
         'Un sito progettato e sviluppato da zero, su misura per la casa e per chi la sceglie',
         'User experience: un percorso semplice per scegliere tra la villa intera e i singoli piani e arrivare alla prenotazione in pochi passaggi',

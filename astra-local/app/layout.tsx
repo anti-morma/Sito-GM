@@ -5,13 +5,19 @@ import { site } from './content';
 import { MOTION_SCRIPT } from './motion';
 import { OPENING_SCRIPT } from './opening';
 import { openGraphBase, siteDescription, siteSummary } from './seo';
+import SiteHeader from './site-header';
 import StarSky from './star-sky';
 import Tracking from './tracking';
 import './globals.css';
 
+// Vercel's preview deployments are copies of the site on other addresses:
+// they must never compete with the real one in search results.
+const preview = process.env.VERCEL_ENV === 'preview';
+const HOME_TITLE = `${site.name} | Web design, sviluppo e digital experiences`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
-  title: { default: 'Siti web su misura e design digitale — GoMore', template: '%s — GoMore' },
+  title: { default: HOME_TITLE, template: `%s | ${site.name}` },
   description: siteDescription,
   applicationName: site.name,
   authors: [{ name: site.name, url: site.url }],
@@ -20,13 +26,11 @@ export const metadata: Metadata = {
   category: 'Web design',
   // Numbers in the copy are not phone numbers unless they are links.
   formatDetection: { telephone: false, address: false, email: false },
-  openGraph: {
-    ...openGraphBase,
-    title: 'GoMore — Diamo forma a ciò che ti rende unico',
-    description: siteSummary,
-  },
-  twitter: { card: 'summary_large_image', title: 'GoMore — Diamo forma a ciò che ti rende unico', description: siteSummary },
-  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 } },
+  openGraph: { ...openGraphBase, title: HOME_TITLE, description: siteSummary },
+  twitter: { card: 'summary_large_image', title: HOME_TITLE, description: siteSummary },
+  robots: preview
+    ? { index: false, follow: false }
+    : { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 } },
 };
 
 export const viewport: Viewport = {
@@ -64,6 +68,8 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: OPENING_SCRIPT }} />
         {/* Moving stars behind every page and section. */}
         <StarSky />
+        {/* The same header on every page (site-header.tsx). */}
+        <SiteHeader />
         {children}
         {/* Vercel Web Analytics: anonymous, aggregated visits, no cookies (see the privacy policy). */}
         <Analytics />

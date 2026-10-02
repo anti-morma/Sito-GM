@@ -10,16 +10,20 @@ const answer = site.responseTime ? `Ti rispondiamo entro ${site.responseTime}` :
 
 const config: ContactConfig = {
   siteName: site.name,
-  returnPath: '/#contatti',
+  // Without JavaScript the form comes back here with its outcome.
+  returnPath: '/contatti',
   fields: [
     { name: 'name', label: 'Nome', autoComplete: 'name', required: 'Dicci come ti chiami.', maxLength: 120 },
     { name: 'email', label: 'Email', type: 'email', autoComplete: 'email', required: 'Inserisci il tuo indirizzo email: ti rispondiamo lì.', maxLength: 254 },
-    { name: 'company', label: 'Azienda / progetto', autoComplete: 'organization', wide: true, maxLength: 200 },
+    { name: 'company', label: 'Azienda / brand', autoComplete: 'organization', maxLength: 200 },
+    // The first option is selected from the start: it must be a true answer
+    // for anyone who does not choose.
+    { name: 'type', label: 'Tipo di progetto', options: ['Da definire insieme', 'Un sito web nuovo', 'Il rinnovo di un sito esistente', 'Un’esperienza 3D o interattiva', 'Hosting e manutenzione', 'Altro'] },
     {
       name: 'idea',
-      label: 'Raccontaci la tua idea',
+      label: 'Messaggio',
       multiline: true,
-      required: 'Raccontaci qualcosa della tua idea, anche solo poche righe.',
+      required: 'Raccontaci qualcosa del progetto, anche solo poche righe.',
       minLength: 10,
       tooShort: 'Aggiungi qualche dettaglio in più: bastano poche righe.',
     },

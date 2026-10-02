@@ -65,7 +65,7 @@ em { font-style: normal; }
   z-index: -1;
   pointer-events: none;
 }
-.gm-star-sky canvas { display: block; width: 100%; height: 100%; }
+.gm-star-sky canvas { display: block; width: 100%; height: 100%; animation: gm-fade-in 0.8s var(--ease) both; }
 
 .gm-sr-only {
   position: absolute;
@@ -181,6 +181,7 @@ em { font-style: normal; }
 .gm-btn--small { min-height: 44px; padding: 0 20px; font-size: 14px; }
 .gm-btn--block { width: 100%; }
 
+/* A link on its own line: its arrow says it is one, no underline needed. */
 .gm-link {
   display: inline-flex;
   align-items: center;
@@ -189,16 +190,23 @@ em { font-style: normal; }
   color: var(--ink);
   font-size: 16px;
   font-weight: 500;
-  text-decoration: underline;
-  text-decoration-color: var(--line-2);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 6px;
-  transition: text-decoration-color 0.3s var(--ease);
+  transition: color 0.3s var(--ease);
 }
-.gm-link:hover { text-decoration-color: var(--accent); }
+.gm-link .gm-btn-arrow { color: var(--accent); }
+.gm-link:hover { color: var(--accent-hover); }
+.gm-link:hover .gm-btn-arrow { transform: translateX(4px); }
+
+/* Breadcrumbs: where an inner page sits (inner.tsx, chi-siamo). */
+.gm-crumbs ol { display: flex; flex-wrap: wrap; gap: 4px 0; margin: 0 0 clamp(28px, 5vh, 48px); padding: 0; list-style: none; color: var(--ink-3); font-size: 13px; }
+.gm-crumbs li { display: inline-flex; align-items: center; }
+.gm-crumbs li + li::before { content: '/'; margin-inline: 10px; color: var(--line-2); }
+.gm-crumbs a { display: inline-flex; align-items: center; min-height: 32px; transition: color 0.3s var(--ease); }
+.gm-crumbs a:hover { color: var(--ink); }
+.gm-crumbs [aria-current] { color: var(--ink-2); }
 
 /* ======================================================================
-   Header
+   Header (site-header.tsx): the GM on the left, the pages on the right,
+   the same on every page. Each name always opens its page.
    ====================================================================== */
 .gm-header {
   position: fixed;
@@ -206,10 +214,9 @@ em { font-style: normal; }
   top: 0;
   right: 0;
   left: 0;
-  /* Logo · section capsule (centred on the page) · contact. */
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 24px;
   height: var(--header-h);
   padding: 0 var(--gutter);
@@ -240,184 +247,49 @@ em { font-style: normal; }
   background: url('/gm-logo.webp') center / 176% auto no-repeat;
 }
 
-.gm-header-cta { justify-self: end; }
-
-/* ---------- Section capsule: every chapter by name, the current one lit ---------- */
-.gm-nav {
+/* ---------- The pages: plain names; where you are, the studio's dot ---------- */
+.gm-nav ul { display: flex; align-items: center; gap: clamp(0px, 0.5vw, 8px); margin: 0; padding: 0; list-style: none; }
+.gm-nav a {
   position: relative;
-  justify-self: center;
-  padding: 3px 4px;
-  border: 1px solid var(--line-2);
-  border-radius: 999px;
-  background: rgb(5 6 8 / 58%);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 8px 30px rgb(0 0 0 / 28%);
-}
-/* Extra room on the right for the final star. */
-.gm-nav-route { position: relative; padding-right: 36px; }
-.gm-nav ul { display: flex; margin: 0; padding: 0; list-style: none; }
-
-.gm-nav ul a {
   display: inline-flex;
   align-items: center;
-  min-height: 56px;
-  /* Room below each name for its star on the rising route. */
-  padding: 0 clamp(10px, 1.1vw, 16px) 8px;
-  border-radius: 999px;
-  color: var(--ink-3);
-  font-size: clamp(13px, 1.02vw, 15px);
+  min-height: 44px;
+  padding: 0 clamp(9px, 1vw, 14px);
+  color: var(--ink-2);
+  font-size: 15px;
   font-weight: 500;
   white-space: nowrap;
-  text-decoration: none;
-  transition: color 0.35s var(--ease), text-shadow 0.35s var(--ease);
+  transition: color 0.3s var(--ease), background-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
-.gm-nav ul a { position: relative; z-index: 1; }
-.gm-nav ul a:hover { color: var(--ink); }
-.gm-nav ul a[aria-current] {
-  color: var(--ink);
-  text-shadow: 0 0 12px rgb(143 177 255 / 55%);
-}
-
-/* ---------- THE ASCENT: the further you go, the higher you climb ----------
-   A rising route under the names (ascent.tsx): the travelled part is revealed,
-   a small light climbs it with the scroll, a star waits at the top. */
-.gm-ascent {
+.gm-nav a:hover { color: var(--ink); }
+/* The page you are on (or inside): its name in full white, the GM dot under it. */
+.gm-nav a[aria-current] { color: var(--ink); }
+.gm-nav a[aria-current]::after {
+  content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-}
-.gm-ascent-svg { position: absolute; inset: 0; overflow: visible; }
-
-.gm-ascent-route {
-  fill: none;
-  stroke: rgb(243 241 236 / 9%);
-  stroke-width: 1;
-  stroke-dasharray: 1 5;
-  stroke-linecap: round;
-}
-.gm-ascent-trail,
-.gm-ascent-glow {
-  fill: none;
-  stroke-linecap: round;
-  stroke-dasharray: 0 10000;
-}
-.gm-ascent-trail { stroke-width: 1; opacity: 0.85; }
-.gm-ascent-glow { stroke-width: 3; opacity: 0.35; transition: opacity 0.9s var(--ease); }
-.gm-ascent.is-rising .gm-ascent-glow { opacity: 0.8; transition-duration: 0.25s; }
-
-.gm-ascent-stop {
-  fill: var(--ink);
-  opacity: 0.22;
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease), filter 0.6s var(--ease);
-}
-.gm-ascent-stop[data-state='past'] { opacity: 0.55; }
-.gm-ascent-stop[data-state='here'] {
-  opacity: 1;
-  transform: scale(1.3);
-  filter: drop-shadow(0 0 2.5px rgb(143 177 255 / 90%));
-}
-
-/* The final star: quiet until the journey reaches it. */
-.gm-ascent-star-body {
-  fill: #e6ecff;
-  opacity: 0.5;
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
-  animation: gm-star-float 6s ease-in-out infinite;
-}
-.gm-ascent-star-glow { opacity: 0; transition: opacity 0.8s var(--ease); }
-.gm-ascent-star-core { fill: #fff; }
-.gm-ascent-star.is-reached .gm-ascent-star-body { opacity: 1; transform: scale(1.3); }
-.gm-ascent-star.is-reached .gm-ascent-star-glow { opacity: 1; }
-.gm-ascent-sparks circle { fill: #dfe7ff; opacity: 0; }
-.gm-ascent-star.is-reached .gm-ascent-sparks circle { animation: gm-spark 1.3s var(--ease) 0.15s both; }
-.gm-ascent-star.is-reached .gm-ascent-sparks circle:nth-child(2) { animation-delay: 0.25s; }
-.gm-ascent-star.is-reached .gm-ascent-sparks circle:nth-child(3) { animation-delay: 0.32s; }
-.gm-ascent-star.is-reached .gm-ascent-sparks circle:nth-child(4) { animation-delay: 0.4s; }
-@keyframes gm-spark {
-  0% { opacity: 0; transform: translate(0, 0); }
-  30% { opacity: 0.9; }
-  100% { opacity: 0; transform: translate(var(--spark-x), var(--spark-y)); }
-}
-/* Depth: the far star drifts almost imperceptibly. */
-@keyframes gm-star-float {
-  0%, 100% { translate: 0 0; }
-  50% { translate: 0.6px -0.8px; }
-}
-
-/* The rocket riding the route (rocket.tsx), engine always at full thrust. */
-.gm-ascent-light {
-  --stretch: 0.3;
-  --motion: 0;
-  --dir: 1;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  will-change: transform;
-}
-.gm-ascent-body { position: absolute; top: 0; left: 0; transform: scaleX(var(--dir)); }
-
-.gm-rocket {
-  position: absolute;
-  top: -10px;
-  left: -28px;
-  overflow: visible;
-  transform-origin: 28px 10px;
-  scale: 0.9;
-  filter: drop-shadow(0 0 3px rgb(143 177 255 / 30%));
-}
-/* Longer, brighter flames as it speeds up. */
-.gm-rocket-engine { --thrust: calc(1 + var(--motion) * 0.9); }
-/* Entering a new section: a short burst of extra thrust. */
-.gm-ascent.is-rising .gm-rocket-engine { --thrust: calc(1.35 + var(--motion) * 0.9); }
-.gm-rocket-flame {
-  transform-box: fill-box;
-  transform-origin: 100% 50%;
-  animation: gm-flame 0.13s ease-in-out infinite alternate;
-}
-.gm-rocket-flame--inner { animation-duration: 0.085s; animation-delay: -0.04s; }
-@keyframes gm-flame {
-  from { transform: scale(calc(var(--thrust) * 0.8), 0.88); }
-  to { transform: scale(calc(var(--thrust) * 1.12), 1.08); }
-}
-.gm-rocket-heat {
-  transform-box: fill-box;
-  transform-origin: 100% 50%;
-  animation: gm-heat 0.22s ease-in-out infinite alternate;
-}
-@keyframes gm-heat {
-  from { opacity: 0.6; transform: scaleX(var(--thrust)); }
-  to { opacity: 1; transform: scaleX(calc(var(--thrust) * 1.15)); }
-}
-
-/* Sparks from the exhaust, clearer in flight. */
-.gm-ascent-dust { position: absolute; top: 0; left: 0; opacity: calc(0.25 + var(--motion) * 0.75); }
-.gm-ascent-dust i {
-  position: absolute;
-  width: 1.5px;
-  height: 1.5px;
+  left: 50%;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
   border-radius: 50%;
-  background: #ffd28a;
-  animation: gm-dust 0.9s ease-out infinite;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgb(143 177 255 / 14%), 0 0 10px rgb(143 177 255 / 70%);
 }
-.gm-ascent-dust i:nth-child(1) { top: -2px; left: calc(-24px - var(--motion) * 10px); animation-delay: -0.2s; }
-.gm-ascent-dust i:nth-child(2) { top: 1.5px; left: calc(-28px - var(--motion) * 16px); width: 1px; height: 1px; animation-delay: -0.55s; }
-.gm-ascent-dust i:nth-child(3) { top: -0.5px; left: calc(-32px - var(--motion) * 22px); width: 1px; height: 1px; animation-delay: -0.75s; }
-@keyframes gm-dust {
-  0% { opacity: 0; transform: translateX(0); }
-  25% { opacity: 0.9; }
-  100% { opacity: 0; transform: translateX(-9px); }
+/* Contatti: the action, as the site's primary button. */
+.gm-nav .gm-nav-action {
+  min-height: 42px;
+  margin-left: clamp(4px, 0.8vw, 12px);
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 0 0 1px rgb(143 177 255 / 30%), 0 10px 36px -12px rgb(143 177 255 / 55%);
 }
-
-/* Compact screens: the same ascent, small, in the top bar. */
-.gm-ascent-mini { display: none; }
+.gm-nav .gm-nav-action:hover { background: var(--accent-hover); color: var(--accent-ink); }
+.gm-nav .gm-nav-action[aria-current] { color: var(--accent-ink); box-shadow: 0 0 0 1px rgb(143 177 255 / 45%), 0 0 0 5px rgb(143 177 255 / 16%); }
+.gm-nav .gm-nav-action[aria-current]::after { content: none; }
+.gm-nav .gm-nav-action:focus-visible { outline-color: var(--ink); }
 
 .gm-menu-toggle { display: none; }
 
@@ -465,68 +337,38 @@ em { font-style: normal; }
 .gm-mobile-menu-pages { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 24px; }
 .gm-mobile-menu-pages :is(a, .gm-motion-toggle) { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); font-size: 13px; }
 
-@media (max-width: 960px) {
-  .gm-header { display: flex; justify-content: space-between; }
-  .gm-nav,
-  .gm-header-cta { display: none; }
-  .gm-ascent-mini {
-    position: relative;
-    display: block;
-    flex: none;
-    margin: 0 auto;
-  }
-  /* Smaller rocket; scaling the drawing, not the element, keeps it on the route. */
-  .gm-ascent-mini .gm-rocket { scale: 0.68; }
-  .gm-header[data-menu='open'] .gm-ascent-mini { opacity: 0; }
+/* Phones: the pages in a full-screen menu. A lighter bar, a smaller mark
+   (its tap area kept), a quieter Menu. */
+@media (max-width: 760px) {
+  :root { --header-h: 64px; }
+  .gm-header { gap: 10px; }
+  .gm-nav { display: none; }
+  .gm-logo { position: relative; width: 46px; height: 34px; margin-left: -6px; }
+  .gm-logo::after { content: ''; position: absolute; inset: -5px -4px; }
   .gm-menu-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     min-width: 44px;
     min-height: 44px;
     margin-right: -10px;
-    padding: 0 10px 0 16px;
+    padding: 0 10px 0 12px;
     border: 0;
     background: none;
-    font-size: 15px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 400;
   }
   .gm-menu-toggle i {
     position: relative;
-    width: 20px;
-    height: 8px;
-    border-top: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
+    flex: none;
+    width: 18px;
+    height: 7px;
+    border-top: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
     transition: height 0.3s var(--ease);
   }
   .gm-header[data-menu='open'] .gm-menu-toggle i { height: 0; border-bottom: 0; }
   .gm-header[data-menu='open']::before { opacity: 1; }
-}
-@media (max-width: 760px) {
-  :root { --header-h: 64px; }
-  /* Phones: a lighter bar. A smaller mark (its tap area kept), a quieter
-     menu, and the ascent as a fine detail of the composition: smaller, with
-     a slimmer route, a softer light and a calmer engine. */
-  .gm-header { gap: 10px; }
-  .gm-logo { position: relative; width: 46px; height: 34px; margin-left: -6px; }
-  .gm-logo::after { content: ''; position: absolute; inset: -5px -4px; }
-  .gm-menu-toggle { gap: 10px; padding-left: 12px; font-size: 14px; font-weight: 400; }
-  .gm-menu-toggle i { flex: none; width: 18px; height: 7px; border-width: 1px 0; }
-  /* 80%, and the width it no longer uses given back to the bar (168px × 0.2 / 2 a side),
-     so the bar fits a 320px screen. */
-  .gm-ascent-mini { margin-inline: -17px; scale: 0.8; }
-  .gm-ascent-mini .gm-ascent-route { stroke: rgb(243 241 236 / 7%); }
-  .gm-ascent-mini .gm-ascent-trail { opacity: 0.6; }
-  .gm-ascent-mini .gm-ascent-glow { stroke-width: 2; opacity: 0.2; }
-  .gm-ascent-mini.is-rising .gm-ascent-glow { opacity: 0.45; }
-  .gm-ascent-mini .gm-ascent-stop[data-state='next'] { opacity: 0.16; }
-  .gm-ascent-mini .gm-ascent-stop[data-state='past'] { opacity: 0.4; }
-  .gm-ascent-mini .gm-ascent-star-body { opacity: 0.38; }
-  .gm-ascent-mini .gm-rocket { opacity: 0.88; filter: drop-shadow(0 0 2px rgb(143 177 255 / 18%)); }
-  .gm-ascent-mini .gm-rocket-flame { animation-duration: 0.26s; }
-  .gm-ascent-mini .gm-rocket-flame--inner { animation-duration: 0.17s; }
-  .gm-ascent-mini .gm-rocket-heat { animation-duration: 0.44s; }
-  .gm-ascent-mini .gm-ascent-dust i { animation-duration: 1.6s; }
 }
 .gm-logo-stars { display: none; }
 /* Phones: the GM, a living constellation (dynamic-gm-logo.tsx), holds the
@@ -612,6 +454,9 @@ em { font-style: normal; }
   letter-spacing: -0.045em;
   text-wrap: balance;
 }
+/* The page's H1, set as the eyebrow: the label's own type (hero.tsx). */
+.gm-hero-h1 { font: inherit; letter-spacing: inherit; }
+
 /* The promise: a sharp display italic lit like the brightest stars. */
 .gm-hero-title em,
 .gm-bridge-line em {
@@ -637,6 +482,7 @@ em { font-style: normal; }
 
 .gm-hero-description {
   max-width: 40ch;
+  text-wrap: pretty;
   margin-top: clamp(22px, 3.4vh, 36px);
   color: var(--ink-2);
   font-size: clamp(17px, 1.3vw, 21px);
@@ -1139,6 +985,8 @@ em { font-style: normal; }
 .gm-phases li > * { opacity: 0.55; transition: opacity 0.6s var(--ease); }
 .gm-phases li.is-done > * { opacity: 0.7; }
 .gm-phases li.is-active > * { opacity: 1; }
+/* The numbers keep their full grey (≥ 4.5:1): dimming them as well left them unreadable. */
+.gm-phases li > .gm-phase-number { opacity: 1; }
 .gm-phases li:not(:last-child)::after {
   content: '';
   position: absolute;
@@ -1514,6 +1362,24 @@ em { font-style: normal; }
   .gm-project-media:hover .gm-project-hover { opacity: 1; transform: none; }
 }
 
+/* ---------- Chi siamo: the journey's stop between projects and services ----------
+   The whole story is on its own page (app/chi-siamo). */
+.gm-about-stop-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(40px, 6vw, 104px); align-items: end; }
+.gm-about-stop .gm-h2 { max-width: 14ch; }
+.gm-about-stop-side { display: grid; justify-items: start; gap: clamp(28px, 4vh, 40px); }
+.gm-home-more { margin-top: clamp(40px, 7vh, 72px); }
+.gm-about-stop-people { width: 100%; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.gm-about-stop-people li { display: grid; gap: 4px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.gm-about-stop-people strong { color: var(--ink); font-size: clamp(20px, 1.6vw, 26px); font-weight: 500; letter-spacing: -0.02em; }
+.gm-about-stop-people span { color: var(--ink-3); font-size: 12px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; }
+@media (max-width: 1024px) {
+  .gm-about-stop-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .gm-about-stop .gm-h2 { font-size: clamp(30px, 8.6vw, 38px); }
+  .gm-about-stop-side .gm-btn { width: 100%; }
+}
+
 /* ---------- Contact ---------- */
 .gm-contact-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(48px, 7vw, 120px); align-items: start; }
 .gm-contact-head { position: sticky; top: calc(var(--header-h) + 48px); }
@@ -1535,6 +1401,28 @@ em { font-style: normal; }
 .gm-footer-cta p { font-size: clamp(30px, 3.4vw, 52px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.05; }
 .gm-footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px 40px; padding-top: 28px; color: var(--ink-3); font-size: 14px; }
 .gm-footer-brand { color: var(--ink); font-size: 16px; font-weight: 500; }
+/* Where we work (where-link.tsx): a quiet pill with a map pin, in the footer
+   and the phone menu. */
+.gm-where-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: 14px;
+  padding: 0 18px 0 16px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  transition: border-color 0.3s var(--ease), background-color 0.3s var(--ease);
+}
+.gm-where-link svg { flex: none; color: var(--accent); }
+.gm-where-link:hover { border-color: rgb(143 177 255 / 55%); background: rgb(143 177 255 / 6%); }
+.gm-where-link:hover .gm-btn-arrow { transform: translateX(4px); }
+.gm-where-link[aria-current] { border-color: rgb(143 177 255 / 55%); }
+.gm-mobile-menu-info .gm-where-link { justify-self: center; margin: 0 0 10px; }
+.gm-where-link + .gm-footer-legal { margin-top: 14px; }
 .gm-footer-legal { margin-top: 6px; }
 .gm-footer-bottom ul { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px; margin: 0; padding: 0; list-style: none; }
 .gm-footer-bottom a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); text-decoration: none; }
@@ -1562,8 +1450,7 @@ em { font-style: normal; }
 .gm-project-live:hover .gm-btn-arrow { transform: translate(2px, -2px); }
 
 /* ---------- Legal pages ---------- */
-.gm-legal-header { display: flex; align-items: center; justify-content: space-between; height: var(--header-h); padding: 0 var(--gutter); }
-.gm-legal { max-width: 860px; padding-block: clamp(64px, 12vh, 128px) clamp(64px, 12vh, 120px); }
+.gm-legal { max-width: 860px; padding-block: calc(var(--header-h) + clamp(48px, 10vh, 112px)) clamp(64px, 12vh, 120px); }
 .gm-legal .gm-h2 { font-size: clamp(40px, 5vw, 72px); }
 .gm-legal-updated { margin-top: 16px; color: var(--ink-3); font-size: 15px; }
 .gm-legal-body { max-width: 68ch; margin-top: 48px; color: var(--ink-2); font-size: 17px; line-height: 1.7; }
@@ -1893,13 +1780,10 @@ html[data-intro='waiting']::after {
 /* ---------- Lite (quality.ts) ----------
    A device that cannot keep up, or says it is modest, gets the same page
    without the effects that cost the most on every frame: frosted glass over
-   the moving sky (blurred again at each frame), the rocket's flickering
-   flames and the trail stars' glow. Nothing moves or changes place. */
-:root.gm-lite .gm-nav { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(5 6 8 / 86%); }
+   the moving sky (blurred again at each frame) and the trail stars' glow.
+   Nothing moves or changes place. */
 :root.gm-lite .gm-offer { -webkit-backdrop-filter: none; backdrop-filter: none; }
 :root.gm-lite .gm-project-arrow { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(5 6 8 / 82%); }
-:root.gm-lite .gm-rocket { filter: none; }
-:root.gm-lite :is(.gm-rocket-flame, .gm-rocket-heat, .gm-ascent-dust i) { animation: none; }
 @media (prefers-reduced-motion: no-preference) {
   :root.gm-lite:not([data-motion='still']) .gm-rail-line i { animation-name: gm-rail-lit-lite; }
 }
@@ -1919,11 +1803,6 @@ html[data-intro='waiting']::after {
   .gm-rail-chevron,
   .gm-rail-chevrons::before { animation: none; opacity: 0.9; }
   .gm-cue-track i { animation: none; top: auto; bottom: 8px; }
-  .gm-ascent-star-body { animation: none; }
-  .gm-ascent-dust,
-  .gm-ascent-sparks { display: none; }
-  .gm-rocket-flame,
-  .gm-rocket-heat { animation: none; }
   .gm-house-intro > *, .gm-phases { translate: none; }
   .gm-reveal-ready [data-reveal] { transform: none; transition: opacity 0.4s linear; }
   .gm-reveal-ready .gm-offer.is-visible:hover { transform: none; }
@@ -1934,12 +1813,11 @@ html[data-intro='waiting']::after {
 /* ---------- "Ferma le animazioni" (motion.ts, motion-toggle.tsx) ----------
    The visitor's own switch: the same stillness as the system setting above. */
 :root[data-motion='still'] :is(.gm-hero-copy > *, .gm-header, .gm-rail > *) { animation: none; }
-:root[data-motion='still'] :is(.gm-rail-line i, .gm-cue-track i, .gm-ascent-star-body, .gm-rocket-flame, .gm-rocket-heat) { animation: none; }
+:root[data-motion='still'] :is(.gm-rail-line i, .gm-cue-track i) { animation: none; }
 :root[data-motion='still'] .gm-rail-comet { animation: none; top: auto; bottom: 0; }
 :root[data-motion='still'] .gm-rail-chevron,
 :root[data-motion='still'] .gm-rail-chevrons::before { animation: none; opacity: 0.9; }
 :root[data-motion='still'] .gm-cue-track i { top: auto; bottom: 8px; }
-:root[data-motion='still'] :is(.gm-ascent-dust, .gm-ascent-sparks) { display: none; }
 :root[data-motion='still'] :is(.gm-house-intro > *, .gm-phases) { translate: none; }
 :root[data-motion='still'].gm-reveal-ready [data-reveal] { transform: none; transition: opacity 0.4s linear; }
 :root[data-motion='still'].gm-reveal-ready .gm-offer.is-visible:hover { transform: none; }

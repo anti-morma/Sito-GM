@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-// Scroll-scrubbed construction video. Phones get a lighter file with a
-// keyframe every 5 frames so seeking keeps up with the finger.
-const FILES = { phone: '/video/blueprint-to-house-mobile.mp4', wide: '/video/blueprint-to-house.mp4' };
+// Scroll-scrubbed construction video. Phones get their own file in which
+// every frame is complete (a keyframe): a seek decodes one frame, never the
+// run up to it, so the film follows the finger even on modest phones.
+const FILES = { phone: '/video/blueprint-to-house-phone.mp4', wide: '/video/blueprint-to-house.mp4' };
 // Both files run at 24 frames a second: one seek per frame of the film.
 const FPS = 24;
 

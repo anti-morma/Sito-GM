@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import SectionLabel from './section-label';
 import SiteFooter from './site-footer';
 import { site } from './content';
@@ -13,11 +12,7 @@ export const owner = () => ({
 export default function LegalPage({ title, updated, children }: { title: string; updated: string; children: React.ReactNode }) {
   return (
     <>
-      <header className="gm-legal-header">
-        <Link className="gm-logo" href="/" aria-label={`${site.name} — torna alla home`} />
-        <Link className="gm-link" href="/">← Torna al sito</Link>
-      </header>
-      <main className="gm-legal gm-wrap">
+      <main className="gm-legal gm-wrap" id="contenuto">
         <SectionLabel>Informazioni legali</SectionLabel>
         <h1 className="gm-h2">{title}</h1>
         <p className="gm-legal-updated">Ultimo aggiornamento: {updated}</p>

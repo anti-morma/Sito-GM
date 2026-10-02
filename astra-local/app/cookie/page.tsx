@@ -1,12 +1,8 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import LegalPage, { owner } from '../legal-page';
+import { pageMetadata } from '../seo';
 
-export const metadata: Metadata = {
-  title: 'Cookie Policy',
-  description: 'Il sito GoMore non utilizza cookie di profilazione né strumenti di tracciamento.',
-  alternates: { canonical: '/cookie' },
-};
+export const metadata = pageMetadata({ path: '/cookie', title: 'Cookie Policy', description: 'Il sito GoMore non utilizza cookie di profilazione né strumenti di tracciamento.' });
 
 export default function Cookie() {
   const o = owner();

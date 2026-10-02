@@ -18,6 +18,9 @@ const SLOW_TAIL_MS = 30; // one frame in five slower than this
 // Frames right after loading or after a change are not judged.
 const SETTLE_MS = 1000;
 
+/** Phone-sized screens, upright or on their side. */
+export const PHONE_QUERY = '(max-width: 760px), (max-height: 500px)';
+
 type Nav = Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
 // Server rendering has no device to ask (Node's own navigator is not one).
 const nav = () => (typeof window === 'undefined' ? undefined : (navigator as Nav));
@@ -34,8 +37,10 @@ export const modestDevice = () => {
 const startingLevel = () => {
   const n = nav();
   if (!n) return 0;
-  // ?lite in the address previews the lightest rung on any device.
-  if (new URLSearchParams(location.search).has('lite')) return LITE;
+  // ?lite in the address previews the lightest rung on any device. Phones
+  // start there: their GPUs drive a screen two or three times denser than a
+  // laptop's, and stepping down only after a stutter means it is already seen.
+  if (new URLSearchParams(location.search).has('lite') || matchMedia(PHONE_QUERY).matches) return LITE;
   const memory = n.deviceMemory;
   const cores = n.hardwareConcurrency;
   if (n.connection?.saveData || (memory !== undefined && memory <= 2) || (cores !== undefined && cores <= 2)) return LITE;

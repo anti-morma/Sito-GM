@@ -1,4 +1,3 @@
-import SectionLabel from './section-label';
 import { primaryCta } from './content';
 
 /**
@@ -11,14 +10,18 @@ export default function Hero() {
   return (
     <section className="gm-hero" id="inizio" aria-labelledby="hero-title">
       <div className="gm-hero-copy">
-        {/* Phones show only "Studio digitale": the description below says the rest. */}
-        <SectionLabel className="gm-hero-eyebrow">
-          <span>Studio digitale<span className="gm-hero-eyebrow-more"> · Siti web su misura</span></span>
-        </SectionLabel>
-        {/* Phones keep one line each: "Diamo forma" / "a ciò che" / "ti rende unico." */}
-        <h1 className="gm-hero-title" id="hero-title">
-          <span className="gm-hero-title-line">Diamo forma</span> <span className="gm-hero-title-line">a ciò che</span> <em>ti rende unico.</em>
-        </h1>
+        {/* The page's H1 says plainly what the studio does (search engines and
+            screen readers start here); the brand's promise below stays the
+            largest line on screen. Phones show the shorter half of it. */}
+        <div className="gm-label gm-hero-eyebrow">
+          <span className="gm-label-mark" aria-hidden="true">GM</span>
+          <span className="gm-label-dot" aria-hidden="true" />
+          <h1 className="gm-hero-h1" id="hero-title">Web design, sviluppo<span className="gm-hero-eyebrow-more"> e digital experiences</span> su misura</h1>
+        </div>
+        {/* Phones keep one line each: "Un sito" / "all’altezza di" / "ciò che fai." */}
+        <p className="gm-hero-title">
+          <span className="gm-hero-title-line">Un sito</span> <span className="gm-hero-title-line">all’altezza di</span> <em>ciò che fai.</em>
+        </p>
         <p className="gm-hero-description">Progettiamo e sviluppiamo siti web su misura che fanno capire in pochi secondi chi sei, cosa offri e perché sceglierti.</p>
         <div className="gm-hero-actions">
           <a className="gm-btn gm-btn--primary gm-btn--large" href="#contatti" data-cta="hero">

@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   agentRules: false,
   poweredByHeader: false,
+  // The two city pages became one (app/dove-lavoriamo): old links still arrive.
+  async redirects() {
+    return [
+      { source: '/torino', destination: '/dove-lavoriamo', permanent: true },
+      { source: '/taranto', destination: '/dove-lavoriamo', permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

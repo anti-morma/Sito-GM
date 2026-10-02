@@ -68,6 +68,11 @@ const atlasFragmentShader = `
     vec3 violet = vec3(0.35, 0.22, 0.48);
     vec3 color = mix(blue, violet, smoothstep(0.57, 0.76, warp.y) * 0.22);
     color *= density * (0.40 + filaments * 0.44) + veil;
+    // The sheet the gas is drawn on has edges, and the thin veil above reaches
+    // them: where the sheet stopped, a straight line showed on screen. The gas
+    // dissolves well before (from 0.55 to 0.88 of the 0.9 half-span), so no
+    // edge is ever seen, at rest or opened up by the scroll.
+    color *= 1.0 - smoothstep(0.55, 0.88, length(p));
     // Thin veils and the outskirts go first, the bright filaments last,
     // along torn, warped edges rather than any regular shape.
     float hold = clamp(0.5 * smoothstep(0.2, 0.75, gas) + 0.3 * filaments + 0.35 * (warp.x - 0.3), 0.0, 1.0);

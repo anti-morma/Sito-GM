@@ -50,8 +50,10 @@ const LOGO_HEIGHT = 0.62;
 const LOGO_WIDTH = 0.818;
 // Phones: the GM rests in the header logo, whose letters span this share of its box.
 const LOGO_MARK = LOGO_MARK_SHARE;
-// The scene's motion is slow: 60 frames a second at most, even on 120 Hz screens.
+// The scene's motion is slow: 60 frames a second at most, even on 120 Hz
+// screens, and 30 on phones, like their sky.
 const MAX_FPS = 60;
+const PHONE_FPS = 30;
 
 // Two kinds of stars share one shader: the story's (the GM, its loose stars,
 // the villa's drawing) and the brain's (BRAIN). They never show together, so
@@ -918,16 +920,19 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
     // The phone opening covers the page: nothing to draw under it.
     if (root.classList.contains('gm-intro')) return;
     const behindVideo = !state.bridgeMode && state.videoReady && state.progress >= 0.866;
-    if (behindVideo !== asleep) {
-      asleep = behindVideo;
+    // Phones, top of the page: the GM rests unlit in the header logo (drawn by
+    // the page) and no star is lit yet, so the layer is empty until they leave.
+    const empty = phoneHero && !state.bridgeMode && state.hero <= 0.04;
+    if ((behindVideo || empty) !== asleep) {
+      asleep = behindVideo || empty;
       renderer.domElement.style.visibility = asleep ? 'hidden' : '';
     }
     // At rest while unseen, except for the one frame that hands the brain's
     // stars to the GPU ahead of its scene (nothing shows: the canvas is hidden).
     if ((asleep || !state.active) && !brainWarm) return;
     if (state.active && !asleep) reportFrame(now, elapsed);
-    // 120 Hz screens: every other frame is enough for these slow motions.
-    if (now - lastDraw < 1000 / MAX_FPS - 2) return;
+    // 120 Hz screens and phones: fewer frames are enough for these slow motions.
+    if (now - lastDraw < 1000 / (phoneDensity ? PHONE_FPS : MAX_FPS) - 2) return;
     const step = Math.min(0.04, (now - (lastDraw || now - elapsed)) / 1000);
     lastDraw = now;
     renderScene(now, step, state);

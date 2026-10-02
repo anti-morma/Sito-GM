@@ -3,10 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { drawLogo, LOGO_STARS, logoBridge, makeSprites, PHONE_LOGO_QUERY } from './gm-constellation';
 import { reducedMotion } from './motion';
+import { isLite } from './quality';
 
 // The logo lives slowly: two dozen frames a second are plenty for drifts of
-// less than a pixel, and leave the phone's GPU to the page.
+// less than a pixel, and leave the phone's GPU to the page; on the lite rung
+// (quality.ts: phones start there) fifteen.
 const FPS = 24;
+const LITE_FPS = 15;
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const smoothStep = (value: number) => {
@@ -82,7 +85,7 @@ export default function DynamicGMLogo() {
           lightFrom = now;
         } else return;
       }
-      if (document.hidden || now - lastDraw < 1000 / FPS - 2) return;
+      if (document.hidden || now - lastDraw < 1000 / (isLite() ? LITE_FPS : FPS) - 2) return;
       // Reduced motion: one still drawing, redrawn only on resize.
       if (reduced.matches && mode === 'live') return;
       draw(now);

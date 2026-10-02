@@ -118,8 +118,9 @@ export default function ProjectPreview({ src, name, only, focus = FOCUS }: { src
   return (
     <>
       <picture className="gm-project-poster">
-        {!only && <source media={MOBILE} srcSet={`${src}-m-poster.jpg`} />}
-        <img src={`${src}-${phone ? 'm-' : ''}poster.jpg`} alt={`Homepage di ${name}${phone ? ' su telefono' : ''}`} loading="lazy" decoding="async" />
+        {!only && <source media={MOBILE} srcSet={`${src}-m-poster.jpg`} width={720} height={1182} />}
+        {/* The frame sets the size; the intrinsic one only reserves the shape. */}
+        <img src={`${src}-${phone ? 'm-' : ''}poster.jpg`} width={phone ? 720 : 1280} height={phone ? 1182 : 800} alt={`Homepage del sito realizzato per ${name}${phone ? ', su telefono' : ''}`} loading="lazy" decoding="async" />
       </picture>
       <video
         ref={ref}

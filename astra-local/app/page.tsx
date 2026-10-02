@@ -15,19 +15,19 @@ import Reveal from './reveal';
 import ScrollCue from './scroll-cue';
 import SectionLabel from './section-label';
 import SiteFooter from './site-footer';
-import SiteHeader from './site-header';
-import { nextSteps, offers, projects, site, type Project } from './content';
+import { founders, offers, projects, site, type Project } from './content';
 import { homeLd, jsonLd, openGraphBase, siteSummary, studyPath } from './seo';
 import { contactDetails, DetailText } from './studio-details';
 
 
+// The home's title is the layout's default ("GoMore | Web design, sviluppo e
+// digital experiences"): the brand first, then what it does.
 export const metadata: Metadata = {
   alternates: { canonical: '/' },
-  openGraph: { ...openGraphBase, url: '/', title: 'GoMore — Diamo forma a ciò che ti rende unico', description: siteSummary },
+  openGraph: { ...openGraphBase, url: '/', title: `${site.name} | Web design, sviluppo e digital experiences`, description: siteSummary, images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: `${site.name} — studio digitale` }] },
 };
 
 const delay = (ms: number) => ({ '--reveal-delay': `${ms}ms` }) as React.CSSProperties;
-const pad = (index: number) => String(index + 1).padStart(2, '0');
 // Links that open another tab say so to screen readers too (the arrow is only drawn).
 const NEW_TAB = <span className="gm-sr-only"> (si apre in una nuova scheda)</span>;
 
@@ -79,7 +79,6 @@ export default function Home() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(homeLd())} />
-      <SiteHeader />
       <GoMoreMobileIntro />
       <ParticleJourney />
       {/* The page and its footer share one light at the bottom: the dawn. */}
@@ -95,13 +94,36 @@ export default function Home() {
           <section id="progetti" className="gm-section gm-projects" aria-labelledby="progetti-title" data-scroll-stop>
             <div className="gm-wrap">
               <header className="gm-projects-head" data-reveal>
-                <SectionLabel>Portfolio</SectionLabel>
-                <h2 id="progetti-title" className="gm-h2">I nostri progetti.</h2>
-                <p className="gm-lead">Siti progettati e sviluppati da noi, dall’identità digitale al codice. Sono online e funzionano: guardali dal vivo.</p>
+                <SectionLabel>Progetti</SectionLabel>
+                <h2 id="progetti-title" className="gm-h2">Progetti reali, <span className="gm-h2-line">online adesso.</span></h2>
+                <p className="gm-lead">Siti progettati e sviluppati da noi, dall’identità digitale al codice. Guardali dal vivo, poi leggi come ci abbiamo ragionato.</p>
               </header>
               <ProjectCarousel count={projects.length}>
                 {projects.map((project) => <ProjectCard key={project.name} project={project} />)}
               </ProjectCarousel>
+              <p className="gm-home-more" data-reveal>
+                <Link className="gm-link" href="/progetti">Tutti i progetti e i casi studio <span className="gm-btn-arrow" aria-hidden="true">→</span></Link>
+              </p>
+            </div>
+          </section>
+
+          {/* Why GoMore, and who, in a few words: the whole story is on its own
+              page (app/chi-siamo). */}
+          <section id="chi-siamo" className="gm-section gm-about-stop" aria-labelledby="chi-siamo-title" data-scroll-stop>
+            <div className="gm-wrap gm-about-stop-grid">
+              <header data-reveal>
+                <SectionLabel>Perché GoMore</SectionLabel>
+                <h2 id="chi-siamo-title" className="gm-h2">Non costruiamo siti. <span className="gm-h2-line">Costruiamo esperienze con una direzione.</span></h2>
+                <p className="gm-lead">Un progetto digitale non dovrebbe iniziare dalla tecnologia, ma da una domanda: che cosa deve ottenere? Per questo uniamo strategia, UX, design e sviluppo.</p>
+              </header>
+              <div className="gm-about-stop-side" data-reveal style={delay(120)}>
+                <ul className="gm-about-stop-people" aria-label="I fondatori">
+                  {founders.map((person) => <li key={person.name}><strong>{person.name}</strong><span lang="en">{person.role.split(' · ').slice(0, 2).join(' · ')}</span></li>)}
+                </ul>
+                <Link className="gm-btn gm-btn--ghost" href="/chi-siamo" data-cta="chi-siamo">
+                  Scopri chi siamo <span className="gm-btn-arrow" aria-hidden="true">→</span>
+                </Link>
+              </div>
             </div>
           </section>
 
@@ -111,7 +133,7 @@ export default function Home() {
               <header className="gm-services-head" data-reveal>
                 <SectionLabel>Cosa facciamo</SectionLabel>
                 <h2 id="servizi-title" className="gm-h2">Un sito su misura.<br /> <span className="gm-h2-line">Seguito anche dopo il lancio.</span></h2>
-                <p className="gm-lead">Non vendiamo pacchetti: ogni sito nasce da una consulenza e viene costruito sul tuo progetto. Dopo il lancio possiamo continuare a seguirlo noi: hosting, dominio e manutenzione.</p>
+                <p className="gm-lead">Ogni sito nasce da una consulenza ed è costruito sul tuo progetto. Dopo il lancio possiamo continuare a seguirlo noi.</p>
               </header>
               {/* Phones: the two offers as a deck of cards, the site in front and
                   its care right behind it (offer-deck.tsx). */}
@@ -136,14 +158,6 @@ export default function Home() {
                     ))}
                   </p>
                 )}
-                {/* The answer to "and then?", before the form is sent. */}
-                <div className="gm-next-steps">
-                  <h3>Cosa succede dopo</h3>
-                  <ol>
-                    {nextSteps.map((step, index) => <li key={step}><span aria-hidden="true">{pad(index)}</span>{step}</li>)}
-                  </ol>
-                  {site.responseTime && <p className="gm-next-steps-time">Ti rispondiamo entro {site.responseTime}.</p>}
-                </div>
               </header>
               <div id="modulo" className="gm-contact-form" data-reveal style={delay(120)}>
                 <ContactForm />

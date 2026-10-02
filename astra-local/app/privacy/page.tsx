@@ -1,25 +1,21 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { site } from '../content';
 import LegalPage, { owner } from '../legal-page';
+import { pageMetadata } from '../seo';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description: 'Come GoMore tratta i dati personali raccolti attraverso il sito e il modulo di contatto.',
-  alternates: { canonical: '/privacy' },
-};
+export const metadata = pageMetadata({ path: '/privacy', title: 'Privacy Policy', description: 'Come GoMore tratta i dati personali raccolti attraverso il sito e il modulo di contatto.' });
 
 export default function Privacy() {
   const o = owner();
   return (
-    <LegalPage title="Privacy Policy" updated="30 settembre 2026">
+    <LegalPage title="Privacy Policy" updated="2 ottobre 2026">
       <p>Questa informativa descrive come vengono trattati i dati personali di chi visita questo sito e di chi ci scrive tramite il modulo di contatto, ai sensi del Regolamento (UE) 2016/679 (GDPR).</p>
 
       <h2>Titolare del trattamento</h2>
       <p>{o.name} — {o.address} — {o.vat}<br />Contatto: {o.email}{site.pec && ` · PEC ${site.pec}`}</p>
 
       <h2>Quali dati raccogliamo</h2>
-      <p><strong>Dati inviati tramite il modulo di contatto:</strong> nome, indirizzo e-mail, eventuale azienda o progetto e il testo del messaggio.</p>
+      <p><strong>Dati inviati tramite il modulo di contatto:</strong> nome, indirizzo e-mail, eventuale azienda o brand, il tipo di progetto scelto e il testo del messaggio.</p>
       <p><strong>Dati tecnici di navigazione:</strong> i server che ospitano il sito registrano automaticamente, come ogni server web, dati quali indirizzo IP, data e ora della richiesta e tipo di browser, per garantire il funzionamento e la sicurezza del servizio.</p>
       <p><strong>Statistiche di visita:</strong> usiamo Vercel Web Analytics per sapere, in forma aggregata e anonima, quante persone visitano il sito e quali pagine guardano. Per ogni visita vengono registrati la pagina, la pagina di provenienza, paese e città approssimativi, tipo di dispositivo, sistema operativo e browser; contiamo inoltre, sempre in forma anonima, alcuni clic che ci dicono se il sito funziona: sui pulsanti per richiedere una consulenza, su e-mail e telefono, e l’invio riuscito del modulo (mai il contenuto di ciò che scrivi). Non usa cookie e non salva informazioni sul tuo dispositivo: per contare le visite usa un codice ricavato dalla richiesta, che viene cancellato dopo 24 ore e non permette di identificarti né di seguirti su altri siti.</p>
       <p>Il sito non utilizza cookie di profilazione o sistemi di tracciamento (vedi la <Link href="/cookie">Cookie Policy</Link>).</p>

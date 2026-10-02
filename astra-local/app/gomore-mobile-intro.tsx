@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { sceneRatio } from './quality';
 import {
   drawStar,
   LIVING_AMP,
@@ -37,8 +36,9 @@ const T = {
 // Reduced motion: dark → GOMORE → GM → the logo, by fades alone.
 const R = { word: 0.12, swap: 0.8, out: 1.35, land: 1.45, end: 1.75 };
 
-// Stars for a capable phone; modest ones get about half, and any phone that
-// falls behind in the first frames draws fewer.
+// Stars for a capable phone, drawn at 60% (about 3,300 instead of 5,400):
+// GOMORE and the GM still read clearly, for far less work per frame. Modest
+// phones get 40%, and any phone that falls behind in the first frames 35%.
 const COUNTS = { word: 3400, fill: 1500, cloud: 460 };
 // Share of the GM's own stars (beyond the logo's) that come from the word.
 const FROM_WORD = 0.5;
@@ -201,7 +201,7 @@ export default function GoMoreMobileIntro() {
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const nav = navigator as Navigator & { deviceMemory?: number };
     const modest = (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) || (navigator.hardwareConcurrency ?? 8) <= 4;
-    let share = still ? 0.6 : modest ? 0.55 : 1;
+    let share = still ? 0.6 : modest ? 0.4 : 0.6;
     const sprites = makeSprites();
     let stars: Star[] = [];
     let frame = 0;
@@ -221,7 +221,8 @@ export default function GoMoreMobileIntro() {
     const measure = () => {
       width = canvas.clientWidth;
       height = canvas.clientHeight;
-      ratio = sceneRatio();
+      // Sharp enough for fine stars, a third of a 3x screen's pixels.
+      ratio = Math.min(devicePixelRatio || 1, 1.5);
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
       stage.x = width / 2;
@@ -470,7 +471,7 @@ export default function GoMoreMobileIntro() {
         slowFrames.push(dt);
         if (slowFrames.length === 16) {
           const median = slowFrames.sort((a, b) => a - b)[8];
-          if (median > 0.024) share = Math.min(share, 0.55);
+          if (median > 0.024) share = Math.min(share, 0.35);
           // Far behind (under about 22 frames a second): the opening plays
           // on at the pace of a tap, rather than stutter for three seconds.
           if (median > 0.045) speed = Math.max(speed, 2.2);
