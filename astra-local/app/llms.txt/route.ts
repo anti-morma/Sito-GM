@@ -1,4 +1,4 @@
-import { areaServed, caseStudies, founders, housePhases, offers, site } from '../content';
+import { areaServed, caseStudies, founders, offers, site } from '../content';
 import { cityNames, wherePath } from '../places';
 import { aboutPath, siteSummary, studyPath } from '../seo';
 import { servicePath, services } from '../services';
@@ -28,9 +28,6 @@ export function GET() {
     '',
     '## Come si lavora insieme',
     ...offers.map((offer) => `- ${offer.title}: ${offer.text}${offer.price ? ` ${offer.price}.` : ''} Include: ${offer.includes.join('; ')}.`),
-    '',
-    '## Metodo',
-    ...housePhases.map((phase, index) => `${index + 1}. ${phase.title}: ${phase.text}`),
     '',
     '## Progetti',
     `Tutti i casi studio: ${site.url}/progetti`,

@@ -5,7 +5,6 @@ import {
   BufferGeometry,
   ClampToEdgeWrapping,
   DataTexture,
-  DynamicDrawUsage,
   FloatType,
   Group,
   NearestFilter,
@@ -21,21 +20,19 @@ import {
 } from 'three';
 import logoPoints from './gm-points.json';
 import type { ParticleFrame } from './astra-field';
-import { BLUEPRINT_HALF, blueprintUrl, decodeBlueprint } from './blueprint-geometry';
 import { BRAIN_COUNT, BRAIN_MOBILE_COUNT, BRAIN_SURFACE_STARS, loadBrain, type BrainStars } from './brain-sculpture';
 import { springStep } from './gesture-spring';
 import { hintGpu, isLite, modestDevice, reportFrame, sceneRatio, watchQuality } from './quality';
 import { LOGO_MARK_SHARE } from './gm-constellation';
-import { GM_RELEASE_END, VILLA_DRAWN_HERO, VILLA_START_HERO } from './method-timeline';
 import { nebulaSubject } from './nebula-state';
 import { reducedMotion } from './motion';
+import { createFramePacer } from './frame-pacer';
+import { createFrameMeter } from './frame-meter';
 
 const ANIMATION_SPEED = 1.25;
 // The background stars live in the site-wide sky (star-sky.tsx).
-// The GM and the villa's drawing use this many stars; the brain has its own.
-const BASE_COUNT = 32768;
-// Phones draw fewer stars across the same complete 3D surface.
-const MOBILE_LAYER = BASE_COUNT / 2;
+// Only the monogram's points are allocated; the brain has its own geometry.
+const GM_RELEASE_END = 0.305;
 // Modest phones (quality.ts) and the lite rung: two thirds of the phones'
 // brain stars; desktops on the lite rung draw the phones' half. Each star is
 // a little larger, so the brain keeps its surface with less work.
@@ -43,20 +40,16 @@ const MODEST_COUNT = (BRAIN_MOBILE_COUNT * 2) / 3;
 // Its drawing spans about this much, in scene units at scale 1.
 const BRAIN_WIDTH = 0.74;
 const BRAIN_HEIGHT = 0.76;
-// The method's timeline starts from the loose stars (see method-story.tsx).
-const METHOD_START = 0.775;
 // The GM's height at scale 1, its dust included, and its letters' width (see gm-points.json).
 const LOGO_HEIGHT = 0.62;
 const LOGO_WIDTH = 0.818;
 // Phones: the GM rests in the header logo, whose letters span this share of its box.
 const LOGO_MARK = LOGO_MARK_SHARE;
-// The scene's motion is slow: 60 frames a second at most, even on 120 Hz
-// screens, and 30 on phones, like their sky.
-const MAX_FPS = 60;
+// Desktop follows RAF's native cadence; phones keep their 30 fps budget.
 const PHONE_FPS = 30;
 
-// Two kinds of stars share one shader: the story's (the GM, its loose stars,
-// the villa's drawing) and the brain's (BRAIN). They never show together, so
+// The monogram and the brain share interaction uniforms, but have their own
+// attributes and shader variants. They never show together, so
 // each kind carries only its own data and computes only its own scene.
 const vertexShader = `
  uniform float uTime;
@@ -67,13 +60,7 @@ const vertexShader = `
  uniform float uGlyphLight;
  uniform vec2 uHeroOffset;
  uniform float uAspect;
- uniform float uCompact;
- // Compact layouts: the construction video's centre and width, measured from the page.
- uniform vec2 uPlan;
- uniform float uPlanWidth;
  uniform float uReduced;
- // The method's timeline: loose stars → villa drawing → construction video.
- uniform float uScroll;
  // Share of the hero scrolled away.
  uniform float uHero;
  // The idea scene before the form (0 → 1).
@@ -87,12 +74,10 @@ const vertexShader = `
  uniform float uBrainStarSize;
  // The brain's exposure, measured from its size on screen (see resize).
  uniform float uBrainLight;
- uniform float uVideoReady;
- // The villa's points arrive apart from the code (blueprint-geometry.ts).
- uniform float uPlanReady;
  uniform float uCamDist;
  uniform sampler2D uSpringField;
  uniform vec2 uFieldSize;
+ uniform float uSpringActive;
  varying vec3 vColor;
  varying float vLight;
  varying float vStar;
@@ -114,6 +99,7 @@ const vertexShader = `
  }
 
  vec2 springAt(vec4 mv) {
+   if (uSpringActive < 0.5) return vec2(0.0);
    vec2 screenPoint = mv.xy * (2.0 / max(0.1, -mv.z));
    vec2 uv = vec2((screenPoint.x + uAspect * 0.5 + 0.1) / (uAspect + 0.2),
      (screenPoint.y + 0.6) / 1.2);
@@ -228,15 +214,11 @@ const vertexShader = `
  attribute vec3 aOrigin;
  attribute vec3 aColor;
  attribute vec3 aStyle;
- // The villa's drawing: x, z, shade, drawing order.
- attribute vec4 aPlan;
- attribute vec2 aOffset;
  // Role in the GM monogram: 2 outline, 1 fill, 0 dust, -1 not part of it.
  attribute float aGlyph;
  #define aSize aStyle.x
  #define aLight aStyle.y
  #define aPhase aStyle.z
- #define aDrawOrder aPlan.w
 
  void main() {
    float motion = 1.0 - uReduced;
@@ -245,38 +227,22 @@ const vertexShader = `
    float ordered = t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
    ordered = mix(ordered, 1.0, max(uReduced, smoothstep(0.0, 0.02, scrolled)));
 
-   // ---------- Hero → method ----------
-   // The GM rises with the page and opens into a loose cloud; its stars, joined
-   // by the rest of the field, then draw the villa of the method.
-   float isGlyph = step(-0.5, aGlyph);
+   // The GM rises and disperses as the hero leaves the viewport.
    float release = smoothstep(0.04, ${GM_RELEASE_END.toFixed(3)}, uHero);
    vec3 logo = position * uLogoScale;
    logo.xy += uHeroOffset;
    logo.y += uHero * 0.8 * motion;
    vec3 loose = vec3(aOrigin.x * uAspect * 1.45, aOrigin.y * 1.35 - 0.18, aOrigin.z * 0.6);
    loose.xy += vec2(sin(aPhase * 2.7), cos(aPhase * 1.9)) * 0.18 * motion;
-   vec3 target = mix(loose, logo, isGlyph);
+   vec3 target = logo;
    target = mix(target, loose, release);
    // A slight arc on the way out, so the letters open rather than slide.
-   target += vec3(aOrigin.x * uAspect, aOrigin.y, aOrigin.z) * sin(3.14159 * release) * 0.12 * motion * isGlyph;
+   target += vec3(aOrigin.x * uAspect, aOrigin.y, aOrigin.z) * sin(3.14159 * release) * 0.12 * motion;
    if (uReduced > 0.5 && uHero < 0.02) target = position * uLogoScale + vec3(uHeroOffset, 0.0);
 
-   float projectMix = smoothstep(0.775, 0.815, uScroll);
-   // Match the CSS video rectangle exactly, with no tilt during the crossfade.
-   // Wide screens: the drawing takes the video's frame on the left (52% wide,
-   // from 4%: globals.css), the words beside it; compact layouts measure it.
-   float frameWidth = mix(0.52, uPlanWidth, uCompact);
-   vec3 plan = vec3(aPlan.x, -aPlan.y, 0.0) * uAspect * frameWidth;
-   plan.xy += mix(vec2(-uAspect * 0.20, 0.0), uPlan, uCompact);
-   // Layered relief while drawing; flattens before the video so the crossfade stays exact.
-   plan.z = aOrigin.z * 0.12 * (1.0 - smoothstep(0.815, 0.845, uScroll));
-   // Each group of stars joins the progressive drawing in turn.
-   float assemble = smoothstep(0.775 + aDrawOrder * 0.037, 0.797 + aDrawOrder * 0.037, uScroll) * uPlanReady;
-   target = mix(target, plan, assemble);
-
    // Kept tiny while the GM is formed, so the outline of the letters stays sharp.
-   float glyph = isGlyph * (1.0 - smoothstep(0.0, 0.1, uHero));
-   float orbit = mix(mix(0.015, 0.005, glyph), 0.0012, release) * motion * (1.0 - projectMix);
+   float glyph = 1.0 - smoothstep(0.0, 0.1, uHero);
+   float orbit = mix(mix(0.015, 0.005, glyph), 0.0012, release) * motion;
    target += vec3(
      sin(uTime * 0.7 + aPhase),
      cos(uTime * 0.55 + aPhase * 1.7),
@@ -298,9 +264,7 @@ const vertexShader = `
    vec4 mv = modelViewMatrix * vec4(p, 1.0);
    vec2 displacement = vec2(0.0);
    #ifndef MOBILE
-     float fieldBlend = smoothstep(0.020, 0.025, scrolled);
-     displacement = mix(aOffset, springAt(mv), fieldBlend)
-       * (1.0 - smoothstep(0.83, 0.84, uScroll) * uVideoReady);
+     displacement = springAt(mv);
    #endif
    float influence = min(length(displacement) * 3.0, 0.2);
    mv.xy += displacement * (-mv.z / 2.0);
@@ -313,11 +277,10 @@ const vertexShader = `
    float depth = clamp(2.0 / -mv.z, 0.35, 2.5);
    float looseSize = min(aSize, 12.0);
    #ifdef PHONE
-   // A phone screen is small: the loose stars between the GM and the villa stay finer.
+   // A phone screen is small: the dispersing stars of the GM stay finer.
    looseSize *= 0.75;
    #endif
    float renderedSize = mix(aSize, looseSize, release);
-   renderedSize = mix(renderedSize, 6.5, projectMix);
    gl_PointSize = clamp(
      renderedSize * uDpr * uPixelScale * depth * (1.0 + influence * 0.12),
      2.0,
@@ -329,26 +292,19 @@ const vertexShader = `
      2.0
    );
 
-   // Light: the GM, its loose stars, then the villa's drawing.
+   // Light: the GM and its dispersing stars.
    float heroLight = aLight * mix(shimmer, 1.0, uReduced) + influence * 0.12;
    float looseLight = max(0.22, aLight * 0.8);
    #ifdef PHONE
    looseLight *= 0.6;
    #endif
    heroLight = mix(heroLight, looseLight, release);
-   // The rest of the field arrives with the release.
-   heroLight *= mix(isGlyph, 1.0, release);
    // Outline stars lead, the fill glows softly behind them, dust barely shows.
    heroLight *= mix(1.0, aGlyph > 1.5 ? 1.04 : aGlyph > 0.5 ? 0.84 : 0.3, glyph);
-   heroLight *= mix(1.0, uGlyphLight, isGlyph * (1.0 - release));
-   float blueprintLight = (0.20 + aPlan.z * 0.42) * clamp(uAspect * frameWidth / 1.4, 0.28, 1.0);
-   // Unassembled particles remain visible: the drawing is made by their arrival.
-   heroLight = mix(heroLight, blueprintLight, projectMix);
-   heroLight *= 1.0 - smoothstep(0.84, 0.865, uScroll) * uVideoReady;
-
+   heroLight *= mix(1.0, uGlyphLight, 1.0 - release);
    vLight = heroLight * depthCue * nearFade;
    vec3 starColor = vec3(0.78, 0.85, 1.0);
-   vColor = mix(mix(aColor, starColor, release), vec3(0.94, 0.97, 1.0), projectMix);
+   vColor = mix(aColor, starColor, release);
 
    // Loose stars glow with a halo.
    vStar = release * 0.85;
@@ -455,7 +411,7 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
 
   const phoneDensity = phone.matches;
   const modest = phoneDensity && modestDevice();
-  const layer = phoneDensity ? MOBILE_LAYER : BASE_COUNT;
+  const layer = logoPoints.length;
   // The brain: every star on a capable desktop, half on phones, fewer on
   // modest devices and on the lite rung (any prefix covers the whole surface).
   const brainFull = phoneDensity ? BRAIN_MOBILE_COUNT : BRAIN_COUNT;
@@ -467,23 +423,20 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
   const origins = new Float32Array(layer * 3);
   const colors = new Float32Array(layer * 3);
   const styles = new Float32Array(layer * 3);
-  // Filled when the villa's points arrive: x, z, shade, drawing order.
-  const plans = new Float32Array(layer * 4);
   const glyphs = new Float32Array(layer);
   const tints = [[0.94, 0.95, 1], [0.64, 0.82, 1], [1, 0.8, 0.59]];
 
   for (let i = 0; i < layer; i++) {
-    const point = logoPoints[i % logoPoints.length];
-    const glyph = i < logoPoints.length;
+    const point = logoPoints[i];
     // Monogram stars sit exactly on the sampled letters.
     // An irregular edge: most monogram stars stay close to the outline, a few stray further.
     const roll = random();
-    const scatter = glyph ? 0.0075 * (1 + 3 * roll ** 3) : roll < 0.20 ? 0.075 : 0.022;
+    const scatter = 0.0075 * (1 + 3 * roll ** 3);
     positions[i * 3] = point[0] + (random() - 0.5) * scatter;
     positions[i * 3 + 1] = point[1] + (random() - 0.5) * scatter;
     // Shallow depth: perspective would otherwise smear the off-centre letters.
-    positions[i * 3 + 2] = (random() - 0.5) * (glyph ? 0.03 : 0.16);
-    glyphs[i] = glyph ? point[2] : -1;
+    positions[i * 3 + 2] = (random() - 0.5) * 0.03;
+    glyphs[i] = point[2];
     origins[i * 3] = (random() - 0.5) * 1.7;
     origins[i * 3 + 1] = (random() - 0.5) * 1.3;
     origins[i * 3 + 2] = (random() - 0.5) * 1.35;
@@ -504,17 +457,10 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
     ['aOrigin', origins, 3],
     ['aColor', colors, 3],
     ['aStyle', styles, 3],
-    ['aPlan', plans, 4],
     ['aGlyph', glyphs, 1],
   ] as [string, Float32Array, number][]) {
     geometry.setAttribute(name, new BufferAttribute(array, size));
   }
-
-  const offsets = new Float32Array(layer * 2);
-  const velocities = new Float32Array(logoPoints.length * 2);
-  const offsetAttribute = new BufferAttribute(offsets, 2);
-  offsetAttribute.setUsage(DynamicDrawUsage);
-  geometry.setAttribute('aOffset', offsetAttribute);
 
   let fieldWidth = 64;
   const fieldHeight = 40;
@@ -540,11 +486,7 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
     uGlyphLight: { value: 1 },
     uHeroOffset: { value: new Vector2() },
     uAspect: { value: 1 },
-    uCompact: { value: 0 },
-    uPlan: { value: new Vector2(0, -0.05) },
-    uPlanWidth: { value: 0.86 },
     uReduced: { value: media.matches ? 1 : 0 },
-    uScroll: { value: METHOD_START },
     uHero: { value: 0 },
     uBridge: { value: 0 },
     uBrainTurn: { value: 0 },
@@ -552,11 +494,10 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
     uBrainScale: { value: 1 },
     uBrainStarSize: { value: 1 },
     uBrainLight: { value: 1 },
-    uVideoReady: { value: 0 },
-    uPlanReady: { value: 0 },
     uCamDist: { value: 2 },
     uSpringField: { value: springTexture },
     uFieldSize: { value: new Vector2(fieldWidth, fieldHeight) },
+    uSpringActive: { value: 0 },
   };
   const defines = { ...(mobile.matches ? { MOBILE: 1 } : {}), ...(phone.matches ? { PHONE: 1 } : {}) };
   const material = new ShaderMaterial({
@@ -600,21 +541,10 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
   let brainLoaded = 0;
   // The first frame after the data lands uploads it, drawing nothing.
   let brainWarm = false;
-  renderer.compile(scene, camera);
+  // Compile away from the first visible draw where the driver supports it.
+  renderer.compileAsync(scene, camera).catch(() => {});
 
   const abort = new AbortController();
-
-  // The villa's drawing: its points arrive beside the code; until then its
-  // stars simply stay loose. Phones need only the first half.
-  Promise.all(Array.from({ length: Math.ceil(layer / BLUEPRINT_HALF) }, (_, index) =>
-    fetch(blueprintUrl(index), { signal: abort.signal, priority: 'low' } as RequestInit)
-      .then((response) => (response.ok ? response.arrayBuffer() : Promise.reject(new Error(`Blueprint: ${response.status}`))))))
-    .then((buffers) => {
-      buffers.forEach((buffer, index) => plans.set(decodeBlueprint(buffer), index * BLUEPRINT_HALF * 4));
-      geometry.getAttribute('aPlan').needsUpdate = true;
-      uniforms.uPlanReady.value = 1;
-    })
-    .catch(() => { if (!abort.signal.aborted) console.warn('The villa drawing could not be loaded.'); });
 
   const showBrain = (stars: BrainStars) => {
     brainGeometry = new BufferGeometry();
@@ -628,7 +558,9 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
     brainGroup.add(brainDepth, brainField);
     placeBrainStars();
     resize();
-    renderer.compileAsync(brainGroup, camera, scene).then(() => { brainWarm = true; });
+    renderer.compileAsync(brainGroup, camera, scene).then(() => {
+      if (!abort.signal.aborted) brainWarm = true;
+    }).catch(() => { if (!abort.signal.aborted) brainWarm = true; });
   };
   let brainStarted = false;
   const brainWatcher = new IntersectionObserver((entries) => {
@@ -653,7 +585,6 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
   };
   const brainSection = document.querySelector('.gm-bridge');
   if (brainSection) brainWatcher.observe(brainSection);
-  else startBrain();
 
   // Stars drawn and their size: fewer stars are each a little larger, so the
   // surface stays covered (two thirds of them, 1.22 times larger), and a
@@ -672,6 +603,8 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
   let time = 0;
   let last = 0;
   let lastDraw = 0;
+  const shouldDraw = createFramePacer();
+  const frameMeter = createFrameMeter();
   let dragging = false;
   let targetX = 0;
   let targetY = 0;
@@ -682,11 +615,9 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
   let zoomVelocity = 0;
   let wheelUntil = 0;
   let pointerActive = false;
-  let springsMoving = false;
   let fieldMoving = false;
   const REST_DISTANCE = 2;
   let zoomTarget = REST_DISTANCE;
-  const panTarget = new Vector2();
   const pointer = new Vector2(-10, -10);
   const smoothPointer = new Vector2(-10, -10);
   const previousPointer = new Vector2(-10, -10);
@@ -694,15 +625,9 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
   const contacts = new Map<number, Vector2>();
   const pivot = new Vector3();
   const rotatedPivot = new Vector3();
-  let scrollProgress = METHOD_START;
-  let videoReady = false;
-  // The stars answer the pointer in the GM, the villa's drawing and the
-  // brain; never over the video or while the brain melts away.
   const interactionAvailable = () => {
     const state = frameState.current;
-    if (mobile.matches) return false;
-    if (state.bridgeMode) return state.bridge < 0.8;
-    return !(videoReady && scrollProgress >= 0.84);
+    return state.active && !mobile.matches && (state.bridgeMode ? state.bridge < 0.8 : state.hero < 0.025);
   };
 
   const locate = (event: PointerEvent) => {
@@ -727,7 +652,7 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
 
   // ---------- Phones: the GM at rest in the header logo ----------
   // The page draws the living logo (dynamic-gm-logo.tsx); these stars wait
-  // there, unlit, and stream out into the villa as the visitor scrolls.
+  // there, unlit, and disperse as the visitor scrolls.
   // While the phone opening plays (gomore-mobile-intro.tsx) this canvas rests.
   const root = document.documentElement;
   let phoneHero = false;
@@ -760,26 +685,6 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
       fieldMoving = false;
     }
     uniforms.uAspect.value = camera.aspect;
-    // Mirrors the CSS stacked layouts: (max-width: 600px), (max-aspect-ratio: 9/10),
-    // and upright phones up to 767px.
-    uniforms.uCompact.value = width <= 600 || camera.aspect <= 0.9 || (width <= 767 && camera.aspect <= 1) ? 1 : 0;
-    // There the villa's drawing lands exactly on the construction video,
-    // wherever the page puts it. The video's stage keeps the height of the
-    // screen with the browser bars shown, while this canvas grows as they
-    // hide: measuring (and measuring again on resize) keeps the two aligned.
-    const video = document.querySelector<HTMLElement>('.gm-construction-video');
-    const videoStage = video?.offsetParent;
-    if (video && videoStage) {
-      // Its centre in the stage, whether the CSS centres it on its top
-      // (translate -50%) or lays it out in the flow (phones).
-      const box = video.getBoundingClientRect();
-      const centre = box.top + box.height / 2 - videoStage.getBoundingClientRect().top;
-      uniforms.uPlanWidth.value = video.offsetWidth / width;
-      uniforms.uPlan.value.set(
-        ((video.offsetLeft + video.offsetWidth / 2) / width - 0.5) * camera.aspect,
-        0.5 - centre / height,
-      );
-    }
     const fullScale = Math.min(1, (camera.aspect * 0.84) / 0.82);
     // The headline leads; the GM fills the space the copy leaves free,
     // measured from the rendered hero copy rather than guessed.
@@ -790,7 +695,7 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
     if (phoneHero) {
       // Phones: the words have the hero to themselves and the GM rests in
       // the header logo, unlit (the logo is drawn by the page). From there
-      // its stars stream out into the villa as the visitor scrolls.
+      // its stars disperse as the visitor scrolls.
       const mark = document.querySelector<HTMLElement>('.gm-header .gm-logo');
       const box = mark?.getBoundingClientRect();
       rest.scale = ((mark?.offsetWidth ?? 46) * LOGO_MARK) / (LOGO_WIDTH * height);
@@ -876,13 +781,11 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
     resize();
   });
   // Web fonts change the copy's height: place the GM again once they land.
-  document.fonts?.ready.then(() => resize());
+  document.fonts?.ready.then(() => { if (!abort.signal.aborted) resize(); });
 
   // Nothing to draw once the story has scrolled away: skip the GPU work.
   let onScreen = true;
-  // Behind the construction video every star is dark (the shader fades them
-  // out as it arrives): the canvas is hidden and the GPU rests until the
-  // scene needs the stars again.
+  // The foreground rests when it is empty or outside an active scene.
   let asleep = false;
   const visibility = new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; });
   visibility.observe(host);
@@ -890,52 +793,40 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
   const render = (now: number) => {
     frame = requestAnimationFrame(render);
     const elapsed = now - last;
-    const dt = Math.min(0.04, elapsed / 1000);
     last = now;
     const state = frameState.current;
     // Dim the gas inside the current sculpture, keeping its edges luminous.
     const logoCenterForSky = uniforms.uHeroOffset.value;
-    const planCenterForSky = uniforms.uPlan.value;
     const brainCenterForSky = uniforms.uBrainCenter.value;
-    const arrival = state.villa ? Math.max(0, Math.min(1, (state.hero - VILLA_START_HERO) / (VILLA_DRAWN_HERO - VILLA_START_HERO))) : 0;
-    const villaMix = arrival * arrival * (3 - 2 * arrival);
-    const compact = uniforms.uCompact.value;
-    const villaX = compact ? planCenterForSky.x : -camera.aspect * 0.20;
-    const villaY = compact ? planCenterForSky.y : 0;
-    nebulaSubject.x = state.bridgeMode ? brainCenterForSky.x
-      : logoCenterForSky.x + (villaX - logoCenterForSky.x) * villaMix;
-    nebulaSubject.y = state.bridgeMode ? brainCenterForSky.y
-      : logoCenterForSky.y + (villaY - logoCenterForSky.y) * villaMix;
-    nebulaSubject.radius = state.bridgeMode
-      ? uniforms.uBrainScale.value * 0.36
-      : uniforms.uLogoScale.value * 0.48 * (1 - villaMix)
-        + camera.aspect * (compact ? uniforms.uPlanWidth.value : 0.52) * 0.40 * villaMix;
+    nebulaSubject.x = state.bridgeMode ? brainCenterForSky.x : logoCenterForSky.x;
+    nebulaSubject.y = state.bridgeMode ? brainCenterForSky.y : logoCenterForSky.y;
+    nebulaSubject.radius = state.bridgeMode ? uniforms.uBrainScale.value * 0.36 : uniforms.uLogoScale.value * 0.48;
     nebulaSubject.strength = state.active
-      ? state.bridgeMode ? Math.min(1, state.bridge / 0.3, (1 - state.bridge) / 0.2)
-        : Math.max(Math.max(0, 1 - state.hero / 0.8), villaMix)
+      ? state.bridgeMode ? Math.max(0, Math.min(1, state.bridge / 0.3, (1 - state.bridge) / 0.2))
+        : Math.max(0, 1 - state.hero / 0.8)
       : 0;
-    scrollProgress = state.bridgeMode ? METHOD_START : state.progress;
-    videoReady = state.videoReady;
     if (document.hidden || !onScreen) return;
     // The phone opening covers the page: nothing to draw under it.
     if (root.classList.contains('gm-intro')) return;
-    const behindVideo = !state.bridgeMode && state.videoReady && state.progress >= 0.866;
     // Phones, top of the page: the GM rests unlit in the header logo (drawn by
     // the page) and no star is lit yet, so the layer is empty until they leave.
     const empty = phoneHero && !state.bridgeMode && state.hero <= 0.04;
-    if ((behindVideo || empty) !== asleep) {
-      asleep = behindVideo || empty;
+    if (empty !== asleep) {
+      asleep = empty;
       renderer.domElement.style.visibility = asleep ? 'hidden' : '';
     }
     // At rest while unseen, except for the one frame that hands the brain's
     // stars to the GPU ahead of its scene (nothing shows: the canvas is hidden).
     if ((asleep || !state.active) && !brainWarm) return;
     if (state.active && !asleep) reportFrame(now, elapsed);
-    // 120 Hz screens and phones: fewer frames are enough for these slow motions.
-    if (now - lastDraw < 1000 / (phoneDensity ? PHONE_FPS : MAX_FPS) - 2) return;
+    // Draw every desktop refresh: a fixed 60 fps cap creates uneven frame
+    // holds on 144/165 Hz displays. Motion still advances by elapsed time.
+    const targetFps = phoneDensity ? PHONE_FPS : null;
+    if (!shouldDraw(now, targetFps)) return;
     const step = Math.min(0.04, (now - (lastDraw || now - elapsed)) / 1000);
     lastDraw = now;
     renderScene(now, step, state);
+    frameMeter?.record(now, targetFps, state.bridgeMode ? 'Cervello' : 'Logo');
   };
 
   const renderScene = (now: number, dt: number, state: ParticleFrame) => {
@@ -946,7 +837,6 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
     if (!atHero) time = Math.max(time, 10);
     uniforms.uTime.value = media.matches ? 10 : time;
     uniforms.uReduced.value = media.matches ? 1 : 0;
-    uniforms.uScroll.value = scrollProgress;
     uniforms.uHero.value = state.bridgeMode ? 1 : state.hero;
     uniforms.uBridge.value = state.bridge;
     // The story's stars or the brain's: never both.
@@ -961,9 +851,6 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
     } else if (!dragging) {
       uniforms.uBrainTurn.value = (uniforms.uBrainTurn.value + dt * Math.PI * 2 / 18) % (Math.PI * 2);
     }
-    // Draw only the stars the current scene uses: the GM or the villa.
-    geometry.setDrawRange(0, atHero ? logoPoints.length : layer);
-    uniforms.uVideoReady.value = videoReady ? 1 : 0;
     if (!interactionAvailable()) pointerActive = false;
     const damping = 1 - Math.exp(-14 * dt);
     smoothPointer.lerp(pointer, damping);
@@ -978,24 +865,14 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
         zoomTarget = REST_DISTANCE;
       }
     }
-    // The villa's drawing settles, aligned and untilted, before its video.
-    const videoSettle = videoReady && !state.bridgeMode
-      ? Math.max(0, Math.min(1, (scrollProgress - 0.83) / 0.01))
-      : 0;
-    const xLimit = 1.20 * (1 - videoSettle);
-    const yLimit = 2.40 * (1 - videoSettle);
-    targetX = Math.max(-xLimit, Math.min(xLimit, targetX));
-    targetY = Math.max(-yLimit, Math.min(yLimit, targetY));
+    targetX = Math.max(-1.2, Math.min(1.2, targetX));
+    targetY = Math.max(-2.4, Math.min(2.4, targetY));
 
     const follow = media.matches ? 1 : 1 - Math.exp(-10 * dt);
     const idle = media.matches ? 0 : Math.sin(time * 0.32) * 0.028;
-    galaxy.rotation.y += ((targetY + idle * (1 - videoSettle)) - galaxy.rotation.y) * follow;
+    galaxy.rotation.y += ((targetY + idle) - galaxy.rotation.y) * follow;
     galaxy.rotation.x += (targetX - galaxy.rotation.x) * follow;
     galaxy.rotation.z += (targetZ - galaxy.rotation.z) * follow;
-    // Complete the return even on a fast scroll into the aligned video frame.
-    galaxy.rotation.x *= 1 - videoSettle;
-    galaxy.rotation.y *= 1 - videoSettle;
-    galaxy.rotation.z *= 1 - videoSettle;
     // Rotate the monogram around its own centre, not around the page centre.
     const heroWeight = 1 - Math.min(1, state.hero / GM_RELEASE_END);
     const logoCenter = uniforms.uHeroOffset.value;
@@ -1023,89 +900,22 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
 
     if (!interactionAvailable()) {
       zoomTarget = REST_DISTANCE;
-      panTarget.set(0, 0);
     }
-    const distanceGoal = zoomTarget + (REST_DISTANCE - zoomTarget) * videoSettle;
+    const distanceGoal = zoomTarget;
     const zoomFollow = media.matches ? 1 : 1 - Math.exp(-9 * dt);
     camera.position.z += (distanceGoal - camera.position.z) * zoomFollow;
-    camera.position.x += (panTarget.x * (1 - videoSettle) - camera.position.x) * zoomFollow;
-    camera.position.y += (panTarget.y * (1 - videoSettle) - camera.position.y) * zoomFollow;
     camera.updateMatrixWorld();
     uniforms.uCamDist.value = camera.position.z;
 
-    const matrix = galaxy.matrixWorld.elements;
     const mx = (smoothPointer.x - previousPointer.x) / Math.max(dt, 0.001);
     const my = (smoothPointer.y - previousPointer.y) / Math.max(dt, 0.001);
     const speed = Math.hypot(mx, my);
     const limit = Math.min(1, 1.5 / Math.max(speed, 0.001));
-    const strength = (media.matches ? 0.25 : 1) * (1 - videoSettle);
-    const scale = uniforms.uLogoScale.value;
-    const heroOffset = uniforms.uHeroOffset.value;
-
-    // Keep the original GM particles on their individual CPU springs.
-    const leftHero = state.bridgeMode || state.hero >= 0.025;
-    let gmDirty = false;
-    if (leftHero && springsMoving) {
-      offsets.fill(0, 0, logoPoints.length * 2);
-      velocities.fill(0);
-      springsMoving = false;
-      gmDirty = true;
-    }
-    if (!leftHero && (pointerActive || springsMoving)) {
-      let nextSpringsMoving = false;
-      const steps = Math.max(1, Math.ceil(dt * 120));
-      const stepTime = dt / steps;
-      for (let i = 0; i < logoPoints.length; i++) {
-        const j = i * 2;
-        const k = i * 3;
-        const wx = positions[k] * scale + heroOffset.x;
-        const wy = positions[k + 1] * scale + heroOffset.y;
-        const wz = positions[k + 2] * scale;
-        const rx = matrix[0] * wx + matrix[4] * wy + matrix[8] * wz + matrix[12];
-        const ry = matrix[1] * wx + matrix[5] * wy + matrix[9] * wz + matrix[13];
-        const rz = matrix[2] * wx + matrix[6] * wy + matrix[10] * wz + matrix[14];
-        const depth = 2 / Math.max(0.05, camera.position.z - rz);
-        const dx = (rx - camera.position.x) * depth + offsets[j] - smoothPointer.x;
-        const dy = (ry - camera.position.y) * depth + offsets[j + 1] - smoothPointer.y;
-        const radius = Math.hypot(dx, dy);
-        const weight = pointerActive && !dragging && atHero && (time > 4 || media.matches)
-          ? Math.pow(Math.max(0, 1 - radius / 0.17), 2) * strength
-          : 0;
-        const radial = dragging ? -18 : 0.6 / Math.max(radius, 0.008);
-        const fx = (mx * limit * 14 + dx * radial) * weight;
-        const fy = (my * limit * 14 + dy * radial) * weight;
-        for (let step = 0; step < steps; step++) {
-          velocities[j] += (fx - offsets[j] * 32 - velocities[j] * 8) * stepTime;
-          velocities[j + 1] += (fy - offsets[j + 1] * 32 - velocities[j + 1] * 8) * stepTime;
-          offsets[j] += velocities[j] * stepTime;
-          offsets[j + 1] += velocities[j + 1] * stepTime;
-        }
-        const excursion = Math.hypot(offsets[j], offsets[j + 1]);
-        if (excursion > 0.085) {
-          offsets[j] *= 0.085 / excursion;
-          offsets[j + 1] *= 0.085 / excursion;
-          velocities[j] *= 0.8;
-          velocities[j + 1] *= 0.8;
-        }
-        if (Math.abs(offsets[j]) + Math.abs(offsets[j + 1]) +
-          Math.abs(velocities[j]) + Math.abs(velocities[j + 1]) > 0.0001) {
-          nextSpringsMoving = true;
-        } else {
-          offsets[j] = offsets[j + 1] = velocities[j] = velocities[j + 1] = 0;
-        }
-      }
-      gmDirty = true;
-      springsMoving = nextSpringsMoving;
-    }
-    if (gmDirty) {
-      offsetAttribute.clearUpdateRanges();
-      offsetAttribute.addUpdateRange(0, logoPoints.length * 2);
-      offsetAttribute.needsUpdate = true;
-    }
-
-    // A compact screen-space spring field drives all later constructions.
+    const strength = media.matches ? 0.25 : 1;
+    // One compact spring grid drives both sculptures, instead of integrating
+    // and uploading 10,420 independent logo springs on the main thread.
     // The shader samples this at each star's current projected position.
-    const fieldForces = pointerActive && !dragging && interactionAvailable() && !atHero;
+    const fieldForces = pointerActive && !dragging && interactionAvailable() && (!atHero || time > 4 || media.matches);
     let nextFieldMoving = false;
     if (fieldForces || fieldMoving) {
       const steps = Math.max(1, Math.ceil(dt * 120));
@@ -1123,8 +933,11 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
             - camera.aspect * 0.5 - 0.1;
           const dx = cellX + fieldData[k] - smoothPointer.x;
           const dy = cellY + fieldData[k + 1] - smoothPointer.y;
+          const receivesForce = fieldForces && dx * dx + dy * dy < 0.17 * 0.17;
+          if (!receivesForce && fieldData[k] === 0 && fieldData[k + 1] === 0 &&
+            fieldVelocity[j] === 0 && fieldVelocity[j + 1] === 0) continue;
           const radius = Math.hypot(dx, dy);
-          const weight = fieldForces
+          const weight = receivesForce
             ? Math.pow(Math.max(0, 1 - radius / 0.17), 2) * fieldStrength
             : 0;
           const radial = dragging ? -18 : 0.6 / Math.max(radius, 0.008);
@@ -1153,6 +966,7 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
       }
       springTexture.needsUpdate = true;
     }
+    uniforms.uSpringActive.value = nextFieldMoving ? 1 : 0;
     fieldMoving = nextFieldMoving;
     previousPointer.copy(smoothPointer);
     renderer.render(scene, camera);
@@ -1238,6 +1052,7 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
   frame = requestAnimationFrame(render);
 
   return () => {
+    frameMeter?.dispose();
     abort.abort();
     brainWatcher.disconnect();
     cancelAnimationFrame(frame);

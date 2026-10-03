@@ -1,14 +1,14 @@
 // One quality budget for every screen, from a new phone to an old laptop.
 // Both star canvases (star-sky.tsx, astra-field.tsx) share the GPU, so they
 // share this ladder too. Each rung costs less than the one before:
-//   0  as sharp as the screen allows, up to 2x
-//   1  at most 1.5x
+//   0  at most 1.5x, including on high-density desktop monitors
+//   1  at most 1.25x
 //   2  at most 1x
-//   3  "lite": 1x, fewer stars, a lighter nebula, still CSS (gm-lite on <html>)
+//   3  "lite": 1x, fewer stars, smaller nebula atlas, still CSS (gm-lite on <html>)
 // A device starts on the rung its hints suggest and steps down, never back up,
 // only if it cannot keep up. A rung that would change nothing on this screen
 // (a 1x screen asked for 1.5x) is skipped, so a slow device gets help quickly.
-const CAPS = [2, 1.5, 1, 1];
+const CAPS = [1.5, 1.25, 1, 1];
 export const LITE = 3;
 // A verdict every 60 frames, on the median and the slower frames, so a single
 // hitch never counts but a device that keeps stuttering steps down quickly.

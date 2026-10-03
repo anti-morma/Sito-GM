@@ -13,6 +13,8 @@ import { createNebulaField } from './nebula-field';
 import { hintGpu, isLite, reportFrame, sceneRatio, watchQuality } from './quality';
 import { reducedMotion } from './motion';
 import { skyFocus } from './sky-focus';
+import { createFramePacer } from './frame-pacer';
+import { createFrameMeter } from './frame-meter';
 
 // Same clock as the story scene (astra-field.tsx), so the sky moves alike.
 const ANIMATION_SPEED = 1.25;
@@ -131,7 +133,7 @@ export function mountStarSky(host: HTMLElement) {
   try {
     // Opaque: the sky is the page's backdrop, so the browser never has to
     // blend this canvas with anything beneath it.
-    renderer = new WebGLRenderer({ alpha: false, antialias: false, powerPreference: 'low-power' });
+    renderer = new WebGLRenderer({ alpha: false, antialias: false, powerPreference: 'high-performance' });
   } catch {
     return () => {};
   }
@@ -139,9 +141,8 @@ export function mountStarSky(host: HTMLElement) {
   const reduced = reducedMotion();
   const mobile = matchMedia('(max-width: 760px), (pointer: coarse)');
   renderer.setClearColor(0x000000, 1);
-  // Phones: the sky's small soft stars look the same at 1.5x as at 2x, for
-  // half the pixels; the particle scenes keep the sharper budget.
-  const skyRatio = () => Math.min(mobile.matches ? 1.5 : 2, sceneRatio());
+  // Soft background light needs fewer pixels than the foreground sculptures.
+  const skyRatio = () => Math.min(1, sceneRatio());
   renderer.setPixelRatio(skyRatio());
   renderer.domElement.setAttribute('aria-hidden', 'true');
   host.appendChild(renderer.domElement);
@@ -193,9 +194,8 @@ export function mountStarSky(host: HTMLElement) {
   points.frustumCulled = false;
   const scene = new Scene();
   scene.add(points);
-  // Phones: no blue nebula at all, on every page, only the stars. It is the
-  // sky's heaviest part (its gas textures and 13,000 stars), so it is not
-  // even created there; a screen that grows past a phone's gets it then.
+  // Phones keep only the stars. Desktop keeps the nebula at every quality
+  // level, using a smaller atlas and fewer stars when the GPU is busy.
   const phone = matchMedia('(max-width: 760px), (max-height: 500px)');
   let nebula: ReturnType<typeof createNebulaField> | null = null;
   const placeNebula = () => {
@@ -229,6 +229,8 @@ export function mountStarSky(host: HTMLElement) {
   let frame = 0;
   let last = performance.now();
   let previous = last;
+  const shouldDraw = createFramePacer();
+  const frameMeter = createFrameMeter('Sfondo');
   const draw = () => {
     u.uTime.value = reduced.matches ? 10 : time;
     u.uMotion.value = reduced.matches ? 0 : 1;
@@ -242,14 +244,14 @@ export function mountStarSky(host: HTMLElement) {
     if (nebula?.stars.visible) nebula.render(renderer, camera, reduced.matches ? 0 : time);
     renderer.render(scene, camera);
   };
-  // Slow drifts: phones and the lite rung draw 30 frames a second, the rest
-  // at most 60, even on 120 Hz screens.
+  // Keep the background at 60 fps desktop / 30 phone, leaving GPU time for
+  // the interactive foreground, which follows the display's native cadence.
   const loop = (now: number) => {
     frame = requestAnimationFrame(loop);
     if (!document.hidden) reportFrame(now, now - previous);
     previous = now;
-    const fps = mobile.matches || isLite() ? 30 : 60;
-    if (now - last < 1000 / fps - 2) return;
+    const fps = mobile.matches ? 30 : 60;
+    if (!shouldDraw(now, fps)) return;
     const dt = Math.min(0.04, (now - last) / 1000);
     last = now;
     if (document.hidden) return;
@@ -259,6 +261,7 @@ export function mountStarSky(host: HTMLElement) {
     focus += (target - focus) * (1 - Math.exp(-dt / 0.6));
     if (!target && focus < 0.002) focus = 0;
     draw();
+    frameMeter?.record(now, fps, 'Sfondo');
   };
   const onResize = () => { resize(); draw(); };
   // A step down the quality ladder: fewer pixels, then fewer stars.
@@ -283,6 +286,7 @@ export function mountStarSky(host: HTMLElement) {
   onMotion();
 
   return () => {
+    frameMeter?.dispose();
     cancelAnimationFrame(frame);
     unwatch();
     removeEventListener('resize', onResize);

@@ -46,15 +46,6 @@ export const primaryCta = 'Richiedi una consulenza';
 /** Where clients come from: the studio works with all of Italy. */
 export const areaServed = 'Italia';
 
-// What happens at each stage, said for the client rather than in the trade's words.
-export const housePhases = [
-  { title: 'Fondamenta', text: 'Obiettivi, pubblico e strategia del tuo sito.' },
-  { title: 'Struttura', text: 'Contenuti e percorso di chi visita il sito.' },
-  { title: 'Forma', text: 'Design, identità e linguaggio visivo.' },
-  { title: 'Dettagli', text: 'Interazioni, animazioni e 3D, dove servono.' },
-  { title: 'Risultato', text: 'Un sito che lavora per te: chiaro, veloce, riconoscibile.' },
-];
-
 // What we offer: one custom website, and someone who looks after it.
 // `price` is shown under the text once filled in, e.g. 'A partire da 2.500 €'
 // or '90 € al mese': a figure, even a starting one, answers the first question

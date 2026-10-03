@@ -95,6 +95,7 @@ const nebulaCommon = `
   uniform float uScroll;
   uniform float uTime;
   uniform float uBlend;
+  uniform float uReady;
   uniform sampler2D uGasA;
   uniform sampler2D uGasB;
   float pocket(vec2 p) {
@@ -149,7 +150,7 @@ const cloudFragmentShader = `
     float keep = smoothstep(letGo - 0.22, letGo, gas.a);
     vec3 color = gas.rgb * keep;
     color *= 1.0 - pocket(vAtlas) * uSubject * 0.72;
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color * uReady, 1.0);
   }
 `;
 
@@ -188,7 +189,7 @@ const starVertexShader = `
     density *= 1.0 - pocket(cloud) * uSubject * 0.72;
     float cloudLight = smoothstep(0.025, 0.55, density);
     float shimmer = 0.86 + 0.14 * sin(uTime * 0.45 + phase);
-    vLight = aStyle.y * cloudLight * shimmer / sqrt(depth);
+    vLight = aStyle.y * cloudLight * shimmer * uReady / sqrt(depth);
     vHeat = fract(phase * 1.37);
     // Lit only within 0.72 of its sprite (beyond, its light is under the
     // cut-off below): the sprite is trimmed to that, never under 1.5 px.
@@ -237,6 +238,7 @@ export function createNebulaField() {
     uRadius: { value: 0.3 }, uSubject: { value: 0 },
     uDispersion: { value: 0 }, uScroll: { value: 0 },
     uBlend: { value: 0 },
+    uReady: { value: 0 },
     uGasA: { value: keys[0].texture }, uGasB: { value: keys[1].texture },
   };
   const sheet = new PlaneGeometry(SPAN, SPAN);
@@ -280,6 +282,8 @@ export function createNebulaField() {
   let from = Number.NaN;
   let rows = 0; // rows of the next keyframe already drawn
   let size = 1;
+  let warmKey = 0;
+  let warmRows = 0;
 
   // The atlas quad ignores the camera: any camera will do.
   const drawRows = (renderer: WebGLRenderer, camera: Camera, index: number, time: number, start: number, end: number) => {
@@ -298,11 +302,9 @@ export function createNebulaField() {
     backdrop,
     stars,
     resize(width: number, height: number, mobile: boolean, lite = false) {
-      // About one texel per two CSS pixels of the screen's height (the atlas
-      // spans 1.8 of it): fine enough that, even opened up as it disperses,
-      // the gas never shows its texels. Being drawn a few rows per frame, the
-      // detail costs memory, not frame time.
-      const resolution = Math.max(16, Math.min(lite ? 512 : 1024, Math.round(height * (lite ? 0.6 : mobile ? 1 : 0.9))));
+      // A soft atmosphere does not need a screen-sized noise atlas. Bound
+      // both its memory and the work needed to prepare its first keyframes.
+      const resolution = Math.max(16, Math.min(lite ? 256 : 512, Math.round(height * 0.5)));
       if (resolution !== size) {
         size = resolution;
         keys.forEach((target) => target.setSize(size, size));
@@ -333,10 +335,27 @@ export function createNebulaField() {
       // A jump in time (a first frame, reduced motion, a long pause): start over.
       if (!(time >= from && time < from + KEY * 3)) {
         from = Math.floor(time / KEY) * KEY;
-        drawRows(renderer, camera, order[0], from, 0, size);
-        drawRows(renderer, camera, order[1], from + KEY, 0, size);
+        warmKey = warmRows = 0;
+        u.uReady.value = 0;
         rows = 0;
       }
+      // Initial atlases used to execute two complete noise passes on the
+      // first visible frame. Prepare at most 32 rows per frame instead.
+      // Reduced motion has no ongoing loop, so initialise its still once.
+      if (time === 0 && warmKey < 2) {
+        drawRows(renderer, camera, order[0], from, 0, size);
+        drawRows(renderer, camera, order[1], from + KEY, 0, size);
+        warmKey = 2;
+      }
+      if (warmKey < 2) {
+        const end = Math.min(size, warmRows + 32);
+        drawRows(renderer, camera, order[warmKey], from + KEY * warmKey, warmRows, end);
+        warmRows = end;
+        if (warmRows === size) { warmKey++; warmRows = 0; }
+        renderer.setRenderTarget(target);
+        return;
+      }
+      u.uReady.value = time === 0 ? 1 : Math.min(1, u.uReady.value + 0.06);
       while (time >= from + KEY) {
         // The next keyframe must be complete before it is shown.
         drawRows(renderer, camera, order[2], from + KEY * 2, rows, size);
@@ -347,8 +366,9 @@ export function createNebulaField() {
       const blend = (time - from) / KEY;
       // A little ahead of the clock, so the last rows never pile up.
       const due = Math.min(size, Math.ceil(size * Math.min(1, blend * 1.15 + 0.05)));
-      drawRows(renderer, camera, order[2], from + KEY * 2, rows, due);
-      rows = Math.max(rows, due);
+      const end = Math.min(due, rows + 32);
+      drawRows(renderer, camera, order[2], from + KEY * 2, rows, end);
+      rows = Math.max(rows, end);
       renderer.setRenderTarget(target);
       u.uBlend.value = blend;
       u.uGasA.value = keys[order[0]].texture;
