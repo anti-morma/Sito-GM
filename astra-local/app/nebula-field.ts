@@ -165,6 +165,7 @@ const starVertexShader = `
   varying float vLight;
   varying float vHeat;
   varying float vCrop;
+  varying float vPixel;
   float starHash(float n) {
     return fract(sin(n * 91.3458) * 47453.5453);
   }
@@ -192,10 +193,13 @@ const starVertexShader = `
     vLight = aStyle.y * cloudLight * shimmer * uReady / sqrt(depth);
     vHeat = fract(phase * 1.37);
     // Lit only within 0.72 of its sprite (beyond, its light is under the
-    // cut-off below): the sprite is trimmed to that, never under 1.5 px.
+    // cut-off below): the sprite is trimmed to that, never under 4 px, so a
+    // scattered star smaller than a pixel still has room for a core a pixel
+    // wide (below) instead of blinking as it drifts between pixels.
     float full = aStyle.x * uDpr / depth;
-    gl_PointSize = max(full * 0.72, min(full, 1.5));
+    gl_PointSize = max(full * 0.72, 4.0);
     vCrop = gl_PointSize / full;
+    vPixel = 1.0 / full;
   }
 `;
 
@@ -204,10 +208,14 @@ const starFragmentShader = `
   varying float vLight;
   varying float vHeat;
   varying float vCrop;
+  varying float vPixel;
   void main() {
     vec2 uv = (gl_PointCoord - 0.5) * vCrop;
     float r2 = dot(uv, uv);
-    float core = exp(-r2 * 95.0);
+    // The core is at least a pixel wide: finer, it would flicker as the star
+    // moves. What it loses in peak it keeps in width.
+    float s = max(0.0725, 0.8 * vPixel);
+    float core = exp(-r2 / (2.0 * s * s)) * (0.0725 / s);
     float halo = exp(-r2 * 22.0) * 0.065;
     float alpha = (core + halo) * vLight;
     if (alpha < 0.002) discard;

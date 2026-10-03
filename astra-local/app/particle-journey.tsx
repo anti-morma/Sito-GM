@@ -24,6 +24,13 @@ export default function ParticleJourney() {
     nebulaJourney.enabled = true;
     let previousOpacity = -1;
     let previousBridge = -1;
+    // On computers the scene is pulled up toward the section before it
+    // (globals.css, one spacing rhythm): the brain still waits for that
+    // section to scroll away, then gathers in the remaining distance.
+    let lead = 0;
+    const measure = () => {
+      lead = Math.min(innerHeight * 0.6, Math.max(0, -parseFloat(getComputedStyle(bridge).marginTop) || 0));
+    };
 
     const update = () => {
       const state = frameState.current;
@@ -31,7 +38,8 @@ export default function ParticleJourney() {
       const bridgeBox = bridge.getBoundingClientRect();
       const heroBox = hero.getBoundingClientRect();
       let opacity: number;
-      state.bridgeMode = bridgeBox.top < vh;
+      const start = vh - lead;
+      state.bridgeMode = bridgeBox.top < start;
       if (!state.bridgeMode) {
         state.bridge = 0;
         state.hero = clamp01(-heroBox.top / Math.max(1, hero.offsetHeight));
@@ -39,7 +47,7 @@ export default function ParticleJourney() {
       } else {
         state.hero = 1;
         const travel = Math.max(1, bridge.offsetHeight - vh);
-        const entering = clamp01((vh - bridgeBox.top) / vh);
+        const entering = clamp01((start - bridgeBox.top) / start);
         const pinned = clamp01(-bridgeBox.top / travel);
         const leaving = clamp01((vh - bridgeBox.bottom) / vh);
         state.bridge = reduced.matches ? 0.5 : bridgeBox.top > 0 ? 0.3 * entering
@@ -57,15 +65,17 @@ export default function ParticleJourney() {
       nebulaJourney.scroll = scrollY / Math.max(1, vh);
     };
 
+    const onResize = () => { measure(); update(); };
+    measure();
     update();
-    const timer = window.setTimeout(update, 300);
+    const timer = window.setTimeout(onResize, 300);
     addEventListener('scroll', update, { passive: true });
-    addEventListener('resize', update);
+    addEventListener('resize', onResize);
     addEventListener('hashchange', update);
     reduced.addEventListener('change', update);
     return () => {
       removeEventListener('scroll', update);
-      removeEventListener('resize', update);
+      removeEventListener('resize', onResize);
       removeEventListener('hashchange', update);
       reduced.removeEventListener('change', update);
       clearTimeout(timer);

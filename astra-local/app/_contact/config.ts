@@ -4,8 +4,7 @@
 import { site } from '../content';
 import type { ContactConfig } from './fields';
 
-// The same action from the first button to the last message (primaryCta in
-// content.ts): "Richiedi una consulenza" → "Richiedi la consulenza" → "Richiesta ricevuta".
+// A first, informal word, not a quote request: "Parliamone" → "Richiesta ricevuta".
 const answer = site.responseTime ? `Ti rispondiamo entro ${site.responseTime}` : 'Ti rispondiamo';
 
 const config: ContactConfig = {
@@ -13,15 +12,16 @@ const config: ContactConfig = {
   // Without JavaScript the form comes back here with its outcome.
   returnPath: '/contatti',
   fields: [
-    { name: 'name', label: 'Nome', autoComplete: 'name', required: 'Dicci come ti chiami.', maxLength: 120 },
-    { name: 'email', label: 'Email', type: 'email', autoComplete: 'email', required: 'Inserisci il tuo indirizzo email: ti rispondiamo lì.', maxLength: 254 },
-    { name: 'company', label: 'Azienda / brand', autoComplete: 'organization', maxLength: 200 },
+    { name: 'name', label: 'Nome', placeholder: 'Il tuo nome', autoComplete: 'name', required: 'Dicci come ti chiami.', maxLength: 120 },
+    { name: 'email', label: 'Email', placeholder: 'La tua email', type: 'email', autoComplete: 'email', required: 'Inserisci il tuo indirizzo email: ti rispondiamo lì.', maxLength: 254 },
+    { name: 'company', label: 'Attività / brand', placeholder: 'Nome dell’attività o del brand', autoComplete: 'organization', maxLength: 200 },
     // The first option is selected from the start: it must be a true answer
     // for anyone who does not choose.
-    { name: 'type', label: 'Tipo di progetto', options: ['Da definire insieme', 'Un sito web nuovo', 'Il rinnovo di un sito esistente', 'Un’esperienza 3D o interattiva', 'Hosting e manutenzione', 'Altro'] },
+    { name: 'type', label: 'Di cosa hai bisogno?', hint: 'Possiamo definirlo insieme.', options: ['Da definire insieme', 'Un sito web nuovo', 'Il rinnovo di un sito esistente', 'Un’esperienza 3D o interattiva', 'Hosting e manutenzione', 'Altro'] },
     {
       name: 'idea',
-      label: 'Messaggio',
+      label: 'Parlaci del progetto',
+      placeholder: 'Cosa hai in mente? Raccontacelo anche in poche righe.',
       multiline: true,
       required: 'Raccontaci qualcosa del progetto, anche solo poche righe.',
       minLength: 10,
@@ -30,10 +30,11 @@ const config: ContactConfig = {
   ],
   submitClassName: 'gm-btn gm-btn--primary gm-btn--large',
   text: {
-    submit: 'Richiedi la consulenza',
+    submit: 'Parliamone',
     sending: 'Invio in corso',
-    // Beside the button: the last doubts (commitment, data) answered where they arise.
-    note: 'Senza impegno. Usiamo i tuoi dati solo per risponderti e li conserviamo al massimo 24 mesi.',
+    // Beside the button: no commitment, and what happens next. How long the data
+    // is kept is said in the privacy policy.
+    note: 'Senza impegno. Ti risponderemo per capire insieme il progetto e i prossimi passi.',
     privacyHref: '/privacy',
     privacyLabel: 'Informativa privacy',
     sentTitle: 'Richiesta ricevuta.',

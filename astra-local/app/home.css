@@ -236,8 +236,7 @@
     --film-gap: clamp(56px, 5vw, 96px);
     display: grid;
     align-items: center;
-    min-height: 100svh;
-    padding-block: calc(var(--header-h) + 24px) 48px;
+    padding-block: var(--section-space);
   }
   /* The film bleeds a little toward the edge; the words keep the site's gutter. */
   .gm-film-grid {

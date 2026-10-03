@@ -7,7 +7,7 @@ import { scrollToNextStop } from './next-stop';
 export default function HeroExplore() {
   return (
     <a
-      className="gm-btn gm-btn--primary gm-btn--large gm-hero-explore"
+      className="gm-btn gm-hero-explore"
       href="#servizi"
       data-cta="hero"
       onClick={(event) => {

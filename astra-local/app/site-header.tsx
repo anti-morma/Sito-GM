@@ -68,6 +68,53 @@ export default function SiteHeader() {
   // A new page closes the menu.
   useEffect(() => setMenuOpen(false), [pathname]);
 
+  // Where you are, for whoever lands mid-page. Each section opens with its
+  // label ("GM · Progetti"): once that label has scrolled up under the header,
+  // its name docks beside the GM, as if the label had moved up there, and
+  // stays until the section ends. While any label is on screen the header
+  // says nothing: it speaks only when the page would not. A page inside a section
+  // (a case study, a service) docks its title instead. The page itself is
+  // already marked in the menu.
+  const [here, setHere] = useState({ name: '', on: false });
+  useEffect(() => {
+    const inside = NAV.some((item) => currentOf(pathname, item.href) === 'true');
+    const nameOf = (anchor: HTMLElement) => {
+      const copy = anchor.cloneNode(true) as HTMLElement;
+      copy.querySelectorAll('.gm-label-mark, .gm-sr-only').forEach((part) => part.remove());
+      return (copy.textContent ?? '').trim().replace(/\.$/, '');
+    };
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const edge = document.querySelector('.gm-header')?.getBoundingClientRect().bottom ?? 72;
+      const anchors = document.querySelectorAll<HTMLElement>(inside ? 'main h1' : 'main .gm-label:not(.gm-hero-eyebrow)');
+      let name = '';
+      for (const anchor of anchors) {
+        const block = inside ? anchor.closest('main') : anchor.closest('section');
+        const box = anchor.getBoundingClientRect();
+        if (!block?.offsetHeight || !box.height) continue;
+        // A label on screen already says where you are.
+        if (box.bottom > edge && box.top < innerHeight) { name = ''; break; }
+        if (box.bottom <= edge) name = block.getBoundingClientRect().bottom > edge + 48 ? nameOf(anchor) : '';
+      }
+      setHere((current) => name
+        ? (current.on && current.name === name ? current : { name, on: true })
+        : (current.on ? { ...current, on: false } : current));
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+    setHere({ name: '', on: false });
+    update();
+    const late = window.setTimeout(update, 400);
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    return () => {
+      removeEventListener('scroll', onScroll);
+      removeEventListener('resize', onScroll);
+      cancelAnimationFrame(frame);
+      clearTimeout(late);
+    };
+  }, [pathname]);
+
   useEffect(() => {
     if (!menuOpen) return;
     // The menu covers the page: what lies behind it leaves the keyboard's and
@@ -108,6 +155,13 @@ export default function SiteHeader() {
         <Link className="gm-logo" href="/" onClick={(event) => toTop(event, '/')} aria-label={`${site.name} — home`}>
           <DynamicGMLogo />
         </Link>
+
+        {/* You are here: the section's label, docked beside the GM. */}
+        <p className="gm-here" data-on={here.on ? '' : undefined} aria-hidden={here.on ? undefined : true}>
+          <span className="gm-label-dot" aria-hidden="true" />
+          <span className="gm-sr-only">Sei in: </span>
+          <span key={here.name} className="gm-here-name">{here.name}</span>
+        </p>
 
         <nav className="gm-nav" aria-label="Principale">
           <ul>

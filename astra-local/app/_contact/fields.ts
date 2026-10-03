@@ -20,6 +20,10 @@ export type ContactFieldConfig = {
   /** Predefinito: 5000 caratteri per il testo su più righe, 200 per gli altri. */
   maxLength?: number;
   autoComplete?: string;
+  /** Esempio dentro il campo vuoto (i menu a tendina non lo mostrano). */
+  placeholder?: string;
+  /** Breve nota accanto all'etichetta, letta insieme a lei, es. "possiamo definirlo insieme". */
+  hint?: string;
   /** Occupa tutta la larghezza del form (il testo su più righe lo fa sempre). */
   wide?: boolean;
 };

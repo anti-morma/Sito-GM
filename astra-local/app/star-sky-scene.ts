@@ -43,6 +43,7 @@ const vertexShader = `
   varying vec3 vColor;
   varying float vLight;
   varying float vSparkle;
+  varying float vPx;
 
   void main() {
     float aSize = aStyle.x;
@@ -59,7 +60,8 @@ const vertexShader = `
     gl_Position = projectionMatrix * mv;
     float viewDist = max(0.001, -mv.z);
     float depth = clamp(2.0 / viewDist, 0.35, 2.5);
-    gl_PointSize = clamp(aSize * uDpr * uPixelScale * depth, 2.0, 160.0);
+    gl_PointSize = clamp(aSize * uDpr * uPixelScale * depth, 4.0, 160.0);
+    vPx = gl_PointSize;
 
     float shimmer = mix(1.0, 0.72 + 0.28 * sin(uTime * (0.65 + aPhase * 0.065) + aPhase * 3.0), uMotion);
     float depthCue = clamp(pow(2.0 / viewDist, 0.8), 0.4, 1.8);
@@ -100,11 +102,16 @@ const fragmentShader = `
   varying vec3 vColor;
   varying float vLight;
   varying float vSparkle;
+  varying float vPx;
 
   void main() {
     vec2 uv = gl_PointCoord - 0.5;
     float r2 = dot(uv, uv);
-    float core = exp(-r2 * 310.0);
+    // A core never finer than a pixel: a smaller one falls between pixels as
+    // the star drifts, and the star blinks on and off. The light it loses in
+    // peak it keeps in width.
+    float s = max(0.0402, 0.8 / vPx);
+    float core = exp(-r2 / (2.0 * s * s)) * (0.0402 / s);
     float inner = exp(-r2 * 90.0) * 0.2;
     float halo = exp(-r2 * 26.0) * 0.055;
     float rays = (exp(-abs(uv.x) * 170.0 - abs(uv.y) * 13.0) + exp(-abs(uv.y) * 170.0 - abs(uv.x) * 13.0)) * 0.18 * vSparkle;

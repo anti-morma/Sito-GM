@@ -105,8 +105,8 @@ em { font-style: normal; }
   align-items: center;
   flex-wrap: wrap;
   margin-bottom: 24px;
-  color: var(--ink-3);
-  font-size: 13px;
+  color: var(--ink-2);
+  font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.14em;
   line-height: 1.4;
@@ -123,6 +123,34 @@ em { font-style: normal; }
   background: var(--accent);
   box-shadow: 0 0 0 3px rgb(143 177 255 / 14%), 0 0 10px rgb(143 177 255 / 70%);
 }
+/* Every section's label catches the eye: now and then a light runs across
+   it, the way a star glints, and its dot brightens as the light passes.
+   (Not the opening line: the hero has its own light.) */
+.gm-label:not(.gm-hero-eyebrow) :is(.gm-label-mark, .gm-label-name) {
+  --tone: var(--ink-2);
+  background: linear-gradient(100deg, var(--tone) 0 28%, #fff 40% 60%, var(--tone) 72% 100%) 100% 0 / 300% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gm-label-glint 4s var(--ease) infinite;
+}
+.gm-label:not(.gm-hero-eyebrow) .gm-label-mark { --tone: var(--ink); }
+.gm-label:not(.gm-hero-eyebrow) .gm-label-name { animation-delay: 0.2s; }
+.gm-label:not(.gm-hero-eyebrow) .gm-label-dot { animation: gm-label-star 4s var(--ease) infinite; }
+/* The light: white, with a real glow while it crosses, then quiet again. */
+@keyframes gm-label-glint {
+  0% { background-position: 100% 0; filter: none; }
+  20% { filter: drop-shadow(0 0 4px rgb(255 255 255 / 85%)) drop-shadow(0 0 14px rgb(255 250 240 / 60%)); }
+  40%, 100% { background-position: 0% 0; filter: none; }
+}
+@keyframes gm-label-star {
+  0%, 30%, 100% { transform: none; background: var(--accent); box-shadow: 0 0 0 3px rgb(143 177 255 / 14%), 0 0 10px rgb(143 177 255 / 70%); }
+  13% { transform: scale(1.8); background: #fff; box-shadow: 0 0 0 4px rgb(255 255 255 / 22%), 0 0 16px rgb(255 255 255 / 95%), 0 0 30px rgb(185 205 255 / 80%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gm-label:not(.gm-hero-eyebrow) :is(.gm-label-mark, .gm-label-name, .gm-label-dot) { animation: none; }
+}
+:root[data-motion='still'] .gm-label:not(.gm-hero-eyebrow) :is(.gm-label-mark, .gm-label-name, .gm-label-dot) { animation: none; }
 
 .gm-h2 {
   color: var(--ink);
@@ -245,6 +273,38 @@ em { font-style: normal; }
   height: 44px;
   margin-left: -8px;
   background: url('/gm-logo.webp') center / 176% auto no-repeat;
+}
+
+/* ---------- You are here: a section's label, docked beside the GM ----------
+   Shown only once the label itself has scrolled under the header
+   (site-header.tsx): the logo is its "GM", then the dot and the name. */
+.gm-here {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.35s var(--ease), transform 0.45s var(--ease);
+  pointer-events: none;
+}
+.gm-here[data-on] { opacity: 1; transform: none; }
+.gm-here .gm-label-dot { margin: 0 0.9em 0 0.2em; }
+.gm-here-name { overflow: hidden; text-overflow: ellipsis; animation: gm-here-in 0.45s var(--ease) both; }
+@keyframes gm-here-in { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .gm-here, .gm-here-name { transition: none; animation: none; } }
+:root[data-motion='still'] :is(.gm-here, .gm-here-name) { transition: none; animation: none; }
+@media (max-width: 760px) {
+  .gm-here { font-size: 11px; letter-spacing: 0.14em; }
+  .gm-here .gm-label-dot { margin-left: 0; }
 }
 
 /* ---------- The pages: plain names; where you are, the studio's dot ---------- */
@@ -491,7 +551,23 @@ em { font-style: normal; }
 }
 
 .gm-hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: clamp(28px, 4.4vh, 44px); }
-.gm-hero-explore { font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase; }
+.gm-hero-explore {
+  gap: 20px;
+  min-height: 60px;
+  padding: 0 8px 0 30px;
+  border-color: rgb(143 177 255 / 42%);
+  background: rgb(143 177 255 / 7%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: var(--ink);
+  font-size: 13px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.gm-hero-explore:hover { border-color: var(--accent); background: rgb(143 177 255 / 13%); }
+/* The way down, in the site's starlight: a lit circle at the end of the pill. */
+.gm-hero-explore .gm-btn-arrow { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); box-shadow: 0 6px 24px -8px rgb(143 177 255 / 70%); color: var(--accent-ink); font-size: 16px; letter-spacing: 0; }
+.gm-hero-actions .gm-btn.gm-hero-explore { width: auto; min-height: 56px; padding: 0 6px 0 26px; font-size: 13px; box-shadow: none; }
 /* The promise breaks after "identità," (hero.tsx), and wraps further only on the narrowest phones. */
 .gm-hero-title em { white-space: normal; }
 
@@ -918,6 +994,8 @@ em { font-style: normal; }
   .gm-bridge-copy { transform: none; }
 }
 
+.gm-section { position: relative; padding-block: clamp(96px, 16vh, 200px); }
+
 /* Section reveal: opacity and a short rise, once. */
 .gm-reveal-ready [data-reveal] {
   opacity: 0;
@@ -1034,7 +1112,7 @@ em { font-style: normal; }
 /* The closing line, said plainly: the point of the whole paragraph. */
 .gm-about-stop-lead p:last-child { color: var(--ink); }
 .gm-about-stop-side { display: grid; justify-items: start; gap: clamp(28px, 4vh, 40px); }
-.gm-home-more { margin-top: clamp(40px, 7vh, 72px); }
+.gm-home-more { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; margin-top: clamp(40px, 7vh, 72px); }
 .gm-about-stop-people { width: 100%; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .gm-about-stop-people li { display: grid; gap: 4px; padding: 18px 0; border-bottom: 1px solid var(--line); }
 .gm-about-stop-people strong { color: var(--ink); font-size: clamp(20px, 1.6vw, 26px); font-weight: 500; letter-spacing: -0.02em; }
@@ -1051,8 +1129,9 @@ em { font-style: normal; }
 .gm-contact-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(48px, 7vw, 120px); align-items: start; }
 .gm-contact-head { position: sticky; top: calc(var(--header-h) + 48px); }
 .gm-contact-form { scroll-margin-top: calc(var(--header-h) + 24px); }
-.gm-contact-mail { margin-top: 28px; color: var(--ink-2); font-size: 17px; }
-.gm-contact-mail a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 5px; }
+.gm-contact-mail { margin-top: 28px; color: var(--ink-2); font-size: 17px; line-height: 1.6; }
+.gm-contact-ways { display: block; }
+.gm-contact-mail a { display: inline-block; padding-block: 6px; color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 5px; }
 .gm-contact-mail a:hover { text-decoration-color: var(--accent); }
 /* What happens after the form, before anyone has to ask. */
 .gm-next-steps { max-width: 40ch; margin-top: clamp(32px, 5vh, 48px); padding-top: 24px; border-top: 1px solid var(--line); }
@@ -1130,6 +1209,7 @@ em { font-style: normal; }
 
 /* ---------- Content: tablets and phones ---------- */
 @media (max-width: 1024px) {
+  .gm-contact-grid { grid-template-columns: 1fr; }
   .gm-contact-head { position: static; }
 
   .gm-project,
@@ -1141,7 +1221,7 @@ em { font-style: normal; }
 
 @media (max-width: 760px) {
   .gm-section { padding-block: clamp(80px, 12vh, 112px); }
-  .gm-label { margin-bottom: 18px; font-size: 12px; }
+  .gm-label { margin-bottom: 18px; font-size: 14px; }
   .gm-h2 { font-size: clamp(38px, 11vw, 50px); }
   .gm-h2--xl { font-size: clamp(44px, 13vw, 60px); }
   .gm-lead { font-size: 18px; }
@@ -1230,6 +1310,7 @@ em { font-style: normal; }
   .gm-project-text .gm-btn { width: auto; min-height: 44px; padding-inline: 20px; font-size: 14px; }
   .gm-project-actions { justify-content: center; gap: 2px 18px; }
   .gm-project-live { font-size: 14px; }
+  .gm-projects .gm-home-more { flex-direction: column; text-align: center; }
 
   .gm-project-arrow {
     position: absolute;
@@ -1374,15 +1455,32 @@ html[data-intro='waiting']::after {
    Tablets and phones are untouched.
    ====================================================================== */
 @media (min-width: 1025px) {
-  .gm-section:not(.gm-about-stop) { padding-block: clamp(48px, 9svh, 136px); }
+  /* One rhythm for the whole site: the same space between the words of any
+     two sections, half above and half below each (home-film and the idea
+     scene follow it too, in home.css and below). */
+  :root { --section-space: clamp(96px, 13svh, 136px); }
+  .gm-section { padding-block: var(--section-space); }
+  /* The idea scene fills a pinned screen with its words in the middle: it
+     comes as close to its neighbours as the rhythm asks, measured from those
+     words (two lines of .gm-bridge-line, the arrow and its margin). */
+  .gm-bridge {
+    --copy-h: calc(clamp(44px, 5vw, 92px) * 2.1 + 68px + clamp(28px, 4.6vh, 48px));
+    --copy-top: calc(50svh + var(--header-h) / 4 - var(--copy-h) / 2);
+    margin-top: calc(var(--section-space) - var(--copy-top));
+    margin-bottom: calc(var(--section-space) - (100svh - var(--copy-top) - var(--copy-h)));
+  }
   .gm-h2 { font-size: clamp(38px, min(4.6vw, 8.6svh), 76px); }
   .gm-h2--xl { font-size: clamp(44px, min(6vw, 11.5svh), 104px); }
   .gm-section .gm-lead { margin-top: clamp(14px, 2.6svh, 28px); }
 
   /* Home, projects: one at a time, beside its words; arrows and dots under them. */
   /* The title and its words side by side, so the project gets the height. */
-  .gm-projects-head { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: clamp(40px, 6vw, 104px); align-items: end; max-width: none; margin-bottom: clamp(24px, 5svh, 64px); }
-  .gm-projects-head > :not(.gm-lead) { grid-column: 1; }
+  /* The preview takes the width its height allows (--shot-w); the words take
+     the rest, never less than 40%: on a short screen they need fewer lines. */
+  .gm-projects { --project-cols: minmax(min(40%, 520px), 1fr) minmax(0, var(--shot-w)); }
+  .gm-projects-head { display: grid; grid-template-columns: var(--project-cols); column-gap: clamp(40px, 6vw, 104px); align-items: end; max-width: none; margin-bottom: clamp(28px, 4.6svh, 72px); }
+  /* No lead beside it: the heading takes the whole width, one line per sentence. */
+  .gm-projects-head > :not(.gm-lead) { grid-column: 1 / -1; }
   /* The words start where the preview starts. */
   .gm-projects { --shot-w: calc((100svh - var(--header-h) - 300px) * 1.6); }
   .gm-projects-head .gm-lead { grid-area: 1 / 2 / span 2; align-self: end; justify-self: end; width: min(100%, var(--shot-w)); max-width: none; margin: 0; }
@@ -1392,7 +1490,7 @@ html[data-intro='waiting']::after {
     gap: 0;
     /* Room for the controls under the words, and for the preview's light to
        fade out whole: a scrolling list clips it at its edge. The controls and
-       "Tutti i progetti" sit 64px higher to match, so nothing else moves. */
+       "Tutti i progetti" sit higher to match, so nothing else moves. */
     padding-bottom: 128px;
     overflow-x: auto;
     overscroll-behavior-x: contain;
@@ -1403,7 +1501,7 @@ html[data-intro='waiting']::after {
   .gm-project,
   .gm-project:nth-child(even) {
     flex: 0 0 100%;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-columns: var(--project-cols);
     grid-template-areas: 'text media';
     /* A hair of room: the next slide's frame never shows at the edge. */
     padding-right: 2px;
@@ -1415,8 +1513,10 @@ html[data-intro='waiting']::after {
   .gm-project:nth-child(even) .gm-project-media { justify-self: end; width: min(100%, var(--shot-w)); }
   .gm-project-description { margin: clamp(12px, 2.4svh, 22px) 0 clamp(18px, 3.4svh, 32px); }
   .gm-project h3 { margin-top: 0; }
+  /* The longer story beside the preview: the text takes its column's width
+     so it needs fewer lines, and the spaces follow the screen's height. */
   .gm-reveal-ready .gm-project-list [data-reveal] { opacity: 1; transform: none; }
-  .gm-project-controls { position: absolute; left: 0; bottom: 72px; display: flex; align-items: center; gap: 6px; }
+  .gm-project-controls { position: absolute; left: 0; bottom: 52px; display: flex; align-items: center; gap: 6px; }
   .gm-project-arrow,
   .gm-project-dots { display: flex; }
   .gm-project-arrow { place-items: center; justify-content: center; align-items: center; width: 44px; height: 44px; border: 1px solid var(--line-2); border-radius: 50%; background: none; color: var(--ink); transition: opacity 0.3s var(--ease), border-color 0.3s var(--ease); }
@@ -1429,6 +1529,64 @@ html[data-intro='waiting']::after {
   .gm-project-dots button::before { content: ''; width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); transition: width 0.4s var(--ease), background-color 0.4s var(--ease); }
   .gm-project-dots button[aria-current]::before { width: 18px; background: var(--accent); }
   /* "Tutti i progetti" on the controls' line, at the far side. */
-  .gm-projects .gm-home-more { position: relative; display: flex; justify-content: flex-end; height: 0; margin-top: -106px; }
-  .gm-projects .gm-home-more .gm-link { translate: 0 -50%; }
+  /* The line under the controls ends the section, so it keeps the same
+     space below as every other one. */
+  .gm-projects .gm-home-more { position: relative; flex-wrap: nowrap; justify-content: flex-end; align-items: flex-end; height: 0; margin-top: -52px; text-align: right; }
 }
+
+/* ======================================================================
+   Home projects (page.tsx, project-carousel.tsx): one at a time, centred.
+   The name and its field, the site itself moving, then the case study and
+   the live site, then the arrows and dots. The projects lie on top of each
+   other and slide in from the right, out to the left, in a loop.
+   ====================================================================== */
+.gm-projects .gm-projects-head { justify-items: center; text-align: center; }
+.gm-projects .gm-projects-head .gm-label { justify-content: center; }
+.gm-projects .gm-project-carousel { position: relative; }
+.gm-projects .gm-project-carousel .gm-project-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  /* Side to side only: the next project waits outside; the light under the
+     preview still fades out downwards. */
+  overflow: visible;
+  overflow-x: clip;
+  scroll-snap-type: none;
+  touch-action: pan-y;
+}
+.gm-projects .gm-project-carousel .gm-project-list > .gm-project {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  padding: 0;
+  text-align: center;
+  will-change: transform;
+}
+.gm-projects .gm-project-list > .gm-project > .gm-project-text { order: 0; display: block; max-width: none; min-height: 0; margin: 0; }
+.gm-projects .gm-project-text .gm-project-category { margin: 10px 0 0; }
+.gm-projects .gm-project-list > .gm-project > .gm-project-media { order: 1; align-self: center; justify-self: auto; margin-top: clamp(18px, 3svh, 28px); }
+.gm-projects .gm-project-list > .gm-project > .gm-project-actions { order: 2; position: relative; justify-content: center; margin: clamp(20px, 3svh, 30px) 0 0; }
+.gm-projects .gm-project-carousel .gm-project-controls { position: static; display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: clamp(16px, 2.6svh, 26px); }
+.gm-projects .gm-project-carousel .gm-project-arrow { position: static; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line-2); border-radius: 50%; background: none; color: var(--ink); transform: none; transition: border-color 0.3s var(--ease); }
+.gm-projects .gm-project-carousel .gm-project-arrow:hover { border-color: rgb(143 177 255 / 55%); }
+.gm-projects .gm-project-carousel .gm-project-arrow span { width: 8px; height: 8px; border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor; transform: translateX(-2px) rotate(45deg); }
+.gm-projects .gm-project-carousel .gm-project-arrow--prev span { transform: translateX(2px) rotate(-135deg); }
+.gm-projects .gm-project-carousel .gm-project-dots { position: static; display: flex; transform: none; }
+.gm-projects .gm-project-dots button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; background: none; }
+.gm-projects .gm-project-dots button::before { content: ''; width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); transition: width 0.4s var(--ease), background-color 0.4s var(--ease); }
+.gm-projects .gm-project-dots button[aria-current]::before { width: 18px; background: var(--accent); }
+.gm-projects .gm-wrap > .gm-home-more { position: static; display: flex; flex-direction: row; justify-content: center; height: auto; margin-top: clamp(14px, 2.4svh, 24px); text-align: center; }
+/* Tablets and computers: the recording as it is (16:10), as large as the
+   screen's height allows under the name and above the buttons. */
+@media (min-width: 761px), (orientation: landscape) {
+  .gm-projects .gm-project-list > .gm-project > .gm-project-media { width: min(100%, 980px, (100svh - var(--header-h) - 300px) * 1.6); aspect-ratio: 16 / 10; }
+}
+/* Phones upright: the phone recording, larger. */
+@media (max-width: 760px) and (orientation: portrait) {
+  .gm-projects .gm-project-carousel { --shot: min(74vw, 320px, 58svh * 0.609); margin-inline: 0; }
+}
+

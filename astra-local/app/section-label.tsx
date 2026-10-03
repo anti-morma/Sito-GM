@@ -5,7 +5,7 @@ export default function SectionLabel({ children, className, ...rest }: React.Com
       <span className="gm-label-mark">GM</span>
       <span className="gm-label-dot" aria-hidden="true" />
       <span className="gm-sr-only"> · </span>
-      {children}
+      <span className="gm-label-name">{children}</span>
     </p>
   );
 }

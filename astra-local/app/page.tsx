@@ -39,38 +39,28 @@ function ProjectCard({ project }: { project: Project }) {
   const media = project.preview
     ? <ProjectPreview src={project.preview} name={project.name} />
     : project.image && <img src={project.image} alt={`Homepage di ${project.name}`} loading="lazy" />;
+  // The project in a glance, centred: its name and field, then the site
+  // itself moving; under it the case study first and the live site beside it.
   return (
     <article className="gm-project" data-reveal>
       <div className="gm-project-text">
         <h3>{project.name}</h3>
-        <p className="gm-project-category">{project.category}</p>
-        <p className="gm-project-description">{project.description}</p>
-        <div className="gm-project-actions">
-          {study && (
-            <Link className="gm-btn gm-btn--ghost" href={study} data-cta="progetto" data-project={project.name}>
-              Scopri il progetto <span className="gm-btn-arrow" aria-hidden="true">→</span>
-            </Link>
-          )}
-          {project.href && (
-            <a className={study ? 'gm-project-live' : 'gm-btn gm-btn--ghost'} href={project.href} target="_blank" rel="noopener" data-cta="sito-cliente" data-project={project.name}>
-              Visita {host} <span className="gm-btn-arrow" aria-hidden="true">↗</span>{NEW_TAB}
-            </a>
-          )}
-        </div>
+        <p className="gm-project-category">{project.home?.category ?? project.category}</p>
       </div>
-      {study ? (
-        <Link className="gm-project-media" href={study} aria-label={`${project.name}: scopri il progetto`} data-cta="progetto" data-project={project.name}>
-          {media}
-          <span className="gm-project-hover" aria-hidden="true">Scopri il progetto <span>→</span></span>
-        </Link>
-      ) : project.href ? (
-        <a className="gm-project-media" href={project.href} target="_blank" rel="noopener" aria-label={`Apri il sito di ${project.name} in una nuova scheda`} data-cta="sito-cliente" data-project={project.name}>
-          {media}
-          <span className="gm-project-hover" aria-hidden="true">Visita il sito <span>↗</span></span>
-        </a>
-      ) : (
-        <div className="gm-project-media">{media}</div>
-      )}
+      {/* The site itself, moving: just to watch (the buttons under it act). */}
+      <div className="gm-project-media">{media}</div>
+      <div className="gm-project-actions">
+        {study && (
+          <Link className="gm-btn gm-btn--primary" href={study} data-cta="progetto" data-project={project.name}>
+            Scopri il progetto <span className="gm-btn-arrow" aria-hidden="true">→</span>
+          </Link>
+        )}
+        {project.href && (
+          <a className={study ? 'gm-project-live' : 'gm-btn gm-btn--ghost'} href={project.href} target="_blank" rel="noopener" data-cta="sito-cliente" data-project={project.name}>
+            Visita il sito<span className="gm-sr-only"> di {project.name} ({host})</span> <span className="gm-btn-arrow" aria-hidden="true">↗</span>{NEW_TAB}
+          </a>
+        )}
+      </div>
     </article>
   );
 }
@@ -98,14 +88,17 @@ export default function Home() {
             <div className="gm-wrap">
               <header className="gm-projects-head" data-reveal>
                 <SectionLabel>Progetti</SectionLabel>
-                <h2 id="progetti-title" className="gm-h2">Progetti reali, <span className="gm-h2-line">online adesso.</span></h2>
+                <h2 id="progetti-title" className="gm-h2"><span className="gm-h2-line">Non raccontiamo cosa facciamo.</span><br /><em className="gm-shine">Te lo mostriamo.</em></h2>
               </header>
               <ProjectCarousel count={projects.length}>
                 {projects.map((project) => <ProjectCard key={project.name} project={project} />)}
               </ProjectCarousel>
-              <p className="gm-home-more" data-reveal>
-                <Link className="gm-link" href="/progetti">Tutti i progetti e i casi studio <span className="gm-btn-arrow" aria-hidden="true">→</span></Link>
-              </p>
+              {/* After the proof, the way deeper: every project and how we thought it. */}
+              <div className="gm-home-more" data-reveal>
+                <Link className="gm-btn gm-btn--ghost" href="/progetti" data-cta="tutti-i-progetti">
+                  Esplora i progetti <span className="gm-btn-arrow" aria-hidden="true">→</span>
+                </Link>
+              </div>
             </div>
           </section>
 
@@ -142,12 +135,21 @@ export default function Home() {
               <header className="gm-contact-head" data-reveal>
                 <SectionLabel>Contatti</SectionLabel>
                 <h2 id="contatti-title" className="gm-h2 gm-h2--xl">Parliamo del tuo progetto.</h2>
-                <p className="gm-lead">Raccontaci che attività hai e cosa vorresti ottenere dal sito: bastano poche righe, anche solo un’idea.</p>
+                <p className="gm-lead">Hai un’attività, un’idea o un progetto da portare online? Raccontaci cosa hai in mente. Ci bastano poche righe per iniziare a capire dove possiamo portarlo.</p>
+                {/* The studio's real e-mail and phone (content.ts): "e-mail" and
+                    "telefono" are the links; a detail not filled in is left out. */}
                 {contacts.length > 0 && (
                   <p className="gm-contact-mail">
-                    Oppure {contacts.map((item, index) => (
-                      <Fragment key={item.key}>{index > 0 && ' o '}{item.key === 'email' ? 'scrivici a ' : 'chiamaci al '}<DetailText item={item} /></Fragment>
-                    ))}
+                    Preferisci parlarne direttamente?{' '}
+                    <span className="gm-contact-ways">
+                      {contacts.map((item, index) => (
+                        <Fragment key={item.key}>
+                          {index > 0 && ' oppure '}
+                          {item.key === 'email' ? (index ? 'scrivici via ' : 'Scrivici via ') : (index ? 'chiamaci al ' : 'Chiamaci al ')}
+                          <DetailText item={{ ...item, text: item.key === 'email' ? 'e-mail' : 'telefono' }} />
+                        </Fragment>
+                      ))}.
+                    </span>
                   </p>
                 )}
               </header>

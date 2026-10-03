@@ -74,7 +74,7 @@ export default function AboutPage() {
                   <span className="gm-label-mark">GM</span>
                   <span className="gm-label-dot" aria-hidden="true" />
                   <span className="gm-sr-only"> · </span>
-                  Chi siamo
+                  <span className="gm-label-name">Chi siamo</span>
                 </span>
                 <span className="gm-sr-only">: </span>
                 <span className="gm-about-title-line">Due persone.</span>{' '}

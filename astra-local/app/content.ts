@@ -176,6 +176,9 @@ export type Project = {
   preview?: string;
   /** Static image under /public, used when there is no preview video. */
   image?: string;
+  /** The home's own wording for the project (page.tsx), when it differs from
+   *  the rest of the site. The whole story is on its case study. */
+  home?: { category?: string };
 };
 
 // Real projects only. Previews are recordings of each live homepage scrolling.
@@ -238,6 +241,7 @@ export const projects: Project[] = [
     description: 'Una residenza sul Lago di Garda, da visitare piano per piano in tre lingue. Un sito che porta gli ospiti a prenotare direttamente dai proprietari, senza commissioni ai portali.',
     href: 'https://www.residenzavedovelli.it',
     preview: '/projects/vedovelli',
+    home: { category: 'Hospitality · Lago di Garda' },
     study: {
       slug: 'residenza-vedovelli',
       seoTitle: 'Residenza Vedovelli, Lago di Garda: caso studio',

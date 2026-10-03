@@ -93,7 +93,7 @@ export default function ContactForm() {
           },
           onBlur: () => setTouched((current) => ({ ...current, [field.name]: true })),
         };
-        const text = { autoComplete: field.autoComplete, maxLength: maxLengthOf(field) };
+        const text = { autoComplete: field.autoComplete, maxLength: maxLengthOf(field), placeholder: field.placeholder };
         return (
           <div
             key={field.name}
@@ -104,6 +104,7 @@ export default function ContactForm() {
             <label htmlFor={id}>
               {field.label}
               {!field.required && !field.options && <small> · facoltativo</small>}
+              {field.hint && <small> · {field.hint}</small>}
             </label>
             {field.options
               ? <select {...common}>{field.options.map((option) => <option key={option}>{option}</option>)}</select>
