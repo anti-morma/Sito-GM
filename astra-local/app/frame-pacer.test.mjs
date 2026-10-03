@@ -30,3 +30,22 @@ test('a quality change starts the new cadence immediately', () => {
   assert.equal(draw(34, 30), false);
   assert.equal(draw(51, 30), true);
 });
+
+for (const hz of [60, 75, 90, 120, 144, 165, 240]) {
+  test(`native cadence draws every refresh on a ${hz} Hz display`, () => {
+    const draw = createFramePacer();
+    for (let refresh = 0; refresh < hz * 10; refresh++) {
+      assert.equal(draw(refresh * 1000 / hz, null), true);
+    }
+  });
+}
+
+test('switching between native and capped cadence resets the deadline', () => {
+  const draw = createFramePacer();
+  draw(0, 30);
+  assert.equal(draw(6, null), true);
+  assert.equal(draw(12, null), true);
+  assert.equal(draw(18, 30), true);
+  assert.equal(draw(24, 30), false);
+  assert.equal(draw(52, 30), true);
+});

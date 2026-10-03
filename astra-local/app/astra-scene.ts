@@ -45,9 +45,7 @@ const LOGO_HEIGHT = 0.62;
 const LOGO_WIDTH = 0.818;
 // Phones: the GM rests in the header logo, whose letters span this share of its box.
 const LOGO_MARK = LOGO_MARK_SHARE;
-// The scene's motion is slow: 60 frames a second at most, even on 120 Hz
-// screens, and 30 on phones, like their sky.
-const MAX_FPS = 60;
+// Desktop follows RAF's native cadence; phones keep their 30 fps budget.
 const PHONE_FPS = 30;
 
 // The monogram and the brain share interaction uniforms, but have their own
@@ -821,8 +819,9 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
     // stars to the GPU ahead of its scene (nothing shows: the canvas is hidden).
     if ((asleep || !state.active) && !brainWarm) return;
     if (state.active && !asleep) reportFrame(now, elapsed);
-    // Desktop quality reductions keep the 60 fps target; only phones use 30.
-    const targetFps = phoneDensity ? PHONE_FPS : MAX_FPS;
+    // Draw every desktop refresh: a fixed 60 fps cap creates uneven frame
+    // holds on 144/165 Hz displays. Motion still advances by elapsed time.
+    const targetFps = phoneDensity ? PHONE_FPS : null;
     if (!shouldDraw(now, targetFps)) return;
     const step = Math.min(0.04, (now - (lastDraw || now - elapsed)) / 1000);
     lastDraw = now;

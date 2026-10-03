@@ -5,7 +5,13 @@
 export function createFramePacer() {
   let next = 0;
   let previousFps = 0;
-  return (now: number, fps: number) => {
+  return (now: number, fps: number | null) => {
+    // Native mode draws once per RAF callback, following the browser's display
+    // cadence without inserting uneven 60 fps skips on high-refresh screens.
+    if (fps === null) {
+      previousFps = 0;
+      return true;
+    }
     const interval = 1000 / fps;
     if (fps !== previousFps) {
       next = now;

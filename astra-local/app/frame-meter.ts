@@ -13,7 +13,7 @@ export function createFrameMeter(name?: string) {
   let start = 0;
   let intervals: number[] = [];
   return {
-    record(now: number, target: number, label: string) {
+    record(now: number, target: number | null, label: string) {
       // Exclude offscreen/hidden pauses from the next measurement window.
       if (!previous || now - previous > 250) {
         previous = start = now;
@@ -26,7 +26,8 @@ export function createFrameMeter(name?: string) {
       const fps = intervals.length * 1000 / (now - start);
       intervals.sort((a, b) => a - b);
       const p95 = intervals[Math.min(intervals.length - 1, Math.floor(intervals.length * 0.95))];
-      output.textContent = `${label}: ${fps.toFixed(1)} FPS · limite ${target} · p95 ${p95.toFixed(1)} ms`;
+      const cadence = target === null ? 'refresh del browser' : `limite ${target}`;
+      output.textContent = `${label}: ${fps.toFixed(1)} FPS · ${cadence} · p95 ${p95.toFixed(1)} ms`;
       output.dataset.fps = fps.toFixed(1);
       output.dataset.p95 = p95.toFixed(1);
       start = now;

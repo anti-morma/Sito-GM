@@ -244,7 +244,8 @@ export function mountStarSky(host: HTMLElement) {
     if (nebula?.stars.visible) nebula.render(renderer, camera, reduced.matches ? 0 : time);
     renderer.render(scene, camera);
   };
-  // Both desktop layers target 60 fps; phones draw the sky at 30.
+  // Keep the background at 60 fps desktop / 30 phone, leaving GPU time for
+  // the interactive foreground, which follows the display's native cadence.
   const loop = (now: number) => {
     frame = requestAnimationFrame(loop);
     if (!document.hidden) reportFrame(now, now - previous);
