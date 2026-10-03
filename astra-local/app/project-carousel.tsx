@@ -6,7 +6,8 @@ import { isReducedMotion } from './motion';
 /**
  * Phones: the projects side by side in a swipeable row, one at a time, with an
  * arrow each side of the preview and a dot per project. On larger screens the
- * row is the usual list and the controls are hidden (globals.css).
+ * row is the usual list and the controls are hidden; on computers it is a
+ * row again, one project per screen (globals.css).
  */
 export default function ProjectCarousel({ count, children }: { count: number; children: React.ReactNode }) {
   const track = useRef<HTMLDivElement>(null);
@@ -38,16 +39,19 @@ export default function ProjectCarousel({ count, children }: { count: number; ch
   return (
     <div className="gm-project-carousel">
       <div ref={track} className="gm-project-list">{children}</div>
-      <button type="button" className="gm-project-arrow gm-project-arrow--prev" onClick={() => go(index - 1)} disabled={index === 0} aria-label="Progetto precedente">
-        <span aria-hidden="true" />
-      </button>
-      <button type="button" className="gm-project-arrow gm-project-arrow--next" onClick={() => go(index + 1)} disabled={index >= count - 1} aria-label="Progetto successivo">
-        <span aria-hidden="true" />
-      </button>
-      <div className="gm-project-dots">
-        {Array.from({ length: count }, (_, i) => (
-          <button key={i} type="button" onClick={() => go(i)} aria-label={`Progetto ${i + 1} di ${count}`} aria-current={i === index ? 'true' : undefined} />
-        ))}
+      {/* Laid out together on computers; on phones each control sits on its own. */}
+      <div className="gm-project-controls">
+        <button type="button" className="gm-project-arrow gm-project-arrow--prev" onClick={() => go(index - 1)} disabled={index === 0} aria-label="Progetto precedente">
+          <span aria-hidden="true" />
+        </button>
+        <button type="button" className="gm-project-arrow gm-project-arrow--next" onClick={() => go(index + 1)} disabled={index >= count - 1} aria-label="Progetto successivo">
+          <span aria-hidden="true" />
+        </button>
+        <div className="gm-project-dots">
+          {Array.from({ length: count }, (_, i) => (
+            <button key={i} type="button" onClick={() => go(i)} aria-label={`Progetto ${i + 1} di ${count}`} aria-current={i === index ? 'true' : undefined} />
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -246,7 +246,7 @@ export default function HomeSummary() {
       <div className="gm-wrap">
         <header className="gm-what-head" data-reveal>
           <SectionLabel>Cosa facciamo</SectionLabel>
-          <h2 id="servizi-title" className="gm-h2"><span className="gm-h2-line">Dall’idea al sito online.</span> <em className="gm-shine">Tutto in casa.</em></h2>
+          <h2 id="servizi-title" className="gm-h2"><span className="gm-h2-line">Dall’idea al digitale.</span> <em className="gm-shine">Tutto su misura.</em></h2>
         </header>
 
         <div className="gm-what-body" ref={bodyRef}>

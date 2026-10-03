@@ -201,3 +201,28 @@ a.gm-case-screen { display: block; color: inherit; text-decoration: none; transi
 }
 
 .gm-case-chapter-body p + p { margin-top: 14px; }
+
+/* ---------- Computers: every part of the story fits one screen (see globals.css) ---------- */
+@media (min-width: 1025px) {
+  .gm-case-hero { padding-top: clamp(28px, 6svh, 104px); }
+  .gm-case-title { font-size: clamp(46px, min(6.4vw, 11svh), 112px); }
+
+  /* The site's window: as large as the screen's height allows. */
+  .gm-case-showcase { margin-top: clamp(40px, 8svh, 120px); }
+  .gm-case-showcase .gm-case-screen { width: min(100%, (100svh - var(--header-h) - 38px - 48px) * 1.6); margin-inline: auto; }
+
+  .gm-case-story { gap: clamp(48px, 10svh, 112px); padding-block: clamp(56px, 11svh, 168px); }
+  /* A chapter with many sides: its title above, the sides in three columns. */
+  .gm-case-chapter:has(.gm-case-part ~ .gm-case-part ~ .gm-case-part ~ .gm-case-part) { grid-template-columns: minmax(0, 1fr); row-gap: clamp(20px, 4svh, 48px); }
+  .gm-case-chapter-body:has(> .gm-case-part ~ .gm-case-part ~ .gm-case-part ~ .gm-case-part) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 4svh, 40px) clamp(28px, 3.4vw, 64px); font-size: 16px; line-height: 1.55; }
+  .gm-case-chapter-body:has(> .gm-case-part ~ .gm-case-part ~ .gm-case-part ~ .gm-case-part) > .gm-case-part { margin-top: 0; }
+  .gm-case-chapter-body:has(> .gm-case-part ~ .gm-case-part ~ .gm-case-part ~ .gm-case-part) .gm-case-work { gap: 6px; }
+
+  /* The result: the statement on the left, what was delivered on the right. */
+  .gm-case-result { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: clamp(40px, 6vw, 120px); align-items: start; padding-block: clamp(56px, 11svh, 200px) clamp(48px, 8svh, 120px); }
+  .gm-case-result > * { grid-column: 1; }
+  .gm-case-result > .gm-case-delivered { grid-column: 2; grid-row: 1 / span 4; margin-top: 0; }
+  .gm-case-result > .gm-case-visit { justify-self: start; }
+  .gm-case-statement { font-size: clamp(28px, min(3.4vw, 6svh), 60px); }
+  .gm-case-delivered .gm-case-work { gap: clamp(4px, 1.1svh, 10px); font-size: clamp(15px, 2.4svh, 17px); line-height: 1.5; }
+}

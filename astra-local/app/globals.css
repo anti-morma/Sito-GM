@@ -399,7 +399,14 @@ em { font-style: normal; }
   .gm-particle-journey .starfield-gesture { display: none !important; pointer-events: none; }
 }
 .gm-site > section { position: relative; z-index: 1; }
-/* The GM beside the copy answers the pointer: only the copy's links take clicks. */
+/* The GM beside the copy answers the pointer (drag to turn it). The page's
+   wrappers are painted above the fixed field (.gm-page is positioned), so
+   they let the pointer through; the sections take it, the hero only on the
+   copy's links. :where() keeps each section's own pointer-events in charge. */
+.gm-page,
+.gm-site { pointer-events: none; }
+.gm-page > :where(:not(.gm-site)),
+.gm-site > :where(*) { pointer-events: auto; }
 .gm-hero { pointer-events: none; }
 .gm-hero-actions { pointer-events: auto; }
 .gm-story-anchor { position: absolute; left: 0; width: 1px; height: 1px; pointer-events: none; }
@@ -490,6 +497,9 @@ em { font-style: normal; }
 }
 
 .gm-hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: clamp(28px, 4.4vh, 44px); }
+.gm-hero-explore { font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase; }
+/* The promise breaks after "identità," (hero.tsx), and wraps further only on the narrowest phones. */
+.gm-hero-title em { white-space: normal; }
 
 .gm-hero-copy > * { animation: gm-hero-rise 1s var(--ease) both; }
 .gm-hero-copy > .gm-hero-eyebrow { animation-delay: 0.1s; }
@@ -804,7 +814,6 @@ em { font-style: normal; }
   /* An overline that introduces the headline without competing with it. */
   .gm-hero-eyebrow { margin-bottom: clamp(14px, 2.6svh, 22px); font-size: 11px; letter-spacing: 0.16em; }
   .gm-hero-eyebrow .gm-label-mark { color: var(--ink-2); }
-  .gm-hero-eyebrow-more { display: none; }
   .gm-hero-title { font-size: clamp(36px, min(13.4vw, 8svh), 60px); line-height: 1.02; letter-spacing: -0.04em; }
   .gm-hero-title-line { display: block; }
   /* Three even lines on every phone: "…con chiarezza / chi sei, cosa offri…". */
@@ -818,23 +827,6 @@ em { font-style: normal; }
     font-size: 16px;
     box-shadow: 0 0 0 1px rgb(143 177 255 / 24%), 0 8px 28px -14px rgb(143 177 255 / 45%);
   }
-}
-
-/* The second action (for whoever wants the proof first) is a quiet text link
-   on phones, under the main one, and only where the screen has room for it. */
-@media (max-width: 600px) and (orientation: portrait) {
-  .gm-hero-actions { gap: 4px; }
-  .gm-hero-actions .gm-hero-secondary {
-    min-height: 44px;
-    border-color: transparent;
-    background: none;
-    box-shadow: none;
-    color: var(--ink-2);
-    font-size: 15px;
-  }
-}
-@media (max-width: 600px) and (orientation: portrait) and (max-height: 700px), (orientation: landscape) and (max-height: 500px) {
-  .gm-hero-secondary { display: none; }
 }
 
 /* Short phones: the words take the whole screen. */
@@ -1366,6 +1358,9 @@ em { font-style: normal; }
    The whole story is on its own page (app/chi-siamo). */
 .gm-about-stop-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(40px, 6vw, 104px); align-items: end; }
 .gm-about-stop .gm-h2 { max-width: 14ch; }
+.gm-about-stop-lead p + p { margin-top: 0.8em; }
+/* The closing line, said plainly: the point of the whole paragraph. */
+.gm-about-stop-lead p:last-child { color: var(--ink); }
 .gm-about-stop-side { display: grid; justify-items: start; gap: clamp(28px, 4vh, 40px); }
 .gm-home-more { margin-top: clamp(40px, 7vh, 72px); }
 .gm-about-stop-people { width: 100%; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
@@ -1659,6 +1654,7 @@ em { font-style: normal; }
    homepage; an arrow waits in the margin either side of it, a dot per project
    below, then the name and a few words. Elsewhere the controls stay hidden. */
 .gm-project-carousel { position: relative; }
+.gm-project-controls { display: contents; }
 .gm-project-arrow,
 .gm-project-dots { display: none; }
 
@@ -1854,3 +1850,69 @@ html[data-intro='waiting']::after {
 .gm-motion-toggle-icon::after { right: 1px; }
 .gm-motion-toggle-icon[data-state='still']::after { display: none; }
 .gm-motion-toggle-icon[data-state='still']::before { left: 1px; width: 9px; border-radius: 0; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+
+/* ======================================================================
+   Computers: every section fits one screen, from a 1366 × 768 laptop
+   (about 650px of page under the browser's bars) to a large monitor.
+   Spacing and headings follow the screen's height as well as its width.
+   Tablets and phones are untouched.
+   ====================================================================== */
+@media (min-width: 1025px) {
+  .gm-section:not(.gm-about-stop) { padding-block: clamp(48px, 9svh, 136px); }
+  .gm-h2 { font-size: clamp(38px, min(4.6vw, 8.6svh), 76px); }
+  .gm-h2--xl { font-size: clamp(44px, min(6vw, 11.5svh), 104px); }
+  .gm-section .gm-lead { margin-top: clamp(14px, 2.6svh, 28px); }
+
+  /* Home, projects: one at a time, beside its words; arrows and dots under them. */
+  /* The title and its words side by side, so the project gets the height. */
+  .gm-projects-head { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: clamp(40px, 6vw, 104px); align-items: end; max-width: none; margin-bottom: clamp(24px, 5svh, 64px); }
+  .gm-projects-head > :not(.gm-lead) { grid-column: 1; }
+  /* The words start where the preview starts. */
+  .gm-projects { --shot-w: calc((100svh - var(--header-h) - 300px) * 1.6); }
+  .gm-projects-head .gm-lead { grid-area: 1 / 2 / span 2; align-self: end; justify-self: end; width: min(100%, var(--shot-w)); max-width: none; margin: 0; }
+  .gm-projects-head .gm-h2 { font-size: clamp(36px, min(3.8vw, 7.4svh), 64px); }
+  .gm-project-list {
+    display: flex;
+    gap: 0;
+    /* Room for the controls under the words, and for the preview's light to
+       fade out whole: a scrolling list clips it at its edge. The controls and
+       "Tutti i progetti" sit 64px higher to match, so nothing else moves. */
+    padding-bottom: 128px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .gm-project-list::-webkit-scrollbar { display: none; }
+  .gm-project,
+  .gm-project:nth-child(even) {
+    flex: 0 0 100%;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas: 'text media';
+    /* A hair of room: the next slide's frame never shows at the edge. */
+    padding-right: 2px;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+  .gm-project-media,
+  .gm-project:nth-child(odd) .gm-project-media,
+  .gm-project:nth-child(even) .gm-project-media { justify-self: end; width: min(100%, var(--shot-w)); }
+  .gm-project-description { margin: clamp(12px, 2.4svh, 22px) 0 clamp(18px, 3.4svh, 32px); }
+  .gm-project h3 { margin-top: 0; }
+  .gm-reveal-ready .gm-project-list [data-reveal] { opacity: 1; transform: none; }
+  .gm-project-controls { position: absolute; left: 0; bottom: 72px; display: flex; align-items: center; gap: 6px; }
+  .gm-project-arrow,
+  .gm-project-dots { display: flex; }
+  .gm-project-arrow { place-items: center; justify-content: center; align-items: center; width: 44px; height: 44px; border: 1px solid var(--line-2); border-radius: 50%; background: none; color: var(--ink); transition: opacity 0.3s var(--ease), border-color 0.3s var(--ease); }
+  .gm-project-arrow span { width: 8px; height: 8px; border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor; transform: translateX(-2px) rotate(45deg); }
+  .gm-project-arrow--prev span { transform: translateX(2px) rotate(-135deg); }
+  .gm-project-arrow:disabled { opacity: 0.25; cursor: default; }
+  .gm-project-arrow:not(:disabled):hover { border-color: rgb(143 177 255 / 55%); }
+  .gm-project-arrow--next { order: 2; }
+  .gm-project-dots button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; background: none; }
+  .gm-project-dots button::before { content: ''; width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); transition: width 0.4s var(--ease), background-color 0.4s var(--ease); }
+  .gm-project-dots button[aria-current]::before { width: 18px; background: var(--accent); }
+  /* "Tutti i progetti" on the controls' line, at the far side. */
+  .gm-projects .gm-home-more { position: relative; display: flex; justify-content: flex-end; height: 0; margin-top: -106px; }
+  .gm-projects .gm-home-more .gm-link { translate: 0 -50%; }
+}

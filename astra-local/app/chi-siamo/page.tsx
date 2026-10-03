@@ -1,25 +1,19 @@
-import { Fragment } from 'react';
 import Link from 'next/link';
 import Reveal from '../reveal';
 import SectionLabel from '../section-label';
 import SiteFooter from '../site-footer';
 import { founders, principles, site } from '../content';
 import { aboutDescription, aboutLd, aboutPath, jsonLd, pageMetadata } from '../seo';
-import Converge from './converge';
+import Monogram from './monogram';
 import Scenes from './scenes';
 import './about.css';
 
 export const metadata = pageMetadata({ path: aboutPath, title: 'Chi siamo', description: aboutDescription });
 
-// The note under the founders, word by word (converge.tsx brings it to light).
-const NOTE = ['Due', 'sguardi', 'diversi,', 'un', 'solo', 'obiettivo:'];
-
 const pad = (index: number) => String(index + 1).padStart(2, '0');
 
 // The studio's star (the same as the GM's sky and the scroll cue's light).
 const STAR = 'M0 -6.5 C0.5 -1.6 1.6 -0.5 6.5 0 C1.6 0.5 0.5 1.6 0 6.5 C-0.5 1.6 -1.6 0.5 -6.5 0 C-1.6 -0.5 -0.5 -1.6 0 -6.5 Z';
-// A founder's surname initial: the two of them, side by side, read GM.
-const initial = (name: string) => name.split(' ').at(-1)!.charAt(0);
 
 /** A soft halo behind a star; each drawing keeps its own (an id shared with
  *  a drawing that may be hidden stops painting). */
@@ -97,7 +91,7 @@ export default function AboutPage() {
             </a>
           </section>
 
-          {/* 2 · The two founders: G and M, two competences meeting in one direction. */}
+          {/* 2 · The two founders: G and M, two competences, one stroke in common. */}
           <section id="fondatori" className="gm-section gm-people" aria-labelledby="people-title">
             <div className="gm-wrap">
               <header className="gm-people-head" data-reveal>
@@ -105,48 +99,20 @@ export default function AboutPage() {
                 <h2 className="gm-h2" id="people-title">Due competenze. <em>Una direzione.</em></h2>
               </header>
 
+              {/* Ludovico, the GM, Alessandro: their initials are the studio's monogram (monogram.tsx). */}
               <div className="gm-duo" data-scene="read">
-                <Converge />
-                {/* Each initial above its founder; two lines meet in the star between them. */}
-                <div className="gm-duo-mark" aria-hidden="true">
-                  <span className="gm-duo-cell" data-side="left">
-                    <span className="gm-duo-letter">{initial(first.name)}</span>
-                    <span className="gm-duo-link" />
-                  </span>
-                  <svg className="gm-duo-star" viewBox="-30 -30 60 60">
-                    <Halo id="about-duo-halo" />
-                    <circle r="22" fill="url(#about-duo-halo)" />
-                    <path d={STAR} transform="scale(1.6)" />
-                  </svg>
-                  <span className="gm-duo-cell" data-side="right">
-                    <span className="gm-duo-letter">{initial(second.name)}</span>
-                    <span className="gm-duo-link" />
-                  </span>
-                </div>
-
-                <div className="gm-duo-people">
-                  {founders.map((person, index) => (
-                    <Fragment key={person.name}>
-                      {/* Between the two: the column the star's light comes down (converge.tsx). */}
-                      {index > 0 && <span className="gm-duo-axis" aria-hidden="true" />}
-                      <article className="gm-duo-person" data-reveal style={{ '--reveal-delay': `${index * 140}ms` } as React.CSSProperties}>
-                        <h3>{person.name}</h3>
-                        <p className="gm-duo-role" lang="en">{person.role}</p>
-                        <p className="gm-duo-text">{person.text}</p>
-                      </article>
-                    </Fragment>
-                  ))}
-                </div>
-
-                {/* Two looks, one point of light, one sentence: "il tuo" last, after a breath. */}
-                <p className="gm-duo-note">
-                  {NOTE.map((word, index) => (
-                    <Fragment key={word}>
-                      <span className="gm-duo-word" style={{ '--i': index } as React.CSSProperties}>{word}</span>{' '}
-                    </Fragment>
-                  ))}
-                  <em className="gm-duo-word" style={{ '--i': NOTE.length + 2 } as React.CSSProperties}>il tuo.</em>
-                </p>
+                <article className="gm-duo-person" data-side="left">
+                  <h3>{first.name}</h3>
+                  <p className="gm-duo-role" lang="en">{first.role}</p>
+                  <p className="gm-duo-text">{first.text}</p>
+                </article>
+                <Monogram />
+                <article className="gm-duo-person" data-side="right">
+                  <h3>{second.name}</h3>
+                  <p className="gm-duo-role" lang="en">{second.role}</p>
+                  <p className="gm-duo-text">{second.text}</p>
+                </article>
+                <p className="gm-duo-note">Due sguardi diversi, un solo obiettivo: <em>il tuo.</em></p>
               </div>
             </div>
           </section>

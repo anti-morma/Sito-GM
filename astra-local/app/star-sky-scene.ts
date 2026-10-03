@@ -6,11 +6,13 @@ import {
   Points,
   Scene,
   ShaderMaterial,
+  Vector4,
   WebGLRenderer,
 } from 'three';
 import { createNebulaField } from './nebula-field';
 import { hintGpu, isLite, reportFrame, sceneRatio, watchQuality } from './quality';
 import { reducedMotion } from './motion';
+import { skyFocus } from './sky-focus';
 
 // Same clock as the story scene (astra-field.tsx), so the sky moves alike.
 const ANIMATION_SPEED = 1.25;
@@ -32,6 +34,10 @@ const vertexShader = `
   uniform float uPixelScale;
   uniform float uMotion;
   uniform float uSkyLight;
+  // The home's film window (sky-focus.ts): centre and half size in NDC, y up.
+  uniform vec4 uFocusRect;
+  uniform float uFocusRadius;
+  uniform float uFocus;
   varying vec3 vColor;
   varying float vLight;
   varying float vSparkle;
@@ -59,6 +65,31 @@ const vertexShader = `
     vLight = aStyle.y * shimmer * uSkyLight * depthCue * nearFade;
     vSparkle = smoothstep(22.0, 34.0, aSize);
     vColor = aColor;
+
+    // Near the film window, some stars glide to its rounded edge, brighten
+    // and go out behind it, as if the sky flowed into the project.
+    float focus = uFocus * uMotion;
+    if (focus > 0.001) {
+      float seed = fract(sin(aPhase * 12.9898) * 43758.5453);
+      if (seed < 0.38) {
+        vec2 asp = vec2(uAspect, 1.0);
+        vec2 q = (gl_Position.xy / gl_Position.w - uFocusRect.xy) * asp;
+        vec2 h = uFocusRect.zw * asp;
+        float r = uFocusRadius;
+        vec2 k = abs(q) - h + r;
+        float d = length(max(k, 0.0)) + min(max(k.x, k.y), 0.0) - r;
+        if (d > 0.0) {
+          float m = (1.0 - smoothstep(0.0, 0.5, d)) * focus;
+          float f = fract(uTime * (0.055 + seed * 0.05) + seed * 7.0);
+          vec2 c = clamp(q, r - h, h - r);
+          vec2 n = normalize(q - c);
+          vec2 target = c + n * (r - 0.035);
+          gl_Position.xy += ((target - q) * (f * f) * m / asp) * gl_Position.w;
+          float vis = smoothstep(0.0, 0.15, f) * (1.0 - smoothstep(0.82, 1.0, f));
+          vLight *= mix(1.0, vis * (1.0 + 1.6 * smoothstep(0.4, 0.85, f)), m);
+        }
+      }
+    }
   }
 `;
 
@@ -149,6 +180,9 @@ export function mountStarSky(host: HTMLElement) {
       uPixelScale: { value: 1 },
       uMotion: { value: reduced.matches ? 0 : 1 },
       uSkyLight: { value: SKY_LIGHT },
+      uFocusRect: { value: new Vector4() },
+      uFocusRadius: { value: 0 },
+      uFocus: { value: 0 },
     },
     transparent: true,
     depthWrite: false,
@@ -191,6 +225,7 @@ export function mountStarSky(host: HTMLElement) {
   resize();
 
   let time = 0;
+  let focus = 0;
   let frame = 0;
   let last = performance.now();
   let previous = last;
@@ -198,6 +233,12 @@ export function mountStarSky(host: HTMLElement) {
     u.uTime.value = reduced.matches ? 10 : time;
     u.uMotion.value = reduced.matches ? 0 : 1;
     u.uScroll.value = (scrollY / Math.max(1, innerHeight)) * SCROLL_DRIFT;
+    u.uFocus.value = focus;
+    if (focus) {
+      const f = skyFocus;
+      u.uFocusRect.value.set(((f.left + f.width / 2) / innerWidth) * 2 - 1, 1 - ((f.top - scrollY + f.height / 2) / innerHeight) * 2, f.width / innerWidth, f.height / innerHeight);
+      u.uFocusRadius.value = f.radius / (innerHeight / 2);
+    }
     if (nebula?.stars.visible) nebula.render(renderer, camera, reduced.matches ? 0 : time);
     renderer.render(scene, camera);
   };
@@ -213,6 +254,10 @@ export function mountStarSky(host: HTMLElement) {
     last = now;
     if (document.hidden) return;
     time += dt * ANIMATION_SPEED;
+    // The flow into the film eases in and out (sky-focus.ts).
+    const target = reduced.matches ? 0 : skyFocus.target;
+    focus += (target - focus) * (1 - Math.exp(-dt / 0.6));
+    if (!target && focus < 0.002) focus = 0;
     draw();
   };
   const onResize = () => { resize(); draw(); };
