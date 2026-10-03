@@ -6,8 +6,8 @@ import ContactForm from './_contact/form';
 import GoMoreMobileIntro from './gomore-mobile-intro';
 import GrowTextarea from './grow-textarea';
 import Hero from './hero';
+import HomeSummary from './home-summary';
 import MethodStory from './method-story';
-import OfferDeck from './offer-deck';
 import ParticleJourney from './particle-journey';
 import ProjectCarousel from './project-carousel';
 import ProjectPreview from './project-preview';
@@ -15,9 +15,10 @@ import Reveal from './reveal';
 import ScrollCue from './scroll-cue';
 import SectionLabel from './section-label';
 import SiteFooter from './site-footer';
-import { founders, offers, projects, site, type Project } from './content';
+import { founders, projects, site, type Project } from './content';
 import { homeLd, jsonLd, openGraphBase, siteSummary, studyPath } from './seo';
 import { contactDetails, DetailText } from './studio-details';
+import './home.css';
 
 
 // The home's title is the layout's default ("GoMore | Web design, sviluppo e
@@ -26,6 +27,11 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
   openGraph: { ...openGraphBase, url: '/', title: `${site.name} | Web design, sviluppo e digital experiences`, description: siteSummary, images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: `${site.name} — studio digitale` }] },
 };
+
+// The method (the villa drawn by the stars, then the construction footage) is
+// hidden for now: set back to true to restore it. Without it the GM's stars
+// open and leave with the hero (particle-journey.tsx).
+const SHOW_METHOD = false;
 
 const delay = (ms: number) => ({ '--reveal-delay': `${ms}ms` }) as React.CSSProperties;
 // Links that open another tab say so to screen readers too (the arrow is only drawn).
@@ -88,24 +94,10 @@ export default function Home() {
           <Hero />
 
           {/* Method: the GM's stars draw the villa, then the construction footage. */}
-          <MethodStory />
+          {SHOW_METHOD && <MethodStory />}
 
-          {/* Projects: real, live work */}
-          <section id="progetti" className="gm-section gm-projects" aria-labelledby="progetti-title" data-scroll-stop>
-            <div className="gm-wrap">
-              <header className="gm-projects-head" data-reveal>
-                <SectionLabel>Progetti</SectionLabel>
-                <h2 id="progetti-title" className="gm-h2">Progetti reali, <span className="gm-h2-line">online adesso.</span></h2>
-                <p className="gm-lead">Siti progettati e sviluppati da noi, dall’identità digitale al codice. Guardali dal vivo, poi leggi come ci abbiamo ragionato.</p>
-              </header>
-              <ProjectCarousel count={projects.length}>
-                {projects.map((project) => <ProjectCard key={project.name} project={project} />)}
-              </ProjectCarousel>
-              <p className="gm-home-more" data-reveal>
-                <Link className="gm-link" href="/progetti">Tutti i progetti e i casi studio <span className="gm-btn-arrow" aria-hidden="true">→</span></Link>
-              </p>
-            </div>
-          </section>
+          {/* What we do and what we use, one line of work at a time. */}
+          <HomeSummary />
 
           {/* Why GoMore, and who, in a few words: the whole story is on its own
               page (app/chi-siamo). */}
@@ -127,17 +119,20 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Services: one custom website, and the care that follows it. */}
-          <section id="servizi" className="gm-section gm-services" aria-labelledby="servizi-title" data-scroll-stop>
+          {/* Projects: real, live work */}
+          <section id="progetti" className="gm-section gm-projects" aria-labelledby="progetti-title" data-scroll-stop>
             <div className="gm-wrap">
-              <header className="gm-services-head" data-reveal>
-                <SectionLabel>Cosa facciamo</SectionLabel>
-                <h2 id="servizi-title" className="gm-h2">Un sito su misura.<br /> <span className="gm-h2-line">Seguito anche dopo il lancio.</span></h2>
-                <p className="gm-lead">Ogni sito nasce da una consulenza ed è costruito sul tuo progetto. Dopo il lancio possiamo continuare a seguirlo noi.</p>
+              <header className="gm-projects-head" data-reveal>
+                <SectionLabel>Progetti</SectionLabel>
+                <h2 id="progetti-title" className="gm-h2">Progetti reali, <span className="gm-h2-line">online adesso.</span></h2>
+                <p className="gm-lead">Siti progettati e sviluppati da noi, dall’identità digitale al codice. Guardali dal vivo, poi leggi come ci abbiamo ragionato.</p>
               </header>
-              {/* Phones: the two offers as a deck of cards, the site in front and
-                  its care right behind it (offer-deck.tsx). */}
-              <OfferDeck offers={offers} />
+              <ProjectCarousel count={projects.length}>
+                {projects.map((project) => <ProjectCard key={project.name} project={project} />)}
+              </ProjectCarousel>
+              <p className="gm-home-more" data-reveal>
+                <Link className="gm-link" href="/progetti">Tutti i progetti e i casi studio <span className="gm-btn-arrow" aria-hidden="true">→</span></Link>
+              </p>
             </div>
           </section>
 

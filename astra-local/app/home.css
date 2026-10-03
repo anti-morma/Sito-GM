@@ -1,0 +1,222 @@
+/* ======================================================================
+   Home: "Cosa facciamo" (home-summary.tsx). Six lines of work scroll past
+   like titles, the one in the middle of the screen lit; beside them a
+   stage of stars flies into a figure for each. One luminous word in the
+   heading; the accent only on the light.
+   ====================================================================== */
+
+/* A word lit like the brightest stars: the hero's display italic, its light
+   drifting slowly across the letters. */
+.gm-shine {
+  display: inline-block;
+  margin-right: -0.04em;
+  padding: 0 0.08em 0.06em 0;
+  background: linear-gradient(100deg, #fbf5e8 0%, #e6e9ff 25%, #b9cdff 50%, var(--accent) 70%, #e6e9ff 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: var(--serif);
+  font-size: 1.12em;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 0.9;
+  filter: drop-shadow(0 0 24px rgb(143 177 255 / 26%));
+  animation: gm-shine 8s ease-in-out infinite alternate;
+}
+@keyframes gm-shine {
+  from { background-position: 0% 0; }
+  to { background-position: 100% 0; }
+}
+
+/* ---------- Head ---------- */
+.gm-what { padding-block: clamp(104px, 15vh, 180px) clamp(40px, 7vh, 88px); }
+/* A faint dawn behind the heading. */
+.gm-what::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  width: min(1100px, 90vw);
+  height: 40%;
+  background: radial-gradient(closest-side, rgb(70 105 220 / 13%), transparent);
+  pointer-events: none;
+}
+.gm-what-head { margin-bottom: clamp(20px, 4vh, 48px); }
+
+/* ---------- The stage: stars that fly into a figure ---------- */
+.gm-what-stage { position: relative; }
+/* The light the figure stands in. */
+.gm-what-stage::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 4% 4% 12%;
+  background: radial-gradient(closest-side, rgb(80 120 255 / 17%), rgb(80 120 255 / 5%) 60%, transparent);
+  pointer-events: none;
+}
+.gm-what-sky { display: block; width: 100%; height: auto; overflow: visible; }
+
+.gm-what-pt {
+  transform: translate(calc(var(--x) * 1px), calc(var(--y) * 1px)) scale(var(--s));
+  opacity: var(--o);
+  transition:
+    transform 1.25s cubic-bezier(0.65, 0, 0.25, 1) calc(var(--k) * 16ms),
+    opacity 0.8s var(--ease) calc(var(--k) * 16ms);
+}
+.gm-what-stage[data-scene='-1'] .gm-what-pt { --x: var(--xd); --y: var(--yd); --s: 0.3; --o: 0.3; }
+.gm-what-stage[data-scene='0'] .gm-what-pt { --x: var(--x0); --y: var(--y0); --s: var(--s0); --o: var(--o0); }
+.gm-what-stage[data-scene='1'] .gm-what-pt { --x: var(--x1); --y: var(--y1); --s: var(--s1); --o: var(--o1); }
+.gm-what-stage[data-scene='2'] .gm-what-pt { --x: var(--x2); --y: var(--y2); --s: var(--s2); --o: var(--o2); }
+.gm-what-stage[data-scene='3'] .gm-what-pt { --x: var(--x3); --y: var(--y3); --s: var(--s3); --o: var(--o3); }
+.gm-what-stage[data-scene='4'] .gm-what-pt { --x: var(--x4); --y: var(--y4); --s: var(--s4); --o: var(--o4); }
+.gm-what-stage[data-scene='5'] .gm-what-pt { --x: var(--x5); --y: var(--y5); --s: var(--s5); --o: var(--o5); }
+.gm-what-star { fill: #eef1ff; animation: gm-twinkle 4s ease-in-out var(--tw) infinite; }
+@keyframes gm-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Each figure's lines draw themselves once its stars have arrived. */
+.gm-what-lines { opacity: 0; transition: opacity 0.4s var(--ease); }
+.gm-what-line {
+  fill: none;
+  stroke: url(#gmw-line);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.1s cubic-bezier(0.6, 0.05, 0.2, 1);
+}
+.gm-what-line.is-faint { stroke: rgb(243 241 236 / 24%); }
+.gm-what-satellite { fill: #fff; }
+.gm-what-stage[data-scene='0'] .gm-what-lines[data-fig='0'],
+.gm-what-stage[data-scene='1'] .gm-what-lines[data-fig='1'],
+.gm-what-stage[data-scene='2'] .gm-what-lines[data-fig='2'],
+.gm-what-stage[data-scene='3'] .gm-what-lines[data-fig='3'],
+.gm-what-stage[data-scene='4'] .gm-what-lines[data-fig='4'],
+.gm-what-stage[data-scene='5'] .gm-what-lines[data-fig='5'] { opacity: 1; transition-delay: 0.5s; }
+.gm-what-stage[data-scene='0'] .gm-what-lines[data-fig='0'] .gm-what-line,
+.gm-what-stage[data-scene='1'] .gm-what-lines[data-fig='1'] .gm-what-line,
+.gm-what-stage[data-scene='2'] .gm-what-lines[data-fig='2'] .gm-what-line,
+.gm-what-stage[data-scene='3'] .gm-what-lines[data-fig='3'] .gm-what-line,
+.gm-what-stage[data-scene='4'] .gm-what-lines[data-fig='4'] .gm-what-line,
+.gm-what-stage[data-scene='5'] .gm-what-lines[data-fig='5'] .gm-what-line { stroke-dashoffset: 0; transition-delay: 0.6s; }
+
+/* Where we are among the six. */
+.gm-what-ticks { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+.gm-what-ticks i { width: 16px; height: 2px; border-radius: 2px; background: var(--line-2); transition: width 0.5s var(--ease), background-color 0.5s var(--ease), box-shadow 0.5s var(--ease); }
+.gm-what-ticks i[data-on] { width: 32px; background: var(--accent); box-shadow: 0 0 10px rgb(143 177 255 / 60%); }
+
+/* ---------- The lines of work ---------- */
+.gm-what-list { margin: 0; padding: 0; list-style: none; }
+.gm-what-row {
+  position: relative;
+  display: grid;
+  align-content: center;
+  min-height: clamp(220px, 32vh, 320px);
+  padding: 32px 0;
+  border-top: 1px solid var(--line);
+}
+.gm-what-row:last-child { border-bottom: 1px solid var(--line); }
+.gm-what-n { color: var(--accent); font-size: 13px; font-weight: 500; letter-spacing: 0.14em; font-variant-numeric: tabular-nums; }
+.gm-what-row h3 { display: flex; align-items: baseline; gap: 18px; margin: 10px 0 0; font-size: clamp(42px, 4.8vw, 84px); font-weight: 500; letter-spacing: -0.045em; line-height: 1.02; }
+.gm-what-row h3 a { color: var(--ink); }
+/* The whole line is the link to its page. */
+.gm-what-row h3 a::after { content: ''; position: absolute; inset: 0; }
+.gm-what-row h3 a:focus-visible { outline: none; }
+.gm-what-row:has(a:focus-visible) { outline: 1px solid var(--accent); outline-offset: 4px; border-radius: 8px; }
+/* A glint runs across the title as it comes into the light. */
+.gm-what-word {
+  background: linear-gradient(100deg, var(--ink) 0 42%, #fff 48%, #c3d4ff 52%, var(--ink) 58% 100%);
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.gm-what-arrow { color: var(--accent); font-size: 0.4em; opacity: 0; translate: -10px 0; transition: opacity 0.5s var(--ease), translate 0.5s var(--ease); }
+.gm-what-text { max-width: 34ch; margin: 16px 0 0; color: var(--ink-2); font-size: clamp(17px, 1.3vw, 20px); line-height: 1.5; text-wrap: pretty; }
+.gm-what-tools { margin: 14px 0 0; color: var(--ink-3); font-size: 12px; font-weight: 500; letter-spacing: 0.14em; line-height: 1.6; text-transform: uppercase; }
+
+/* With JS, only the line in the middle of the screen is lit. */
+.gm-what-list[data-ready] .gm-what-row > * { opacity: 0.2; transition: opacity 0.7s var(--ease); }
+.gm-what-list[data-ready] .gm-what-row[data-active] > * { opacity: 1; }
+.gm-what-row[data-active] .gm-what-arrow { opacity: 1; translate: 0 0; }
+@media (hover: hover) {
+  .gm-what-list[data-ready] .gm-what-row:hover > * { opacity: 1; }
+  .gm-what-row:hover .gm-what-arrow { opacity: 1; translate: 0 0; }
+}
+
+/* ---------- Wide screens: the lines on the left, the stage held on the right ---------- */
+@media (min-width: 900px) {
+  .gm-what-body { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: clamp(32px, 5vw, 96px); }
+  /* Room for the last line to reach the middle with the stage still held. */
+  .gm-what-list { grid-column: 1; grid-row: 1; padding-bottom: 20vh; }
+  .gm-what-stage {
+    position: sticky;
+    top: calc(19vh + var(--header-h) / 2);
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    justify-self: center;
+    width: min(100%, 62vh);
+  }
+  .gm-what-points { filter: drop-shadow(0 0 4px rgb(143 177 255 / 65%)); }
+}
+
+/* ---------- Phones and portrait tablets: the stage on top, the lines below ---------- */
+@media (max-width: 899px) {
+  .gm-what-stage {
+    position: sticky;
+    z-index: 2;
+    top: var(--header-h);
+    margin: 0 calc(-1 * var(--gutter));
+    padding: 4px var(--gutter) 18px;
+    background: var(--bg);
+  }
+  /* The lines slide under the stage through a soft edge, never behind its marks. */
+  .gm-what-stage::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 36px;
+    background: linear-gradient(180deg, var(--bg), rgb(5 6 6 / 0%));
+    pointer-events: none;
+  }
+  .gm-what-sky { width: auto; height: 30svh; margin: 0 auto; }
+  .gm-what-ticks { margin-top: 10px; }
+  .gm-what-list { padding-bottom: 26svh; }
+  .gm-what-row { min-height: 34svh; padding: 26px 0; }
+  .gm-what-row h3 { gap: 12px; font-size: clamp(34px, 10vw, 48px); }
+  .gm-what-text { margin-top: 12px; font-size: 16px; }
+  .gm-what-tools { margin-top: 10px; font-size: 11px; }
+}
+
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion='still']) .gm-what-list[data-ready] .gm-what-row[data-active] .gm-what-word { animation: gm-glint 1.5s var(--ease) 0.1s both; }
+}
+@keyframes gm-glint {
+  from { background-position: 100% 0; }
+  to { background-position: 0% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gm-shine,
+  .gm-what-star { animation: none; }
+  .gm-what-pt,
+  .gm-what-lines,
+  .gm-what-line,
+  .gm-what-list[data-ready] .gm-what-row > * { transition: none; }
+  .gm-what-satellite { display: none; }
+}
+/* The visitor's own "Ferma le animazioni" (motion.ts), like the system setting. */
+:root[data-motion='still'] :is(.gm-shine, .gm-what-star) { animation: none; }
+:root[data-motion='still'] :is(.gm-what-pt, .gm-what-lines, .gm-what-line) { transition: none; }
+:root[data-motion='still'] .gm-what-list[data-ready] .gm-what-row > * { transition: none; }
+:root[data-motion='still'] .gm-what-satellite { display: none; }

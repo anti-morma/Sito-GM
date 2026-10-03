@@ -181,26 +181,165 @@
 .gm-duo-person h3 { color: var(--ink); font-size: clamp(30px, 3vw, 50px); font-weight: 500; line-height: 1.02; letter-spacing: -0.035em; }
 .gm-duo-role { margin-top: 14px; color: var(--ink-2); font-size: 12px; font-weight: 500; letter-spacing: 0.16em; line-height: 1.5; text-transform: uppercase; }
 .gm-duo-text { max-width: 40ch; margin: 18px auto 0; color: var(--ink-2); font-size: clamp(16px, 1.2vw, 18px); line-height: 1.6; }
-/* The direction: from the star down between the two, drawn once the star is lit. */
-.gm-duo-axis {
-  margin-top: calc(-1 * (var(--gap) + var(--letter) * 0.49 - 24px));
-  background: linear-gradient(var(--accent), rgb(143 177 255 / 0%));
-  transform: scaleY(0);
-  transform-origin: top;
-  transition: transform 1.4s var(--ease) 1.3s;
-}
-.gm-duo.is-on .gm-duo-axis { transform: none; }
+/* The column between the two stays empty: the star's light comes down it (converge.tsx). */
 .gm-duo-note {
-  max-width: 34ch;
-  margin: clamp(40px, 7vh, 72px) auto 0;
+  position: relative;
+  z-index: 1;
+  max-width: 30ch;
+  margin: clamp(150px, 24vh, 250px) auto 0;
   color: var(--ink);
   font-family: var(--serif);
-  font-size: clamp(22px, 2vw, 32px);
+  font-size: clamp(26px, 2.7vw, 42px);
   font-style: italic;
-  line-height: 1.3;
+  line-height: 1.25;
   text-align: center;
   text-wrap: balance;
 }
+.gm-duo-note em {
+  color: #f1f4ff;
+  text-shadow: 0 0 0 rgb(143 177 255 / 0%);
+  transition: text-shadow 1.8s ease 1.6s;
+}
+
+/* ---------- The convergence (converge.tsx) ----------
+   Two threads of light, one per founder (plus the star's, side by side),
+   follow the reading line down and meet in one point; there the point
+   ignites and the sentence surfaces. The page is set up so that, without the
+   script, everything simply reads. */
+.gm-duo { position: relative; }
+.gm-people { overflow-x: clip; }
+.gm-duo-mark,
+.gm-duo-people { position: relative; z-index: 1; }
+
+.gm-converge { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.gm-converge path { fill: none; stroke-dasharray: 1 1; stroke-dashoffset: 1; stroke-linecap: butt; }
+.cv-haze { stroke-width: 16; opacity: 0.05; }
+.cv-glow { stroke-width: 4; opacity: 0.2; }
+.cv-core { stroke-width: 1.2; }
+.cv-comet { opacity: 0; transition: opacity 0.4s ease; }
+.cv-comet circle:first-child { animation: cv-flicker 1.6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+@keyframes cv-flicker { from { opacity: 0.7; transform: scale(0.85); } to { opacity: 1; transform: scale(1.15); } }
+
+.cv-focal { position: absolute; top: 0; left: 50%; z-index: 0; width: 0; height: 0; pointer-events: none; }
+.cv-focal > *,
+.cv-sparks i { position: absolute; top: 0; left: 0; }
+
+/* Before: where the threads will meet, a point barely breathing. */
+.cv-target {
+  width: 5px;
+  height: 5px;
+  margin: -2.5px;
+  border-radius: 50%;
+  background: #cfdcff;
+  box-shadow: 0 0 10px 2px rgb(143 177 255 / 45%);
+  animation: cv-wait 2.4s ease-in-out infinite;
+  transition: opacity 0.3s ease;
+}
+@keyframes cv-wait { 0%, 100% { opacity: 0.18; transform: scale(0.8); } 50% { opacity: 0.55; transform: scale(1.2); } }
+.gm-duo.is-lit .cv-target { opacity: 0; animation: none; }
+
+/* The light that stays: a wide glow under the sentence. */
+.cv-bloom {
+  width: 640px;
+  height: 640px;
+  margin: -320px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(143 177 255 / 20%), rgb(143 177 255 / 6%) 45%, rgb(143 177 255 / 0%));
+  opacity: 0;
+  transform: scale(0.3);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.gm-duo.is-lit .cv-bloom { opacity: 1; transform: none; transition: opacity 1.8s var(--ease), transform 2.4s var(--ease); }
+
+/* The anamorphic streak: wide, thin and blue, the cinema's own flare. */
+.cv-streak {
+  --w: min(1200px, 160vw);
+  width: var(--w);
+  height: 2px;
+  margin: -1px 0 0 calc(var(--w) / -2);
+  background: linear-gradient(90deg, rgb(143 177 255 / 0%), rgb(143 177 255 / 30%) 28%, #ffffff 50%, rgb(143 177 255 / 30%) 72%, rgb(143 177 255 / 0%));
+  opacity: 0;
+  transform: scaleX(0);
+}
+.cv-streak--soft {
+  height: 30px;
+  margin-top: -15px;
+  background: radial-gradient(closest-side, rgb(160 190 255 / 30%), rgb(143 177 255 / 0%));
+  filter: blur(6px);
+}
+.gm-duo.is-lit .cv-streak { animation: cv-streak 2.6s cubic-bezier(0.15, 0.8, 0.2, 1) forwards; }
+.gm-duo.is-lit .cv-streak--soft { animation-duration: 3.2s; }
+@keyframes cv-streak {
+  0% { opacity: 0; transform: scaleX(0); }
+  10% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0.4; transform: scaleX(0.38); }
+}
+
+/* The shockwave: two rings, the second a beat later. */
+.cv-ring {
+  width: 140px;
+  height: 140px;
+  margin: -70px;
+  border: 1px solid rgb(214 225 255 / 75%);
+  border-radius: 50%;
+  box-shadow: 0 0 22px rgb(143 177 255 / 40%), inset 0 0 22px rgb(143 177 255 / 25%);
+  opacity: 0;
+}
+.gm-duo.is-lit .cv-ring { animation: cv-ring 1.5s cubic-bezier(0.1, 0.7, 0.2, 1) forwards; }
+.gm-duo.is-lit .cv-ring--late { animation-duration: 2.2s; animation-delay: 0.16s; }
+@keyframes cv-ring {
+  0% { opacity: 0; transform: scale(0.05); }
+  8% { opacity: 1; }
+  100% { opacity: 0; transform: scale(3.4); }
+}
+
+/* Sparks thrown out of the meeting point. */
+.cv-sparks i {
+  width: 3px;
+  height: 3px;
+  margin: -1.5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 8px 1px #8fb1ff;
+  opacity: 0;
+}
+.gm-duo.is-lit .cv-sparks i { animation: cv-spark var(--t) cubic-bezier(0.05, 0.75, 0.3, 1) forwards; }
+@keyframes cv-spark {
+  0% { opacity: 0; transform: rotate(var(--a)) translateX(4px) scale(1.6); }
+  8% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(0.3); }
+}
+
+/* The star born where the two meet: overshoots, turns, settles. */
+.cv-star {
+  width: 46px;
+  height: 46px;
+  margin: -23px;
+  overflow: visible;
+  fill: #f4f6ff;
+  filter: drop-shadow(0 0 8px rgb(143 177 255 / 90%)) drop-shadow(0 0 24px rgb(143 177 255 / 55%));
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.4s ease, transform 0.5s ease;
+}
+.gm-duo.is-lit .cv-star { animation: cv-star 1.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+@keyframes cv-star {
+  0% { opacity: 0; transform: scale(0) rotate(-140deg); }
+  22% { opacity: 1; transform: scale(2.1) rotate(-25deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* The sentence surfaces out of focus, word by word; "il tuo" last, glowing. */
+.gm-duo-word {
+  display: inline-block;
+  transition: opacity 0.5s ease, filter 0.6s ease, transform 0.6s ease;
+}
+.gm-duo.cv-ready:not(.is-lit) .gm-duo-word { opacity: 0; filter: blur(12px); transform: translateY(0.4em) scale(1.06); }
+.gm-duo.is-lit .gm-duo-word {
+  transition: opacity 1s var(--ease), filter 1.3s var(--ease), transform 1.4s var(--ease);
+  transition-delay: calc(0.4s + var(--i) * 0.11s);
+}
+.gm-duo.is-lit .gm-duo-note em { text-shadow: 0 0 22px rgb(143 177 255 / 70%), 0 0 64px rgb(143 177 255 / 35%); }
 
 /* ---------- 3 · How we think: the question, then five sides ---------- */
 .gm-think-intro {
@@ -284,6 +423,7 @@
   .gm-duo-star { width: 36px; height: 36px; flex: none; }
   .gm-duo-people { grid-template-columns: minmax(0, 1fr); row-gap: 40px; }
   .gm-duo-axis { display: none; }
+  .gm-duo-note { margin-top: clamp(170px, 26svh, 230px); font-size: clamp(25px, 7.4vw, 32px); }
   .gm-duo-axis + .gm-duo-person { padding-top: 40px; border-top: 1px solid var(--line); }
   .gm-duo-person h3 { font-size: clamp(30px, 9vw, 40px); }
   .gm-duo-text { font-size: 16px; }
@@ -308,9 +448,23 @@
   .gm-principle-number,
   .gm-duo-letter,
   .gm-duo-link,
-  .gm-duo-star,
-  .gm-duo-axis { transition-duration: 0.01s; transition-delay: 0s; }
+  .gm-duo-star { transition-duration: 0.01s; transition-delay: 0s; }
+  .gm-duo-word,
+  .gm-duo-note em,
+  .cv-bloom { transition: none !important; }
+  .cv-focal *,
+  .cv-comet circle { animation: none !important; }
+  .cv-target,
+  .cv-ring,
+  .cv-sparks { display: none; }
+  .gm-duo.is-lit .cv-star { opacity: 1; transform: none; }
+  .gm-duo.is-lit .cv-streak { opacity: 0.4; transform: scaleX(0.38); }
 }
 :root[data-motion='still'] :is(.gm-about-title > *, .gm-about-hero-copy > *, .gm-about-down, .gm-about-route-star) { animation: none !important; }
 :root[data-motion='still'] .gm-about-route-trail { animation: none; stroke-dashoffset: 0; }
-:root[data-motion='still'] :is(.gm-principle-number, .gm-duo-letter, .gm-duo-link, .gm-duo-star, .gm-duo-axis) { transition-duration: 0.01s; transition-delay: 0s; }
+:root[data-motion='still'] :is(.gm-principle-number, .gm-duo-letter, .gm-duo-link, .gm-duo-star) { transition-duration: 0.01s; transition-delay: 0s; }
+:root[data-motion='still'] :is(.gm-duo-word, .gm-duo-note em, .cv-bloom) { transition: none !important; }
+:root[data-motion='still'] :is(.cv-focal *, .cv-comet circle) { animation: none !important; }
+:root[data-motion='still'] :is(.cv-target, .cv-ring, .cv-sparks) { display: none; }
+:root[data-motion='still'] .gm-duo.is-lit .cv-star { opacity: 1; transform: none; }
+:root[data-motion='still'] .gm-duo.is-lit .cv-streak { opacity: 0.4; transform: scaleX(0.38); }

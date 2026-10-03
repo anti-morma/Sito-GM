@@ -28,6 +28,7 @@ export default function ParticleJourney() {
     hero: 0,
     bridge: 0,
     bridgeMode: false,
+    villa: true,
     videoReady: false,
     active: true,
   });
@@ -42,20 +43,26 @@ export default function ParticleJourney() {
     let previousBridge = -1;
 
     const update = () => {
-      if (!hero || !method || !bridge) return;
+      if (!hero || !bridge) return;
       const state = frameState.current;
       const vh = innerHeight;
       const still = reduced.matches;
-      state.videoReady = method.dataset.videoReady === 'true';
+      // The method can be left off the home (page.tsx): then the GM's stars
+      // only open, and leave with the hero instead of drawing the villa.
+      state.villa = !!method;
+      state.videoReady = method?.dataset.videoReady === 'true';
 
       const bridgeBox = bridge.getBoundingClientRect();
-      const methodBox = method.getBoundingClientRect();
+      const heroBox = hero.getBoundingClientRect();
+      const methodBox = method?.getBoundingClientRect();
       let opacity: number;
       if (bridgeBox.top >= vh) {
         state.bridgeMode = false;
         state.bridge = 0;
-        state.hero = clamp01(-hero.getBoundingClientRect().top / Math.max(1, hero.offsetHeight));
-        if (methodBox.top < 0) {
+        state.hero = clamp01(-heroBox.top / Math.max(1, hero.offsetHeight));
+        if (!method || !methodBox) {
+          state.progress = METHOD_START;
+        } else if (methodBox.top < 0) {
           const stageHeight = method.querySelector<HTMLElement>('.gm-stage')?.offsetHeight ?? vh;
           const travel = Math.max(1, method.offsetHeight - stageHeight);
           state.progress = methodStoryAt(clamp01(-methodBox.top / travel) * METHOD_TRAVEL);
@@ -65,8 +72,9 @@ export default function ParticleJourney() {
           state.progress = METHOD_START + (METHOD_ENTRY - METHOD_START)
             * clamp01((state.hero - VILLA_START_HERO) / (VILLA_DRAWN_HERO - VILLA_START_HERO));
         }
-        // The field leaves with the villa: the projects and services keep only the sky.
-        opacity = clamp01(methodBox.bottom / vh);
+        // The field leaves with the villa (or, without it, with the hero): the
+        // projects and services keep only the sky.
+        opacity = clamp01((methodBox ?? heroBox).bottom / vh);
       } else {
         state.bridgeMode = true;
         state.hero = 1;
@@ -90,9 +98,11 @@ export default function ParticleJourney() {
       // One reversible journey for the background's own stars. GM opens first;
       // they gather below the villa, then fill every intervening section before
       // gathering below the brain. Its exit releases them through the footer.
-      const heroDispersion = smoothStep((state.hero - 0.04) / 0.27)
-        * (1 - smoothStep((state.hero - 0.36) / (VILLA_DRAWN_HERO - 0.36)));
-      const villaExit = smoothStep((vh * 1.15 - methodBox.bottom) / (vh * 0.8));
+      const heroRelease = smoothStep((state.hero - 0.04) / 0.27);
+      const heroDispersion = methodBox
+        ? heroRelease * (1 - smoothStep((state.hero - 0.36) / (VILLA_DRAWN_HERO - 0.36)))
+        : heroRelease;
+      const villaExit = methodBox ? smoothStep((vh * 1.15 - methodBox.bottom) / (vh * 0.8)) : 0;
       const brainEntry = 1 - smoothStep(state.bridge / 0.3);
       const brainExit = smoothStep((state.bridge - 0.8) / 0.2);
       nebulaJourney.dispersion = still ? 0 : state.bridgeMode

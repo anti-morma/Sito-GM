@@ -897,7 +897,7 @@ export function mountAstraField(host: HTMLElement, frameState: RefObject<Particl
     const logoCenterForSky = uniforms.uHeroOffset.value;
     const planCenterForSky = uniforms.uPlan.value;
     const brainCenterForSky = uniforms.uBrainCenter.value;
-    const arrival = Math.max(0, Math.min(1, (state.hero - VILLA_START_HERO) / (VILLA_DRAWN_HERO - VILLA_START_HERO)));
+    const arrival = state.villa ? Math.max(0, Math.min(1, (state.hero - VILLA_START_HERO) / (VILLA_DRAWN_HERO - VILLA_START_HERO))) : 0;
     const villaMix = arrival * arrival * (3 - 2 * arrival);
     const compact = uniforms.uCompact.value;
     const villaX = compact ? planCenterForSky.x : -camera.aspect * 0.20;

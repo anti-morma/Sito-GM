@@ -5,10 +5,14 @@ import SectionLabel from '../section-label';
 import SiteFooter from '../site-footer';
 import { founders, principles, site } from '../content';
 import { aboutDescription, aboutLd, aboutPath, jsonLd, pageMetadata } from '../seo';
+import Converge from './converge';
 import Scenes from './scenes';
 import './about.css';
 
 export const metadata = pageMetadata({ path: aboutPath, title: 'Chi siamo', description: aboutDescription });
+
+// The note under the founders, word by word (converge.tsx brings it to light).
+const NOTE = ['Due', 'sguardi', 'diversi,', 'un', 'solo', 'obiettivo:'];
 
 const pad = (index: number) => String(index + 1).padStart(2, '0');
 
@@ -102,6 +106,7 @@ export default function AboutPage() {
               </header>
 
               <div className="gm-duo" data-scene="read">
+                <Converge />
                 {/* Each initial above its founder; two lines meet in the star between them. */}
                 <div className="gm-duo-mark" aria-hidden="true">
                   <span className="gm-duo-cell" data-side="left">
@@ -122,7 +127,7 @@ export default function AboutPage() {
                 <div className="gm-duo-people">
                   {founders.map((person, index) => (
                     <Fragment key={person.name}>
-                      {/* Between the two: the line that comes down from the star. */}
+                      {/* Between the two: the column the star's light comes down (converge.tsx). */}
                       {index > 0 && <span className="gm-duo-axis" aria-hidden="true" />}
                       <article className="gm-duo-person" data-reveal style={{ '--reveal-delay': `${index * 140}ms` } as React.CSSProperties}>
                         <h3>{person.name}</h3>
@@ -133,7 +138,15 @@ export default function AboutPage() {
                   ))}
                 </div>
 
-                <p className="gm-duo-note" data-reveal>Due sguardi diversi, un solo obiettivo: il tuo.</p>
+                {/* Two looks, one point of light, one sentence: "il tuo" last, after a breath. */}
+                <p className="gm-duo-note">
+                  {NOTE.map((word, index) => (
+                    <Fragment key={word}>
+                      <span className="gm-duo-word" style={{ '--i': index } as React.CSSProperties}>{word}</span>{' '}
+                    </Fragment>
+                  ))}
+                  <em className="gm-duo-word" style={{ '--i': NOTE.length + 2 } as React.CSSProperties}>il tuo.</em>
+                </p>
               </div>
             </div>
           </section>

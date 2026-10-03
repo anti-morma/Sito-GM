@@ -69,10 +69,10 @@ export const offers = [
     includes: [
       'Consulenza e strategia iniziale',
       'Struttura, contenuti e percorso dell’utente',
-      'Design su misura della tua identità',
-      'Sviluppo, animazioni e 3D dove servono',
-      'Ottimizzato per telefono e velocità',
-      'Pubblicazione online',
+      'Design su misura',
+      'Sviluppo, animazioni e 3D',
+      'Ottimizzato per tutti i dispositivi',
+      'Due revisioni del progetto',
     ],
     cta: primaryCta,
   },
@@ -86,10 +86,9 @@ export const offers = [
     includes: [
       'Hosting: il sito sempre online, veloce e sicuro',
       'Registrazione e gestione del dominio',
+      'Gestione DNS e record',
       'Aggiornamenti tecnici e di sicurezza',
       'Modifiche a testi, immagini e contenuti',
-      'Nuove sezioni e funzioni quando servono',
-      'Un riferimento diretto per ogni richiesta',
     ],
     cta: 'Chiedi informazioni',
   },
@@ -100,14 +99,14 @@ export const offers = [
 export const founders = [
   {
     name: 'Ludovico Gusmano',
-    role: 'Strategy · Business · UX',
-    text: 'Business, economia e finanza, user experience. Definisce gli obiettivi e la logica del sito: i percorsi delle persone, i passaggi che portano a una scelta, ciò che fa funzionare un’esperienza digitale chiara.',
-    knowsAbout: ['Strategia digitale', 'Business', 'Economia e finanza', 'UX design', 'User flow'],
+    role: 'Strategy · UX/UI · Business',
+    text: 'Ideatore di ogni progetto, dalla prima idea al sito online. Strategia, user experience, user interface e user flow; psicologia del consumatore e principi di persuasione; gerarchia visiva, carico cognitivo e leggi della UX; business, economia e finanza. Definisce obiettivi, struttura e identità del sito: come le persone lo percepiscono, come si muovono e cosa le porta a scegliere.',
+    knowsAbout: ['Strategia digitale', 'UX design', 'UI design', 'User flow', 'Psicologia del consumatore', 'Business', 'Economia e finanza'],
   },
   {
     name: 'Alessandro Mormandi',
     role: 'Development · 3D · Creative Technology',
-    text: 'Sviluppo e scrittura del codice, front-end, performance, 3D e WebGL, animazioni e interazioni. Trasforma il progetto in un sito veloce, solido e curato in ogni dettaglio.',
+    text: 'Struttura e architettura tecnologica del sito, sviluppo e scrittura del codice, front-end, performance, 3D e WebGL, animazioni e interazioni. Trasforma il progetto in un sito veloce, solido e curato in ogni dettaglio.',
     knowsAbout: ['Sviluppo web', 'Front-end', 'Performance web', '3D e WebGL', 'Creative technology'],
   },
 ];

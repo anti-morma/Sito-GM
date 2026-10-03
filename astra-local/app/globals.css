@@ -807,7 +807,7 @@ em { font-style: normal; }
   .gm-hero-eyebrow-more { display: none; }
   .gm-hero-title { font-size: clamp(36px, min(13.4vw, 8svh), 60px); line-height: 1.02; letter-spacing: -0.04em; }
   .gm-hero-title-line { display: block; }
-  /* Three even lines on every phone: "…in pochi secondi / chi sei, cosa offri…". */
+  /* Three even lines on every phone: "…con chiarezza / chi sei, cosa offri…". */
   .gm-hero-description { max-width: 19.5em; margin-top: clamp(16px, 3.6svh, 32px); font-size: 17px; line-height: 1.5; text-wrap: pretty; }
   .gm-hero-actions { margin-top: clamp(22px, 5svh, 44px); }
   /* The main action, slimmer, with a quieter glow and the same touch comfort. */

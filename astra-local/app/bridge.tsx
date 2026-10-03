@@ -3,7 +3,7 @@
 import { isReducedMotion } from './motion';
 
 /**
- * The idea, between the services and the form: one pinned scene. Beside the
+ * The idea, between the projects and the form: one pinned scene. Beside the
  * words, a brain of stars gathers and turns slowly on itself, then melts away
  * as the form arrives (drawn by particle-journey.tsx, which also sets --bridge,
  * 0 → 1). With reduced motion the section is not pinned and the brain is still.

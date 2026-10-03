@@ -16,7 +16,7 @@ const pad = (index: number) => String(index + 1).padStart(2, '0');
 /**
  * /servizi: what you can ask us for (a website, and its care), the five
  * disciplines inside every project (each with its own page), and the proof.
- * The method itself lives on the home, once.
+ * The home shows what we do at a glance and links here for the details.
  */
 export default function ServicesPage() {
   return (

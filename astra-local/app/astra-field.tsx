@@ -11,6 +11,8 @@ export type ParticleFrame = {
   /** The idea scene before the form (0 → 1), drawn while bridgeMode is on. */
   bridge: number;
   bridgeMode: boolean;
+  /** False when the page has no method section: the GM's stars draw no villa. */
+  villa: boolean;
   videoReady: boolean;
   active: boolean;
 };

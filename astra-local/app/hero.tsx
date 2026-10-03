@@ -22,7 +22,7 @@ export default function Hero() {
         <p className="gm-hero-title">
           <span className="gm-hero-title-line">Un sito</span> <span className="gm-hero-title-line">all’altezza di</span> <em>ciò che fai.</em>
         </p>
-        <p className="gm-hero-description">Progettiamo e sviluppiamo siti web su misura che fanno capire in pochi secondi chi sei, cosa offri e perché sceglierti.</p>
+        <p className="gm-hero-description">Progettiamo e sviluppiamo siti web su misura che comunicano con chiarezza chi sei, cosa offri e cosa ti distingue.</p>
         <div className="gm-hero-actions">
           <a className="gm-btn gm-btn--primary gm-btn--large" href="#contatti" data-cta="hero">
             {primaryCta} <span className="gm-btn-arrow" aria-hidden="true">→</span>
