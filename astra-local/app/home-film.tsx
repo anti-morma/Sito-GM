@@ -216,41 +216,15 @@ export default function HomeFilm() {
       resize.observe(document.body);
       measure();
 
-      // The window turns a little toward the pointer; the scene inside moves
-      // with the eye, its light the other way.
+      // The window stays still; only a soft light follows the pointer over it.
       const fine = matchMedia('(hover: hover) and (pointer: fine)');
-      const target = { x: 0, y: 0 };
-      const current = { x: 0, y: 0, gx: 50, gy: 50 };
-      let pointerFrame = 0;
-      let last = 0;
-      const step = (now: number) => {
-        const dt = last ? now - last : 16;
-        last = now;
-        const k = 1 - Math.exp(-dt / 140);
-        current.x += (target.x - current.x) * k;
-        current.y += (target.y - current.y) * k;
-        stage.style.setProperty('--tx', current.x.toFixed(4));
-        stage.style.setProperty('--ty', current.y.toFixed(4));
-        stage.style.setProperty('--gx', `${current.gx.toFixed(1)}%`);
-        stage.style.setProperty('--gy', `${current.gy.toFixed(1)}%`);
-        if (Math.abs(target.x - current.x) > 0.001 || Math.abs(target.y - current.y) > 0.001) pointerFrame = requestAnimationFrame(step);
-        else { pointerFrame = 0; last = 0; }
-      };
-      const kick = () => { if (!pointerFrame) pointerFrame = requestAnimationFrame(step); };
       const onPointer = (event: PointerEvent) => {
-        if (!fine.matches || motion.matches) return;
-        const area = section.getBoundingClientRect();
-        const frameBox = stage.getBoundingClientRect();
-        const clamp = (v: number) => Math.max(-1, Math.min(1, v));
-        target.x = clamp((event.clientX - (frameBox.left + frameBox.width / 2)) / (area.width * 0.5));
-        target.y = clamp((event.clientY - (frameBox.top + frameBox.height / 2)) / (area.height * 0.5));
-        current.gx = ((event.clientX - frameBox.left) / frameBox.width) * 100;
-        current.gy = ((event.clientY - frameBox.top) / frameBox.height) * 100;
-        kick();
+        if (!fine.matches) return;
+        const box = stage.getBoundingClientRect();
+        stage.style.setProperty('--gx', `${(((event.clientX - box.left) / box.width) * 100).toFixed(1)}%`);
+        stage.style.setProperty('--gy', `${(((event.clientY - box.top) / box.height) * 100).toFixed(1)}%`);
       };
-      const onLeave = () => { target.x = 0; target.y = 0; kick(); };
-      section.addEventListener('pointermove', onPointer, { passive: true });
-      section.addEventListener('pointerleave', onLeave);
+      stage.addEventListener('pointermove', onPointer, { passive: true });
 
       return () => {
         cancelIdle();
@@ -259,7 +233,6 @@ export default function HomeFilm() {
         seen.disconnect();
         resize.disconnect();
         timers.forEach(clearTimeout);
-        if (pointerFrame) cancelAnimationFrame(pointerFrame);
         if ('requestVideoFrameCallback' in video) video.cancelVideoFrameCallback(videoFrame);
         document.removeEventListener('visibilitychange', onVisibility);
         motion.removeEventListener('change', onMotion);
@@ -268,8 +241,7 @@ export default function HomeFilm() {
         video.removeEventListener('timeupdate', onTime);
         video.removeEventListener('error', onError);
         toggle.removeEventListener('click', onToggle);
-        section.removeEventListener('pointermove', onPointer);
-        section.removeEventListener('pointerleave', onLeave);
+        stage.removeEventListener('pointermove', onPointer);
         video.pause();
         skyFocus.target = 0;
       };

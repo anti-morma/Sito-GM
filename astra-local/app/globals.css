@@ -1189,7 +1189,9 @@ em { font-style: normal; }
 
 .gm-page { position: relative; }
 /* A lit screen spills its light around it. */
-.gm-project-media { box-shadow: 0 40px 120px -48px rgb(120 155 255 / 34%), 0 0 0 1px rgb(143 177 255 / 6%); }
+.gm-project-media { box-shadow: 0 40px 120px -48px rgb(120 155 255 / 34%), 0 0 0 1px rgb(143 177 255 / 6%); transition: box-shadow 0.6s var(--ease); }
+/* In the sliding row only the project in view is lit (project-carousel.tsx). */
+.gm-project-list > .gm-project:not([data-current]) .gm-project-media { box-shadow: 0 40px 120px -48px rgb(120 155 255 / 0%), 0 0 0 1px rgb(143 177 255 / 6%); }
 
 /* ---------- Services: two offers ---------- */
 .gm-services-head { max-width: 760px; margin-bottom: clamp(48px, 8vh, 88px); }

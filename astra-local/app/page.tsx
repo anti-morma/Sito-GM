@@ -108,7 +108,6 @@ export default function Home() {
               <header className="gm-projects-head" data-reveal>
                 <SectionLabel>Progetti</SectionLabel>
                 <h2 id="progetti-title" className="gm-h2">Progetti reali, <span className="gm-h2-line">online adesso.</span></h2>
-                <p className="gm-lead">Siti progettati e sviluppati da noi, dall’identità digitale al codice. Guardali dal vivo, poi leggi come ci abbiamo ragionato.</p>
               </header>
               <ProjectCarousel count={projects.length}>
                 {projects.map((project) => <ProjectCard key={project.name} project={project} />)}

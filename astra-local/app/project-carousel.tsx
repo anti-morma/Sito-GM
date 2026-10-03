@@ -19,12 +19,21 @@ export default function ProjectCarousel({ count, children }: { count: number; ch
     let frame = 0;
     const update = () => {
       frame = 0;
-      setIndex(Math.round(row.scrollLeft / Math.max(1, row.clientWidth)));
+      const current = Math.round(row.scrollLeft / Math.max(1, row.clientWidth));
+      setIndex(current);
+      // Only the project in view keeps its light: a neighbour's would spill
+      // into the row and be cut at its edge. As a plain list, all keep it.
+      const sliding = row.scrollWidth > row.clientWidth + 1;
+      [...row.children].forEach((slide, i) => slide.toggleAttribute('data-current', !sliding || i === current));
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
     row.addEventListener('scroll', onScroll, { passive: true });
+    const resize = new ResizeObserver(onScroll);
+    resize.observe(row);
+    update();
     return () => {
       row.removeEventListener('scroll', onScroll);
+      resize.disconnect();
       cancelAnimationFrame(frame);
     };
   }, []);

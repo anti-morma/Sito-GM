@@ -42,6 +42,94 @@
   cursor: pointer;
 }
 .cf-field select option { background: var(--bg-raised); color: var(--ink); }
+
+/* Where the browser lets the page draw the open menu (customizable select),
+   it is the site's own: a dark glass panel lit by the accent like the
+   project previews, and the chosen option marked by the label's dot.
+   Elsewhere the system menu stays, already dark (above). */
+@supports (appearance: base-select) {
+  .cf-field select,
+  .cf-field select::picker(select) { appearance: base-select; }
+  .cf-field select {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-right: 2px;
+    background: transparent;
+    /* One line, as the other fields: a long choice is cut, not wrapped. */
+    white-space: nowrap;
+  }
+  .cf-field select > button,
+  .cf-field select selectedcontent { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .cf-field select::picker-icon {
+    flex: none;
+    content: '';
+    width: 14px;
+    height: 14px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 20 20'%3E%3Cpath d='m5 7.5 5 5 5-5' fill='none' stroke='%23c4c3bd' stroke-width='1.6'/%3E%3C/svg%3E") center / 14px no-repeat;
+    transition: rotate 0.35s var(--ease);
+  }
+  .cf-field select:open::picker-icon { rotate: 180deg; }
+
+  .cf-field select::picker(select) {
+    /* Below the field, like a sheet unfolding from its line; above only
+       when the screen has no room left under it. */
+    position-area: block-end span-inline-end;
+    position-try-order: normal;
+    position-try-fallbacks: flip-block;
+    margin: 10px 0;
+    padding: 6px;
+    border: 1px solid var(--line-2);
+    border-radius: 16px;
+    background: rgb(11 12 13 / 86%);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    backdrop-filter: blur(18px) saturate(1.2);
+    box-shadow: 0 30px 80px -30px rgb(0 0 0 / 90%), 0 24px 70px -40px rgb(120 155 255 / 40%), 0 0 0 1px rgb(143 177 255 / 6%);
+    color: var(--ink);
+    font-family: var(--sans);
+    scrollbar-width: none;
+    opacity: 0;
+    translate: 0 -6px;
+    transition: opacity 0.25s var(--ease), translate 0.35s var(--ease), overlay 0.35s allow-discrete, display 0.35s allow-discrete;
+  }
+  .cf-field select:open::picker(select) { opacity: 1; translate: 0 0; }
+  @starting-style {
+    .cf-field select:open::picker(select) { opacity: 0; translate: 0 -6px; }
+  }
+
+  .cf-field select option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 14px;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: 16px;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
+  }
+  .cf-field select option:is(:hover, :focus-visible) { outline: none; background: rgb(143 177 255 / 10%); color: var(--ink); }
+  .cf-field select option:checked { color: var(--ink); }
+  /* The chosen one: the label's lit dot, at the end of the line. */
+  .cf-field select option::checkmark {
+    order: 1;
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px rgb(143 177 255 / 80%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cf-field select::picker-icon,
+    .cf-field select::picker(select) { transition: none; }
+  }
+}
 .cf-field input:-webkit-autofill { -webkit-text-fill-color: var(--ink); transition: background-color 9999s ease-out; }
 
 .cf-field-line {
