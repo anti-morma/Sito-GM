@@ -8,7 +8,6 @@ import GrowTextarea from './grow-textarea';
 import Hero from './hero';
 import HomeFilm from './home-film';
 import HomeSummary from './home-summary';
-import MethodStory from './method-story';
 import ParticleJourney from './particle-journey';
 import ProjectCarousel from './project-carousel';
 import ProjectPreview from './project-preview';
@@ -28,11 +27,6 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
   openGraph: { ...openGraphBase, url: '/', title: `${site.name} | Web design, sviluppo e digital experiences`, description: siteSummary, images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: `${site.name} — studio digitale` }] },
 };
-
-// The method (the villa drawn by the stars, then the construction footage) is
-// hidden for now: set back to true to restore it. Without it the GM's stars
-// open and leave with the hero (particle-journey.tsx).
-const SHOW_METHOD = false;
 
 const delay = (ms: number) => ({ '--reveal-delay': `${ms}ms` }) as React.CSSProperties;
 // Links that open another tab say so to screen readers too (the arrow is only drawn).
@@ -93,9 +87,6 @@ export default function Home() {
         <main className="gm-site" id="contenuto">
           {/* Hero: the headline, and the GM made of stars */}
           <Hero />
-
-          {/* Method: the GM's stars draw the villa, then the construction footage. */}
-          {SHOW_METHOD && <MethodStory />}
 
           {/* What we do. Desktop: the film of the villa in a lit window
               (home-film.tsx); phones and tablets: one line of work at a time. */}

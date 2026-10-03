@@ -383,14 +383,8 @@ em { font-style: normal; }
   .gm-header .gm-logo { background: none; }
   .gm-logo-stars { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 }
-
-/* ======================================================================
-   Story: hero → the villa (method) → the bridge → the projects.
-   One particle field (particle-journey.tsx) runs behind all of them.
-   ====================================================================== */
 /* Clipped: the dark pool behind the copy must not widen the page on phones. */
 .gm-hero { position: relative; height: 100svh; min-height: 520px; overflow: clip; }
-.gm-method-story { position: relative; }
 .gm-particle-journey { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 /* Stellar nebulae are rendered by the shared sky, behind every scene. */
 .gm-particle-journey .starfield { width: 100%; height: 100%; }
@@ -924,261 +918,6 @@ em { font-style: normal; }
   .gm-bridge-copy { transform: none; }
 }
 
-/* ---------- Method: video left, phases right ----------
-   One step at a time with the scroll (method-story.tsx): the words, then the
-   villa of stars, drawn in the video's frame, then the film and its phases. */
-.gm-construction-video { position: absolute; z-index: 2; top: 50%; transform: translateY(-50%); left: 4%; width: 52%; pointer-events: none; }
-.gm-construction-video video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; background: var(--bg-raised); }
-
-.gm-house {
-  position: absolute;
-  z-index: 4;
-  top: calc(50% + var(--header-h) / 4);
-  right: 5%;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(22px, 4vh, 40px);
-  width: min(36%, 480px);
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-/* Each word block and the phases fade in and rise as the scroll reaches them (--in: 0 → 1). */
-.gm-house-intro > *,
-.gm-phases { opacity: var(--in, 1); translate: 0 calc((1 - var(--in, 1)) * 14px); }
-
-.gm-house-intro .gm-label { margin-bottom: 16px; }
-.gm-house-title {
-  font-size: clamp(30px, 2.8vw, 48px);
-  font-weight: 500;
-  line-height: 1.02;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
-}
-.gm-house-lead { max-width: 36ch; margin-top: 14px; color: var(--ink-2); font-size: clamp(16px, 1.15vw, 18px); line-height: 1.5; }
-
-/* The phases as a path: a rail runs from dot to dot and is drawn as far as the
-   phase the film is building, where the dot waits, never beyond it. The dot
-   moves on once the line has reached the next phase; each phase's words open
-   under its title when it is reached. */
-.gm-phases { position: relative; }
-.gm-phases ol { margin: 0; padding: 0; list-style: none; }
-.gm-phases-dots,
-.gm-phases-count { display: none; }
-
-.gm-phases li {
-  --pad: clamp(7px, 1.2vh, 12px);
-  --dot: calc(var(--pad) + 11.5px); /* level with the title */
-  position: relative;
-  display: grid;
-  grid-template-columns: 40px 1fr;
-  padding: var(--pad) 0 var(--pad) 26px;
-}
-/* Phases still to come stay readable (≥ 4.5:1): the lit one leads by its light, not by hiding the rest. */
-.gm-phases li > * { opacity: 0.55; transition: opacity 0.6s var(--ease); }
-.gm-phases li.is-done > * { opacity: 0.7; }
-.gm-phases li.is-active > * { opacity: 1; }
-/* The numbers keep their full grey (≥ 4.5:1): dimming them as well left them unreadable. */
-.gm-phases li > .gm-phase-number { opacity: 1; }
-.gm-phases li:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  top: var(--dot);
-  left: 0;
-  width: 1px;
-  height: 100%;
-  background: linear-gradient(var(--ink-2), var(--ink-2)) top / 100% 0% no-repeat, var(--line);
-  transition: background-size 0.5s var(--ease);
-}
-.gm-phases li.is-done::after { background-size: 100% 100%; }
-.gm-phases li::before {
-  content: '';
-  position: absolute;
-  z-index: 1;
-  top: calc(var(--dot) - 4.5px);
-  left: -4px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 10px rgb(143 177 255 / 60%);
-  opacity: 0;
-  transform: scale(0.4);
-  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
-}
-/* It arrives once the line has. */
-.gm-phases li.is-active::before { opacity: 1; transform: none; transition-delay: 0.42s; }
-
-.gm-phase-number { padding-top: 4px; color: var(--ink-3); font-size: 13px; font-weight: 500; letter-spacing: 0.06em; }
-.gm-phases li.is-active .gm-phase-number { color: var(--accent); }
-.gm-phase-body { display: grid; grid-template-rows: auto 0fr; row-gap: 0; transition: grid-template-rows 0.5s var(--ease), row-gap 0.5s var(--ease); }
-.gm-phase-body strong { display: block; color: var(--ink); font-size: clamp(17px, 1.35vw, 21px); font-weight: 500; letter-spacing: -0.01em; }
-.gm-phase-body span { display: block; min-height: 0; max-width: 36ch; overflow: hidden; color: var(--ink-2); font-size: 15px; line-height: 1.45; opacity: 0; transition: opacity 0.4s var(--ease); }
-/* Only the lit phase opens its words: the list keeps its height, so the
-   column never slides while the eye looks for the new phase. */
-.gm-phases li.is-active .gm-phase-body { grid-template-rows: auto 1fr; row-gap: 4px; }
-.gm-phases li.is-active .gm-phase-body span { opacity: 1; }
-
-@media (max-height: 700px) and (min-width: 601px) and (min-aspect-ratio: 9/10) {
-  .gm-house-lead { display: none; }
-}
-
-/* Stacked layout on phones and portrait tablets (mirrors uCompact in the shader):
-   headline → construction → one phase at a time. */
-@media (max-width: 600px), (max-aspect-ratio: 9/10) {
-  .gm-construction-video { top: 55%; left: 7%; width: 86%; }
-  .gm-house { inset: 0; display: block; width: auto; transform: none; }
-  .gm-house-intro { position: absolute; top: calc(var(--header-h) + 8svh); left: 20px; right: 20px; }
-  .gm-house-intro .gm-label { margin-bottom: 10px; font-size: 12px; }
-  .gm-house-title { max-width: 16ch; font-size: clamp(28px, 8vw, 40px); }
-  .gm-house-lead { font-size: 16px; }
-
-  .gm-phases { position: absolute; top: calc(55% + 24.2vw + 20px); left: 20px; right: 20px; }
-  .gm-phases-dots { display: flex; gap: 6px; margin-bottom: 18px; }
-  .gm-phases-dots i { flex: 1; height: 2px; background: var(--line-2); transition: background-color 0.5s var(--ease); }
-  .gm-phases-dots i.is-on { background: var(--accent); }
-
-  .gm-phases ol { position: relative; min-height: 96px; }
-  .gm-phases li,
-  .gm-phases li.is-done {
-    position: absolute;
-    inset: 0 0 auto;
-    grid-template-columns: 44px 1fr;
-    padding: 0;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
-  }
-  .gm-phases li.is-active { opacity: 1; transform: none; }
-  .gm-phases li > * { opacity: 1; }
-  .gm-phases li::before,
-  .gm-phases li::after { display: none; }
-  .gm-phase-number { font-size: 15px; }
-  .gm-phase-body strong { font-size: 22px; }
-  .gm-phase-body span { font-size: 16px; }
-}
-
-/* Small phones held sideways keep the listed layout: the five titles under the
-   video, only the lit phase opens its words. The video rises a little to make
-   room; the stars follow it (astra-field.tsx). Held upright, phones have their
-   own composition below. */
-@media (max-width: 600px) and (max-height: 760px) and (orientation: landscape) {
-  .gm-house-lead { display: none; }
-}
-@media (max-width: 600px) and (orientation: landscape) {
-  .gm-construction-video { top: 46%; }
-  .gm-house-intro { top: calc(var(--header-h) + 5svh); }
-  .gm-phases { top: calc(46% + 24.2vw + 18px); }
-  .gm-phases-dots { display: none; }
-  .gm-phases ol { min-height: 0; }
-  .gm-phases li,
-  .gm-phases li.is-done {
-    --pad: clamp(3px, 0.6svh, 6px);
-    --dot: calc(var(--pad) + 0.65em);
-    position: relative;
-    inset: auto;
-    grid-template-columns: 30px 1fr;
-    align-items: baseline;
-    padding: var(--pad) 0 var(--pad) 18px;
-    font-size: clamp(15px, 2.1svh, 18px);
-    opacity: 1;
-    transform: none;
-  }
-  .gm-phases li > * { opacity: 0.55; }
-  .gm-phases li.is-done > * { opacity: 0.7; }
-  .gm-phases li.is-active > * { opacity: 1; }
-  .gm-phases li:not(:last-child)::after { display: block; }
-  .gm-phases li::before { display: block; top: calc(var(--dot) - 3.5px); left: -3px; width: 7px; height: 7px; }
-  .gm-phase-number { padding-top: 0; font-size: 12px; }
-  .gm-phase-body strong { font-size: 1em; line-height: 1.3; }
-  .gm-phase-body span { font-size: clamp(13px, 1.75svh, 15px); }
-}
-@media (max-width: 600px) and (max-height: 640px) and (orientation: landscape) {
-  .gm-house-intro .gm-label { display: none; }
-}
-
-/* ---------- Method on phones (up to 767px, upright) ----------
-   One column in the pinned stage, centred between the header and the scroll
-   cue: kicker, title and line → the construction video, almost full width →
-   one phase at a time under it, with "01 / 05" and a hairline of five steps.
-   The scroll, the film and the timeline are the desktop's (method-story.tsx);
-   the stars measure the video wherever it lands (astra-field.tsx). */
-@media (max-width: 767px) and (orientation: portrait) {
-  .gm-method-story .gm-stage {
-    display: grid;
-    grid-template-rows: auto auto auto;
-    align-content: center;
-    row-gap: clamp(20px, 3.4svh, 30px);
-    padding: calc(var(--header-h) + 8px) 20px calc(72px + env(safe-area-inset-bottom));
-  }
-  /* Its words and phases join the stage's column, around the video. */
-  .gm-house { position: static; display: contents; width: auto; transform: none; }
-  .gm-house-intro { position: static; grid-row: 1; }
-  .gm-house-intro .gm-label { margin-bottom: 10px; font-size: 12px; }
-  .gm-house-title { max-width: 16ch; font-size: clamp(28px, 8vw, 36px); }
-  .gm-house-lead { display: block; max-width: 34ch; margin-top: 10px; font-size: 16px; }
-
-  /* The film's frame is sized before the video loads: nothing moves when it does. */
-  .gm-construction-video { position: relative; grid-row: 2; top: auto; left: auto; width: 100%; aspect-ratio: 16 / 9; transform: none; }
-
-  .gm-phases {
-    position: static;
-    grid-row: 3;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    gap: 14px;
-  }
-  .gm-phases-count { display: block; margin: 0; color: var(--ink-3); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
-  .gm-phases-count span { color: var(--accent); }
-  .gm-phases-dots { display: flex; gap: 4px; margin: 0; }
-  .gm-phases-dots i { flex: 1; height: 1px; background: var(--line-2); transition: background-color 0.5s var(--ease); }
-  .gm-phases-dots i.is-on { background: var(--accent); }
-
-  /* The five phases share one cell: the tallest sets the height, so the page
-     never moves as they take turns. */
-  .gm-phases ol { grid-column: 1 / -1; display: grid; min-height: 0; }
-  .gm-phases li,
-  .gm-phases li.is-done {
-    position: relative;
-    inset: auto;
-    grid-area: 1 / 1;
-    display: block;
-    padding: 0;
-    opacity: 0;
-    transform: translateY(6px);
-    transition: opacity 0.35s var(--ease), transform 0.35s var(--ease);
-  }
-  .gm-phases li.is-active { opacity: 1; transform: none; }
-  .gm-phases li > *,
-  .gm-phases li.is-done > * { opacity: 1; }
-  .gm-phases li::before,
-  .gm-phases li::after { display: none; }
-  /* The count above already says which phase this is. */
-  .gm-phase-number { display: none; }
-  .gm-phase-body,
-  .gm-phases li.is-active .gm-phase-body { display: block; }
-  .gm-phase-body strong { font-size: clamp(22px, 6.2vw, 26px); line-height: 1.2; }
-  .gm-phase-body span,
-  .gm-phases li.is-done .gm-phase-body span { max-width: 34ch; margin-top: 6px; font-size: 16px; opacity: 1; }
-}
-/* Short phones (Safari with its bars): the kicker, then the line, give way. */
-@media (max-width: 767px) and (orientation: portrait) and (max-height: 640px) {
-  .gm-house-intro .gm-label { display: none; }
-}
-@media (max-width: 767px) and (orientation: portrait) and (max-height: 600px) {
-  .gm-method-story .gm-stage { row-gap: 16px; padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
-  .gm-house-lead { display: none; }
-}
-@media (max-width: 767px) and (orientation: portrait) and (prefers-reduced-motion: reduce) {
-  .gm-phases li,
-  .gm-phases li.is-done { transform: none; transition: opacity 0.2s linear; }
-}
-
-/* ======================================================================
-   Content sections
-   ====================================================================== */
-.gm-section { position: relative; padding-block: clamp(96px, 16vh, 200px); }
-
 /* Section reveal: opacity and a short rise, once. */
 .gm-reveal-ready [data-reveal] {
   opacity: 0;
@@ -1190,77 +929,8 @@ em { font-style: normal; }
 .gm-page { position: relative; }
 /* A lit screen spills its light around it. */
 .gm-project-media { box-shadow: 0 40px 120px -48px rgb(120 155 255 / 34%), 0 0 0 1px rgb(143 177 255 / 6%); }
-
-/* ---------- Services: two offers ---------- */
-.gm-services-head { max-width: 760px; margin-bottom: clamp(48px, 8vh, 88px); }
-.gm-offers {
-  display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  gap: clamp(20px, 2.4vw, 32px);
-  align-items: stretch;
-}
-.gm-offer {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: clamp(28px, 3.4vw, 48px);
-  border: 1px solid var(--line-2);
-  border-radius: 20px;
-  background: linear-gradient(160deg, rgb(22 44 104 / 46%), rgb(9 12 20 / 62%) 58%);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  transition: border-color 0.4s var(--ease), transform 0.45s var(--ease);
-}
-.gm-offer:first-child { border-color: rgb(143 177 255 / 35%); box-shadow: 0 30px 80px -40px rgb(143 177 255 / 35%); }
-.gm-offer-kicker { display: flex; align-items: center; gap: 12px; color: var(--ink-3); font-size: 13px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; }
-.gm-offer-kicker span { color: var(--accent); }
-.gm-offer h3 { margin-top: 18px; color: var(--ink); font-size: clamp(30px, 2.8vw, 46px); font-weight: 500; line-height: 1.05; letter-spacing: -0.03em; }
-.gm-offer-text { max-width: 44ch; margin-top: 16px; color: var(--ink-2); font-size: 17px; line-height: 1.55; }
 /* The price, once there is one (content.ts): the visitor's first question. */
-.gm-offer-price { margin-top: 14px; color: var(--ink); font-size: 16px; font-weight: 500; }
-.gm-offer-list { display: grid; gap: 12px; margin: 28px 0 36px; padding: 0; list-style: none; }
-.gm-offer:first-child .gm-offer-list { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }
-.gm-offer-list li { position: relative; padding-left: 22px; color: var(--ink); font-size: 16px; line-height: 1.45; }
 /* A small star for every item. */
-.gm-offer-list li::before {
-  content: '';
-  position: absolute;
-  top: 0.45em;
-  left: 2px;
-  width: 7px;
-  height: 7px;
-  background: var(--accent);
-  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
-}
-.gm-offer-details { display: contents; }
-.gm-offer-toggle { display: none; }
-.gm-offer .gm-btn { align-self: flex-start; margin-top: auto; }
-
-/* Desktop: heading and both offers fit on one screen. The title and its
-   lead sit side by side, and the spacing follows the screen's height. */
-@media (min-width: 1025px) {
-  /* Clear the fixed header when the menu brings the section to the top. */
-  .gm-services { padding-top: calc(var(--header-h) + clamp(16px, 3vh, 40px)); }
-  .gm-services-head {
-    display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    gap: clamp(12px, 2.4vh, 28px) clamp(20px, 2.4vw, 32px);
-    align-items: end;
-    max-width: none;
-    margin-bottom: clamp(24px, 4.4vh, 56px);
-  }
-  .gm-services-head .gm-label { grid-column: 1 / -1; margin-bottom: 0; }
-  .gm-services-head .gm-h2 { font-size: clamp(36px, min(3.6vw, 6.4vh), 64px); }
-  .gm-services-head .gm-lead { margin-top: 0; font-size: clamp(16px, 1.15vw, 18px); }
-  .gm-offer { padding: clamp(22px, 3.6vh, 44px) clamp(28px, 2.8vw, 44px); }
-  .gm-offer h3 { margin-top: 12px; font-size: clamp(28px, min(2.4vw, 4.4vh), 42px); }
-  .gm-offer-text { margin-top: 12px; font-size: 16px; }
-  .gm-offer-list { gap: clamp(8px, 1.4vh, 12px); margin: clamp(16px, 2.8vh, 28px) 0 clamp(20px, 3.4vh, 36px); }
-}
-
-@media (hover: hover) {
-  .gm-reveal-ready .gm-offer.is-visible:hover { transform: translateY(-4px); border-color: rgb(143 177 255 / 55%); }
-}
 
 /* ---------- Projects ---------- */
 .gm-projects-head { max-width: 760px; margin-bottom: clamp(64px, 11vh, 128px); }
@@ -1458,8 +1128,6 @@ em { font-style: normal; }
 
 /* ---------- Content: tablets and phones ---------- */
 @media (max-width: 1024px) {
-  .gm-offers,
-  .gm-contact-grid { grid-template-columns: 1fr; }
   .gm-contact-head { position: static; }
 
   .gm-project,
@@ -1476,151 +1144,9 @@ em { font-style: normal; }
   .gm-h2--xl { font-size: clamp(44px, 13vw, 60px); }
   .gm-lead { font-size: 18px; }
 
-
-  .gm-offer { padding: 26px 22px; border-radius: 16px; }
-  .gm-offer:first-child .gm-offer-list { grid-template-columns: 1fr; }
-  .gm-offer-text { font-size: 16px; }
-  .gm-offer-details { display: block; margin-top: 24px; }
-  .gm-offer-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    min-height: 48px;
-    padding: 12px 0;
-    border: 0;
-    border-top: 1px solid var(--line-2);
-    background: transparent;
-    color: var(--accent);
-    text-align: left;
-    font-size: 15px;
-    font-weight: 500;
-  }
-  .gm-offer-toggle svg { transition: transform 0.25s var(--ease); }
-  .gm-offer-toggle[aria-expanded='true'] svg { transform: rotate(180deg); }
-  .gm-offer-list[data-open='false'] { display: none; }
-  .gm-offer-list[data-open='true'] { margin: 10px 0 24px; }
-  .gm-offer .gm-btn { margin-top: 18px; }
-  .gm-offer .gm-btn { align-self: stretch; }
-
-  /* Phones: the heading and the offers on one screen. The offers are a deck
-     (offer-deck.tsx): the website in front, its care right behind it, whose
-     edge shows above with its name. A tap there brings it forward. */
-  .gm-services {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 100svh;
-    padding-block: calc(var(--header-h) + clamp(8px, 2svh, 20px)) clamp(20px, 4svh, 40px);
-  }
-  .gm-services-head { margin-bottom: clamp(18px, 3svh, 32px); }
-  .gm-services-head .gm-label { margin-bottom: clamp(10px, 1.6svh, 18px); }
-  .gm-services-head .gm-h2 { font-size: clamp(28px, min(8.6vw, 4.8svh), 40px); }
-  .gm-services-head .gm-lead { margin-top: clamp(10px, 1.6svh, 18px); font-size: clamp(15px, min(4vw, 2.2svh), 17px); line-height: 1.45; }
-  @media (max-height: 640px) {
-    .gm-services-head .gm-lead { display: none; }
-  }
-
-  .gm-offers[data-deck] {
-    --peek: 58px;
-    position: relative;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-    padding-top: var(--peek);
-    touch-action: pan-y;
-  }
-  .gm-offers[data-deck] > .gm-offer {
-    grid-area: 1 / 1;
-    padding: clamp(20px, 2.8svh, 26px) 20px clamp(18px, 2.6svh, 22px);
-    border-radius: 18px;
-    /* Opaque: the card behind must not show through. */
-    background: linear-gradient(165deg, #0d1c42 0%, #080b12 56%, #07080b 100%);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    transform-origin: 50% 0;
-    transition: translate 0.6s var(--ease), scale 0.6s var(--ease), border-color 0.5s var(--ease),
-      box-shadow 0.6s var(--ease), opacity 1s var(--ease), transform 1s var(--ease);
-  }
-  .gm-offers[data-deck] > .gm-offer > * { transition: opacity 0.35s var(--ease) 0.2s; }
-  .gm-offers[data-deck] > [data-place='front'] {
-    z-index: 2;
-    border-color: rgb(143 177 255 / 38%);
-    box-shadow: 0 -14px 30px -18px rgb(0 0 0 / 90%), 0 30px 70px -40px rgb(143 177 255 / 40%);
-  }
-  .gm-offers[data-deck] > [data-place='back'] {
-    z-index: 1;
-    translate: 0 calc(var(--peek) * -1);
-    scale: 0.93;
-    border-color: var(--line-2);
-    box-shadow: none;
-    background: linear-gradient(180deg, #121a2e 0%, #0a0d15 40%);
-  }
-  .gm-offers[data-deck] > [data-place='back'] > * { opacity: 0; transition-delay: 0s; transition-duration: 0.2s; }
-
-  .gm-offer-kicker { font-size: 11px; letter-spacing: 0.1em; }
-  .gm-offers[data-deck] .gm-offer h3 { margin-top: 12px; font-size: clamp(26px, 7.4vw, 32px); }
-  .gm-offers[data-deck] .gm-offer-text { margin-top: 10px; font-size: clamp(15px, min(4.1vw, 2.2svh), 16px); line-height: 1.5; }
-  .gm-offers[data-deck] .gm-offer-details { margin-top: clamp(14px, 2svh, 20px); }
-  .gm-offers[data-deck] .gm-offer .gm-btn { min-height: 50px; margin-top: 4px; }
-
   /* The edge of the card behind: its number, its name, a quiet invitation. */
-  .gm-deck-peek {
-    position: absolute;
-    z-index: 3;
-    top: 0;
-    left: 3.5%;
-    right: 3.5%;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    height: var(--peek);
-    padding: 0 12px 6px 18px;
-    border: 0;
-    border-radius: 16px 16px 0 0;
-    background: transparent;
-    color: var(--ink);
-    text-align: left;
-    touch-action: manipulation;
-  }
-  .gm-deck-peek-number { align-self: flex-start; margin-top: 14px; color: var(--accent); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; }
-  .gm-deck-peek-name { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
-  .gm-deck-peek-name strong { overflow: hidden; font-size: clamp(14.5px, 4.6vw, 17px); font-weight: 500; letter-spacing: -0.01em; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
-  .gm-deck-peek-kicker { color: var(--ink-3); font-size: 10px; font-weight: 500; letter-spacing: 0.12em; line-height: 1.2; text-transform: uppercase; white-space: nowrap; }
   /* Two small arcs: this card and the one behind trade places. */
-  .gm-deck-peek i {
-    position: relative;
-    flex: none;
-    width: 30px;
-    height: 30px;
-    border: 1px solid var(--line-2);
-    border-radius: 50%;
-    transition: border-color 0.3s var(--ease), transform 0.6s var(--ease);
-  }
-  .gm-deck-peek i::before,
-  .gm-deck-peek i::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    width: 6px;
-    height: 6px;
-    border-top: 1.5px solid var(--ink);
-    border-left: 1.5px solid var(--ink);
-  }
-  .gm-deck-peek i::before { top: 8px; transform: translateX(-50%) rotate(45deg); }
-  .gm-deck-peek i::after { bottom: 8px; transform: translateX(-50%) rotate(225deg); }
-  .gm-deck-peek:active i { border-color: var(--accent); transform: rotate(180deg); }
   /* A soft light runs across the edge now and then: there is more here. */
-  .gm-deck-peek::after {
-    content: '';
-    position: absolute;
-    inset: 0 0 6px;
-    border-radius: inherit;
-    background: linear-gradient(100deg, transparent 30%, rgb(143 177 255 / 12%) 50%, transparent 70%) no-repeat;
-    background-size: 220% 100%;
-    animation: gm-peek-shine 5.5s var(--ease) 2.5s infinite;
-    pointer-events: none;
-  }
 
   .gm-projects-head { margin-bottom: clamp(34px, 6svh, 56px); }
   .gm-project-list { gap: clamp(56px, 10svh, 88px); }
@@ -1778,7 +1304,6 @@ html[data-intro='waiting']::after {
    without the effects that cost the most on every frame: frosted glass over
    the moving sky (blurred again at each frame) and the trail stars' glow.
    Nothing moves or changes place. */
-:root.gm-lite .gm-offer { -webkit-backdrop-filter: none; backdrop-filter: none; }
 :root.gm-lite .gm-project-arrow { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(5 6 8 / 82%); }
 @media (prefers-reduced-motion: no-preference) {
   :root.gm-lite:not([data-motion='still']) .gm-rail-line i { animation-name: gm-rail-lit-lite; }
@@ -1799,11 +1324,7 @@ html[data-intro='waiting']::after {
   .gm-rail-chevron,
   .gm-rail-chevrons::before { animation: none; opacity: 0.9; }
   .gm-cue-track i { animation: none; top: auto; bottom: 8px; }
-  .gm-house-intro > *, .gm-phases { translate: none; }
   .gm-reveal-ready [data-reveal] { transform: none; transition: opacity 0.4s linear; }
-  .gm-reveal-ready .gm-offer.is-visible:hover { transform: none; }
-  .gm-deck-peek::after { animation: none; }
-  .gm-offers[data-deck] > .gm-offer { transition-duration: 0.01s; }
 }
 
 /* ---------- "Ferma le animazioni" (motion.ts, motion-toggle.tsx) ----------
@@ -1814,18 +1335,11 @@ html[data-intro='waiting']::after {
 :root[data-motion='still'] .gm-rail-chevron,
 :root[data-motion='still'] .gm-rail-chevrons::before { animation: none; opacity: 0.9; }
 :root[data-motion='still'] .gm-cue-track i { top: auto; bottom: 8px; }
-:root[data-motion='still'] :is(.gm-house-intro > *, .gm-phases) { translate: none; }
 :root[data-motion='still'].gm-reveal-ready [data-reveal] { transform: none; transition: opacity 0.4s linear; }
-:root[data-motion='still'].gm-reveal-ready .gm-offer.is-visible:hover { transform: none; }
-:root[data-motion='still'] .gm-deck-peek::after { animation: none; }
-:root[data-motion='still'] .gm-offers[data-deck] > .gm-offer { transition-duration: 0.01s; }
 :root[data-motion='still'] .gm-bridge { --bridge-travel: 0svh; }
 :root[data-motion='still'] .gm-bridge-copy { opacity: 1; transform: translateY(-50%); }
 @media (max-width: 760px), (max-aspect-ratio: 21/20) {
   :root[data-motion='still'] .gm-bridge-copy { transform: none; }
-}
-@media (max-width: 767px) and (orientation: portrait) {
-  :root[data-motion='still'] :is(.gm-phases li, .gm-phases li.is-done) { transform: none; transition: opacity 0.2s linear; }
 }
 
 /* The switch itself: a quiet text button in the footer and the phone menu. */

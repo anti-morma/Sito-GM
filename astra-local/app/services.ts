@@ -144,7 +144,7 @@ export const services: Service[] = [
     },
     example: {
       title: 'Lo vedi su questo sito',
-      text: 'Il monogramma GM in apertura, la villa del metodo e il cervello che ruota prima del modulo contatti sono disegnati da migliaia di stelle in WebGL (Three.js). Le scene si caricano dopo la pagina, scendono di qualità sui dispositivi più lenti e si fermano con il movimento ridotto.',
+      text: 'Il monogramma GM in apertura e il cervello che ruota prima del modulo contatti sono disegnati da migliaia di stelle in WebGL (Three.js). Le scene si caricano dopo la pagina, scendono di qualità sui dispositivi più lenti e si fermano con il movimento ridotto.',
     },
     projects: [
       { slug: 'lalinga-oro', note: 'Motion su misura: al primo scroll un orologio si apre e svela il suo meccanismo, pezzo per pezzo.' },

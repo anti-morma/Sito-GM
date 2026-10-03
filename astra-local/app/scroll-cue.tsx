@@ -38,7 +38,7 @@ export default function ScrollCue() {
       setAtTop(scrollY < 8);
       const contact = document.getElementById('contatti');
       setEnded(!!contact && contact.getBoundingClientRect().top < innerHeight * 0.72);
-      const scene = [...document.querySelectorAll<HTMLElement>('.gm-hero, .gm-method-story, .gm-bridge')].some((section) => {
+      const scene = [...document.querySelectorAll<HTMLElement>('.gm-hero, .gm-bridge')].some((section) => {
         const box = section.getBoundingClientRect();
         return box.top <= innerHeight * 0.1 && box.bottom >= innerHeight * 0.9;
       });

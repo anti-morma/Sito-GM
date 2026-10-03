@@ -1,186 +1,85 @@
-# GoMore - Contratto facoltativo di hosting e gestione dominio
+# GoMore - Hosting e servizi aggiuntivi
 
-BOZZA DA COMPLETARE E SOTTOPORRE A REVISIONE LEGALE
+BOZZA DA COMPLETARE E REVISIONARE PRIMA DELLA FIRMA
 
-Contratto n. [NUMERO] del [DATA], relativo al sito [SITO/DOMINIO].
+Contratto n. [NUMERO] del [DATA]. Sito: [SITO].
 
-## 1. Parti
+## 1. Chi fornisce il servizio
 
-Fornitore: [SELEZIONARE ALESSANDRO MORMANDI O LUDOVICO GUSMANO], codice fiscale [CF], partita IVA [PIVA], sede [INDIRIZZO], email [EMAIL], PEC [PEC], che utilizza il nome commerciale GoMore.
+Fornitore: [ALESSANDRO MORMANDI O LUDOVICO GUSMANO], professionista che utilizza il nome commerciale GoMore, CF [CF], partita IVA [PIVA], indirizzo professionale [INDIRIZZO], email [EMAIL], PEC [PEC, SE DISPONIBILE].
 
-Cliente: [RAGIONE SOCIALE/NOME], sede [INDIRIZZO], CF [CF], partita IVA [PIVA], rappresentante [NOME/QUALIFICA], email [EMAIL], PEC [PEC].
+Cliente: [NOME/RAGIONE SOCIALE], CF [CF], partita IVA [PIVA], indirizzo [INDIRIZZO], rappresentante [NOME E QUALIFICA], email [EMAIL], PEC [PEC, SE DISPONIBILE].
 
-Il servizio e' acquistato per l'attivita' economica o professionale del Cliente. Il Fornitore indicato assume gli obblighi del presente contratto e fattura il canone. L'eventuale coinvolgimento dell'altro professionista viene documentato, anche ai fini privacy, senza trasferire automaticamente gli obblighi verso il Cliente.
+Il Cliente acquista il servizio per la propria attivita'. Il Fornitore indicato firma, fattura e risponde del servizio. La collaborazione e la divisione dei compensi fra i due professionisti sono regolate separatamente.
 
-## 2. Scheda del servizio
+## 2. Cosa comprende e quanto costa
 
-I seguenti dati devono essere completati prima della sottoscrizione. Le voci non incluse vanno contrassegnate come escluse, senza lasciare ambiguita'.
-
-| Voce | Condizioni concordate |
+| Servizio | Prezzo mensile concordato |
 | --- | --- |
-| Pacchetto base mensile B | EUR [IMPORTO; PROPOSTA COMMERCIALE: 19,99], [TRATTAMENTO FISCALE]; sito online, hosting e dominio entro la soglia S |
-| Soglia annuale dominio inclusa S | EUR [IMPORTO ANNUALE] |
-| Coefficiente sull'eccedenza dominio K | [COEFFICIENTE NUMERICO] |
-| Supplemento mensile dominio E | EUR [IMPORTO CALCOLATO COME DA ART. 3] |
-| Eventuale attivazione una tantum | EUR [IMPORTO / ZERO], [TRATTAMENTO FISCALE] |
-| Decorrenza e periodo di fatturazione | [DATA; ESEMPIO DAL 1 AL FINE MESE] |
-| Termine e metodo di pagamento | [TERMINE; BONIFICO/ALTRO] |
-| Provider e piano hosting | [NOME E PIANO IDONEO ALL'USO COMMERCIALE] |
-| Intestatario account hosting | [CLIENTE / FORNITORE; DEDICATO / CONDIVISO] |
-| Dominio gestito | [NOME, ESTENSIONE, REGISTRAR, SCADENZA] |
-| Intestatario del dominio | Cliente |
-| Costo annuale autorizzato del dominio | EUR [IMPORTO], [TRATTAMENTO FISCALE]; registrazione/rinnovo dal [DATA] al [DATA] |
-| Pagamento del dominio da parte del Cliente | Costo annuale ripartito in 12 quote nei pagamenti mensili; eventuale diverso accordo scritto: [NESSUNO / DESCRIZIONE] |
-| Quota mensile imputata al costo annuale dominio | EUR [COSTO ANNUALE D / 12]; gia' compresa in B + E, non da aggiungere una seconda volta |
-| Modulo contatti opzionale F | [ATTIVO / NON ATTIVO]; EUR [IMPORTO MENSILE / ZERO], con scheda operativa sotto |
-| Channel manager opzionale C | [ATTIVO / NON ATTIVO]; EUR [IMPORTO MENSILE / ZERO], con scheda operativa sotto |
-| Totale mensile concordato T | EUR [B + E + F + C], [TRATTAMENTO FISCALE] |
-| Autorizzazione alla registrazione/rinnovo | [FIRMA DELLA SCHEDA PER IL PERIODO INDICATO; EVENTUALI ULTERIORI CONDIZIONI] |
-| Risorse e limiti | [TRAFFICO, STORAGE, BUILD, FUNZIONI, EMAIL TRANSAZIONALI] |
-| HTTPS e gestione tecnica | [PRESTAZIONI INCLUSE] |
-| Localizzazione dati e fornitori ulteriori | [PAESI, PROVIDER E SERVIZI] |
-| Disponibilita' minima garantita | [EVENTUALE SLA CON RIMEDI / NESSUNO SLA NUMERICO] |
-| Backup | [OGGETTO, FREQUENZA, CONSERVAZIONE, DESTINAZIONE / ESCLUSI] |
-| Ripristino | [PROCEDURA, OBIETTIVI, COSTI INCLUSI / ESCLUSO] |
-| Monitoraggio | [TIPO E FREQUENZA / ESCLUSO] |
-| Assistenza | [GIORNI, ORARI, FUSO EUROPE/ROME E CANALE] |
-| Presa in carico | [TEMPO IN ORARIO DI SERVIZIO; NON TEMPO DI RISOLUZIONE] |
-| Aggiornamenti del codice/dipendenze | [ELENCO E LIMITI / ESCLUSI] |
-| Modifiche contenuti | [ORE/INTERVENTI INCLUSI / ESCLUSE] |
-| Altri servizi email e prenotazioni | [SERVIZI INCLUSI E LIMITI / ESCLUSI]; opzioni F e C disciplinate separatamente |
-| Migrazione in uscita inclusa | [EXPORT, TRASFERIMENTI, ORE E FORMATI] |
+| Base: sito online, hosting e dominio entro il limite indicato sotto | EUR [IMPORTO; PROPOSTA 19,99] |
+| Supplemento per un dominio oltre il limite | EUR [IMPORTO / ZERO] |
+| Modulo contatti e inoltro delle richieste, facoltativo | EUR [IMPORTO / NON ATTIVO] |
+| Integrazione con channel manager, facoltativa | EUR [IMPORTO / NON ATTIVO] |
+| Totale mensile | EUR [TOTALE] |
 
-## 3. Prestazioni e spese
+Trattamento fiscale e totale da pagare: [IVA/ALTRO REGIME, IMPORTO FINALE].
 
-### Pacchetto base e prezzo complessivo
+Decorrenza: [DATA]. Pagamento entro [GIORNO], tramite [MODALITA'/IBAN].
 
-Il pacchetto base comprende il mantenimento online del sito esistente, il pagamento dell'hosting e la registrazione o il rinnovo del dominio autorizzato entro la soglia annuale S. La realizzazione iniziale del sito e' oggetto di un contratto distinto. Il pacchetto base non comprende il servizio di invio del modulo contatti, il channel manager o altre integrazioni ricorrenti, salvo attivazione espressa delle relative opzioni.
+Eventuale configurazione iniziale: EUR [IMPORTO / ZERO], [TRATTAMENTO FISCALE], per [ATTIVITA'].
 
-Indicando con D il costo annuale del dominio approvato, il supplemento mensile e' E = max(0, D - S) x K / 12. Il prezzo mensile complessivo e' T = B + E + F + C. Per ogni opzione non attiva il relativo importo e' zero. Tutti gli importi di calcolo sono espressi sulla stessa base fiscale, da specificare nella scheda, e il risultato finale viene arrotondato al centesimo. Prima della firma vengono compilati soglia, coefficiente, importi e totale effettivo; la formula non autorizza variazioni retroattive o acquisti non approvati.
+Dominio: [NOME], intestato al Cliente. Costo annuale incluso nel prezzo base fino a EUR [SOGLIA]. Il supplemento per un dominio piu' costoso viene indicato nella tabella e accettato prima dell'acquisto.
 
-Il Fornitore mantiene il servizio descritto nella scheda e paga i costi dei provider inclusi nelle prestazioni attive. Per il dominio anticipa al registrar il costo annuale D autorizzato. Nei pagamenti mensili viene individuata una quota pari a D / 12 a copertura di tale costo, gia' compresa in B + E; la restante parte remunera hosting e gestione. L'eventuale maggiorazione commerciale sull'eccedenza non si confonde con il costo del registrar da recuperare alla cessazione. Le quote vengono conteggiate senza superare D nell'arco dell'annualita', con conguaglio dell'ultima quota per gli arrotondamenti. Il Cliente resta intestatario del dominio.
+Costo annuale effettivo autorizzato del dominio: EUR [IMPORTO], [TRATTAMENTO FISCALE], per il periodo [DAL / AL]. Quota mensile destinata a coprire tale costo: EUR [COSTO ANNUALE / 12], gia' compresa nel totale, senza addebiti aggiuntivi. Le quote dell'annualita' non superano il costo autorizzato; gli arrotondamenti vengono conguagliati.
 
-Se le parti concordano il pagamento annuale anticipato del dominio, la scheda deve indicare la corrispondente riduzione della parte mensile, per evitare che lo stesso costo sia addebitato due volte.
+Se attivo, il modulo contatti comprende [MODULI E DESTINATARI], fino a [NUMERO] invii al mese. Il prezzo remunera il servizio di inoltro; caselle email, newsletter e risposta ai visitatori richiedono un accordo distinto.
 
-La registrazione o il rinnovo del dominio riguarda l'intero periodo annuale indicato. L'eventuale pagamento rateale distribuisce il costo di tale operazione gia' eseguita e non trasforma la registrazione del dominio in un servizio acquistato mese per mese. Prima di ogni nuovo rinnovo il Fornitore comunica importo e periodo e ottiene l'autorizzazione scritta del Cliente; la firma della scheda autorizza soltanto il periodo espressamente riportato. Non sono addebitabili rinnovi eseguiti senza autorizzazione.
+Se attivo, il channel manager e' [PRODOTTO/PIANO], per [STRUTTURE/UNITA'], collegato al sito tramite [TIPO DI COLLEGAMENTO], con queste funzioni: [ELENCO]. Il suo abbonamento e' [INCLUSO NEL SUPPLEMENTO / PAGATO DAL CLIENTE]. Commissioni e gestione operativa di tariffe e prenotazioni: [CONDIZIONI / ESCLUSE]. Il collegamento con calendari iCal non equivale automaticamente a questo servizio.
 
-La realizzazione iniziale del sito e' regolata da un contratto distinto. Il canone non comprende nuove pagine, redesign, nuove funzioni o integrazioni se non espressamente riportati nella scheda. Gli interventi extra richiedono un preventivo accettato per iscritto.
+La realizzazione del sito, nuove pagine, nuove funzioni e modifiche ai contenuti si preventivano separatamente.
 
-### Opzione F - Modulo contatti e inoltro richieste
+## 3. Assistenza e gestione
 
-Il supplemento mensile F remunera il funzionamento e la gestione tecnica del servizio che raccoglie e inoltra le richieste dal modulo del sito, entro i limiti concordati. Il relativo costo e' pattuito con il Cliente e non varia automaticamente in base al numero degli altri clienti del Fornitore o al piano acquistato dal Fornitore presso il proprio provider. Lo sviluppo iniziale del modulo viene incluso nella realizzazione del sito oppure preventivato separatamente; non si presume incluso nel solo canone ricorrente.
+Assistenza: [EMAIL/CANALE], nei giorni e orari [GIORNI/ORARI]. Presa in carico entro [TEMPO IN ORARIO DI SERVIZIO]; il tempo di risoluzione viene comunicato in base al problema.
 
-| Specifica | Condizioni dell'opzione F |
-| --- | --- |
-| Moduli e campi | [ELENCO] |
-| Caselle destinatarie | [ELENCO] |
-| Volume incluso | [NUMERO DI INVII AL MESE E LIMITI ALLEGATI] |
-| Configurazione iniziale | [COMPRESA NEL CONTRATTO SITO / EUR IMPORTO UNA TANTUM] |
-| Protezione da abusi e controllo errori | [PRESTAZIONI] |
-| Gestione richieste oltre soglia | [NUOVO PREVENTIVO / TARIFFA E SOGLIA GIA' AUTORIZZATE] |
-| Provider tecnico e ruolo privacy | [RESEND O ALTRO, RUOLO, LOCALIZZAZIONE, ACCORDI APPLICABILI] |
-| Decorrenza del supplemento | [DATA DI ATTIVAZIONE E VERIFICA] |
+Hosting e limiti: [PROVIDER/PIANO, RISORSE E LIMITI]. Backup e ripristino: [COSA E' INCLUSO, FREQUENZA E CONSERVAZIONE / ESCLUSI]. Aggiornamenti tecnici inclusi: [ELENCO / NESSUNO].
 
-Il servizio non comprende caselle di posta, newsletter, campagne marketing o risposta ai messaggi dei visitatori salvo accordo espresso. La consegna in posta in arrivo dipende anche dai sistemi del destinatario; i Professionisti curano la configurazione concordata e la diagnosi delle anomalie senza promettere assenza assoluta di filtri antispam.
+Il Fornitore cura la configurazione e gestione concordate, protegge gli accessi e segnala tempestivamente incidenti e interruzioni significative. La disponibilita' segue [EVENTUALE SLA E RIMEDI / NESSUNO SLA NUMERICO CONCORDATO]. Restano le responsabilita' previste dalla legge, anche per errori propri nella gestione di servizi esterni.
 
-### Opzione C - Integrazione con channel manager
+Il superamento dei limiti o l'aggiunta di servizi richiedono un nuovo prezzo approvato per iscritto. I costi interni del Fornitore e il numero degli altri suoi clienti non modificano automaticamente il prezzo pattuito. Gli aumenti vengono proposti con almeno 60 giorni di preavviso e richiedono accettazione; in mancanza di accordo resta il prezzo vigente fino alla cessazione.
 
-Il supplemento mensile C remunera le prestazioni concordate relative al collegamento del sito al channel manager scelto per la struttura ricettiva. Una semplice sincronizzazione tramite calendari iCal e un'integrazione con channel manager sono prestazioni distinte. Il servizio effettivo dipende dalle funzioni e dalle interfacce disponibili nel prodotto selezionato; non si presume che comprenda un motore di prenotazione, pagamenti o sincronizzazione di prezzi e disponibilita' se non indicati espressamente.
+## 4. Come si interrompe il servizio
 
-| Specifica | Condizioni dell'opzione C |
-| --- | --- |
-| Channel manager e piano | [NOME, PIANO, INTESTATARIO ACCOUNT] |
-| Strutture/unita' incluse | [ELENCO E NUMERO] |
-| Canali collegati | [ELENCO DEI CANALI COMPATIBILI DA VERIFICARE] |
-| Tipo di integrazione sito | [WIDGET / MOTORE PRENOTAZIONI / API / ALTRO] |
-| Dati e funzioni collegati | [DISPONIBILITA', TARIFFE, PRENOTAZIONI: SPECIFICARE] |
-| Tempi/modalita' di sincronizzazione | [CARATTERISTICHE VERIFICATE E LIMITI] |
-| Abbonamento del channel manager | [INCLUSO IN C E PAGATO DAL FORNITORE / ACQUISTATO E PAGATO DIRETTAMENTE DAL CLIENTE] |
-| Commissioni variabili | [IMPORTI E SOGGETTO CHE LI PAGA / NON PREVISTE] |
-| Configurazione e sviluppo iniziali | [COMPRESI NEL CONTRATTO SITO / EUR IMPORTO UNA TANTUM] |
-| Assistenza tecnica inclusa | [ATTIVITA' E LIMITI] |
-| Gestione operativa prenotazioni e tariffe | [ESCLUSA / PRESTAZIONI ESPRESSAMENTE INCARICATE] |
-| Provider, dati e ruoli privacy | [SERVIZI, RUOLI E ACCORDI APPLICABILI] |
-| Decorrenza del supplemento | [DATA DI ATTIVAZIONE E VERIFICA] |
+Il rapporto e' a tempo indeterminato. Il Cliente puo' interrompere l'hosting o un singolo extra con 30 giorni di preavviso scritto. Il Fornitore puo' recedere con 60 giorni di preavviso, collaborando al trasferimento del sito.
 
-Il Fornitore paga l'abbonamento esterno soltanto quando la scheda lo indica come incluso nel supplemento. Le commissioni dei portali, del sistema di prenotazione o dei pagamenti non sono incluse automaticamente. Il Cliente mantiene le decisioni su tariffe, disponibilita' e gestione degli ospiti salvo distinto incarico espresso; restano ferme le responsabilita' del Fornitore per l'integrazione e le attivita' di propria competenza.
+I servizi mensili terminano alla data di cessazione e l'ultimo periodo viene calcolato in proporzione ai giorni di servizio, distinguendo la quota annuale del dominio.
 
-### Attivazione e cessazione delle opzioni
+Se il Fornitore ha gia' pagato un dominio annuale autorizzato, il Cliente salda il costo ancora non coperto dalle quote gia' versate. Il saldo riguarda il costo effettivamente sostenuto e non recuperabile: si sottraggono anche eventuali rimborsi o crediti del registrar. La maggiorazione commerciale e i canoni futuri dell'hosting non rientrano in questo saldo. Se il dominio e' gia' stato interamente pagato, non e' dovuto altro per la stessa annualita'.
 
-Le opzioni vengono attivate solo dopo approvazione scritta di prezzo, limiti, eventuale configurazione iniziale e data di decorrenza. Il Cliente puo' cessare una singola opzione mantenendo il pacchetto base, con il preavviso di 30 giorni previsto per il servizio; il relativo supplemento termina alla data di cessazione ed e' riproporzionato per l'ultimo periodo. Le parti documentano gli effetti sul sito, l'eventuale rimozione del modulo o del collegamento e le modalita' di consegna dei dati. Le cessazioni sono coordinate con gli abbonamenti esterni del Cliente, che non si interrompono automaticamente.
+Il Fornitore invia il conteggio e la fattura di saldo, da pagare entro 15 giorni dalla ricezione. Eventuali rimborsi del registrar ricevuti dopo il saldo vengono riconosciuti al Cliente entro 30 giorni. Restano salvi i rimedi di legge per inadempimento del Fornitore.
 
-Il Fornitore non acquista abbonamenti annuali non recuperabili per le opzioni senza approvazione separata del Cliente che indichi costo, periodo, rate e conseguenze della cessazione. La clausola di saldo del dominio non si estende automaticamente a tali abbonamenti. Eventuali nuove tariffe delle opzioni seguono la procedura di variazione del prezzo dell'art. 4.
+Ogni nuova annualita' del dominio richiede autorizzazione scritta su costo e periodo. Dopo la disdetta non si acquistano rinnovi senza una nuova autorizzazione. Eventuali abbonamenti annuali degli extra richiedono un accordo separato che specifichi i costi residui in caso di cessazione.
 
-Il superamento dei limiti non autorizza addebiti automatici non concordati. Il Fornitore segnala tempestivamente il superamento e propone un intervento o cambio piano con i relativi costi. Eventuali soglie di spesa automatica devono essere autorizzate espressamente nella scheda: [SOGLIA / NESSUNA].
+Il dominio resta del Cliente. Entro 10 giorni lavorativi dalla richiesta, le parti definiscono il trasferimento di sito, dominio e dati, includendo [EXPORT E ATTIVITA' COMPRESE]. Gli adattamenti a nuovi sistemi vengono preventivati. Si consegnano accessi dedicati o export, senza condividere credenziali dello studio o di altri clienti. Il trasferimento del dominio non viene bloccato per recuperare il debito.
 
-## 4. Durata, cessazione e variazioni del canone
+## 5. Pagamenti, dati e firme
 
-Il rapporto e' a tempo indeterminato dalla data indicata nella scheda, con fatturazione mensile. Non e' previsto un periodo minimo obbligatorio.
+In caso di mancato pagamento, il Fornitore concede almeno 15 giorni con un sollecito scritto. Se il debito resta insoluto, puo' sospendere il servizio con un ulteriore preavviso di almeno 5 giorni lavorativi, comunicando gli effetti e come recuperare i dati. La sospensione non comporta cancellazione immediata dei dati o perdita del dominio.
 
-Il Cliente puo' cessare il servizio con comunicazione scritta almeno 30 giorni prima della data desiderata. Se il preavviso e' inferiore, la cessazione avviene trascorsi 30 giorni dalla ricezione. Il Fornitore puo' recedere con almeno 60 giorni di preavviso, assicurando la collaborazione in uscita prevista dall'art. 7. L'ultima mensilita' del solo hosting e' calcolata proporzionalmente ai giorni di servizio. Il costo annuale del dominio segue invece la disciplina del paragrafo successivo. Eventuali altri costi una tantum non recuperabili devono essere indicati e approvati prima dell'acquisto.
+Le parti mantengono riservati informazioni e accessi. Prima di trattare dati personali per conto del Cliente, sottoscrivono l'accordo previsto dall'art. 28 GDPR, ove necessario. Tale accordo specifica provider, eventuali sub-responsabili, localizzazione e trasferimenti dei dati, sicurezza e restituzione/cancellazione alla fine del servizio: [RIFERIMENTO ALL'ACCORDO]. Questa clausola non lo sostituisce.
 
-### Saldo del dominio alla cessazione
-
-Se il Fornitore ha gia' eseguito e pagato una registrazione o un rinnovo annuale autorizzato, la cessazione dell'hosting o il trasferimento del dominio non elimina l'obbligo del Cliente di corrispondere il costo annuale anticipato e non recuperabile. Alla cessazione, le eventuali rate residue relative a tale costo diventano esigibili in un'unica soluzione, con pagamento entro 15 giorni dalla ricezione della fattura di saldo e del relativo conteggio.
-
-Il residuo e' calcolato sul costo annuale autorizzato ed effettivamente sostenuto, documentabile dal Fornitore, detraendo tutte le somme gia' versate dal Cliente per il medesimo periodo, comprese le quote dominio dei pagamenti mensili, e gli eventuali rimborsi o crediti ottenuti dal registrar per la stessa operazione. Non sono richiesti canoni hosting successivi alla cessazione ne' importi per annualita' del dominio non ancora acquistate. Se il costo annuale e' gia' stato integralmente pagato, non e' dovuto alcun ulteriore saldo per quel periodo. Le somme relative a un costo effettivamente non recuperabile non vengono rimborsate per il solo fatto della cessazione anticipata dell'hosting.
-
-Il Fornitore fornisce il dettaglio di periodo, costo, pagamenti imputati e residuo; eventuali rimborsi o crediti del registrar ricevuti successivamente vengono riconosciuti al Cliente entro 30 giorni dal ricevimento. La clausola disciplina il recupero del costo autorizzato del dominio, non una penale di uscita, e lascia salvi i rimedi spettanti al Cliente per inadempimento del Fornitore e le norme inderogabili applicabili.
-
-Gli aumenti di prezzo vengono proposti per iscritto con almeno 60 giorni di preavviso e si applicano solo se accettati dal Cliente. In mancanza di accordo, il canone resta quello vigente fino alla cessazione eventualmente comunicata da una delle parti secondo i termini precedenti.
-
-## 5. Pagamenti e sospensione
-
-Il Fornitore fattura e incassa il totale mensile concordato secondo la scheda, identificando pacchetto base, supplemento dominio, opzioni attive e quota imputata al costo annuale del dominio, senza duplicare quest'ultima. Eventuali costi di configurazione iniziale sono distinti dai canoni ricorrenti. Un eventuale addebito automatico richiede un'autorizzazione separata con importo e periodicita'.
-
-In caso di mancato pagamento, il Fornitore invia un sollecito scritto con dettaglio del debito, concedendo almeno 15 giorni per regolarizzare. Decorso il termine, puo' sospendere il servizio dopo una seconda comunicazione con almeno 5 giorni lavorativi di preavviso, indicando gli effetti sul sito e le modalita' per ottenere un export dei dati.
-
-La sospensione non comporta cancellazione immediata dei dati, appropriazione del dominio o blocco del suo trasferimento. Il Fornitore conserva i dati secondo l'accordo privacy applicabile e consente il recupero e l'uscita secondo l'art. 7. Il ripristino avviene dopo la regolarizzazione nei tempi tecnici comunicati al Cliente. Eventuali costi di riattivazione devono essere gia' specificati nella scheda: [IMPORTO / ZERO]. Restano salvi i rimedi previsti dalla legge.
-
-## 6. Gestione tecnica e incidenti
-
-Il Fornitore applica le misure concordate e la diligenza professionale, mantiene gli accessi necessari protetti e comunica gli incidenti che incidono significativamente sul servizio appena conosciuti. La presa in carico e la risoluzione sono impegni distinti: quest'ultima dipende anche dalla natura del guasto e dai servizi coinvolti.
-
-Il Cliente riceve comunicazione degli interventi programmati che possono provocare indisponibilita', quando il preavviso e' possibile. Gli interventi urgenti per sicurezza possono essere effettuati immediatamente, con tempestiva comunicazione.
-
-Le garanzie di disponibilita', i backup e gli obiettivi di ripristino sono esclusivamente quelli indicati nella scheda, ferme le responsabilita' di legge. Un repository del codice non costituisce un backup dei dati del sito. Eventuali crediti riconosciuti dal provider non sostituiscono automaticamente i rimedi spettanti al Cliente.
-
-Il Fornitore non e' esonerato da responsabilita' per errori propri di scelta, configurazione o gestione dei servizi di terzi, ne' per dolo, colpa grave o obblighi inderogabili.
-
-## 7. Dominio, portabilita' e uscita
-
-Il Cliente conserva il diritto di trasferire dominio e sito a un altro fornitore. Il Fornitore collabora alla consegna del codice e dei dati del Cliente disponibili, alla modifica dei DNS e al trasferimento del dominio nel rispetto delle procedure del registrar.
-
-Il Fornitore comunica al Cliente la scadenza del dominio almeno 30 giorni prima, ove tecnicamente possibile, e gestisce i rinnovi autorizzati ai sensi dell'art. 3. Dopo la comunicazione di cessazione non acquista nuove annualita' senza una nuova autorizzazione scritta del Cliente. Il saldo di cui all'art. 4 riguarda solo il periodo gia' acquistato: i rinnovi successivi alla cessazione sono gestiti e pagati dal Cliente o dal nuovo fornitore. Il Fornitore consegna in tempo utile informazioni e accessi necessari; non trasferisce a proprio favore la titolarita' del dominio e non subordina il rilascio del codice di trasferimento al saldo, fermo il diritto al recupero delle somme dovute.
-
-Entro 10 giorni lavorativi dalla richiesta di uscita, le parti definiscono il piano di migrazione, in modo da completare le attivita' incluse prima della cessazione ove possibile. Credenziali di account condivisi e di altri clienti non vengono consegnate: si utilizzano export e trasferimenti di progetto. Le incompatibilita' con l'ambiente scelto dal Cliente sono comunicate e gli adattamenti extra vengono preventivati.
-
-Prima della cessazione il Cliente indica un destinatario sicuro per la consegna. I tempi e le modalita' di restituzione e cancellazione dei dati personali sono disciplinati nell'accordo art. 28; i dati ordinari del progetto vengono rimossi secondo il piano di uscita concordato, con comunicazione preventiva. Non sono previste cancellazioni automatiche prima della possibilita' di recupero. Restano salve conservazioni imposte dalla legge, limitate ai dati necessari.
-
-## 8. Privacy e riservatezza
-
-Le parti mantengono riservati dati, credenziali e informazioni non pubbliche. Prima di trattare dati personali per conto del Cliente definiscono i ruoli e sottoscrivono un accordo conforme all'art. 28 GDPR, ove necessario, indicando anche provider e altri soggetti coinvolti. La presente clausola non sostituisce tale accordo.
-
-Riferimento all'accordo privacy e all'elenco dei sub-responsabili: [VERSIONE/DATA]. Per gli eventuali trasferimenti extra SEE si documentano i presupposti e le garanzie applicabili. Gli incidenti relativi a dati personali vengono comunicati senza ingiustificato ritardo secondo l'accordo e la normativa applicabile.
-
-## 9. Comunicazioni e controversie
-
-Per solleciti, sospensione e cessazione si utilizzano PEC o altro mezzo che permetta di documentare invio e ricezione. Le comunicazioni operative seguono i canali della scheda.
-
-Si applica la legge italiana. La competenza giudiziaria segue i criteri di legge; non e' previsto un foro esclusivo convenzionale.
-
-## Sottoscrizione
+Le comunicazioni di cessazione, sollecito e sospensione utilizzano PEC o altro mezzo che documenti invio e ricezione. Si applicano la legge italiana e i criteri ordinari di competenza giudiziaria.
 
 Luogo e data: [LUOGO, DATA]
 
 Il Cliente: ____________________
 
-Il Fornitore selezionato all'art. 1: ____________________
+Il Fornitore: ____________________
 
 ### Approvazione specifica
 
-Previa lettura, il Cliente approva specificamente, ove richiesto dagli artt. 1341 e 1342 c.c.: art. 4, limitatamente alla facolta' di recesso del Fornitore con preavviso di 60 giorni e all'esigibilita' in unica soluzione delle rate residue del costo annuale del dominio gia' autorizzato e sostenuto, senza rimborso per il solo recesso dei costi non recuperabili; art. 5, limitatamente alla facolta' di sospensione per mancato pagamento dopo solleciti e preavviso.
+Il Cliente approva specificamente, ove richiesto dagli artt. 1341 e 1342 c.c.: art. 4, recesso del Fornitore con 60 giorni di preavviso ed esigibilita' in unica soluzione del costo annuale del dominio gia' autorizzato e sostenuto, al netto delle quote versate e dei rimborsi; art. 5, sospensione per mancato pagamento dopo sollecito e preavviso.
 
 Firma del Cliente: ____________________
 
-Nota di redazione: far verificare e aggiornare l'elenco dal legale dopo aver completato la scheda, comprese eventuali limitazioni introdotte nella versione definitiva; eliminare questa nota prima della firma.
+Nota di redazione: far verificare al legale testo e approvazioni specifiche dopo la compilazione; eliminare questa nota dalla versione da firmare.
