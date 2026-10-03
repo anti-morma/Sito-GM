@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { isReducedMotion as reducedMotion } from './motion';
+import { scrollToNextStop } from './next-stop';
 
 // How long the visitor must stay still before the cue comes back.
 const IDLE_MS = 1100;
@@ -67,14 +67,6 @@ export default function ScrollCue() {
     };
   }, []);
 
-  const next = () => {
-    const stops = [...document.querySelectorAll<HTMLElement>('[data-scroll-stop]')]
-      .map((element) => element.getBoundingClientRect().top + scrollY)
-      .sort((a, b) => a - b);
-    const top = stops.find((stop) => stop > scrollY + 24) ?? scrollY + innerHeight * 0.9;
-    scrollTo({ top, behavior: reducedMotion() ? 'auto' : 'smooth' });
-  };
-
   const hidden = ended || menuOpen || overText;
   const state = hidden ? 'hidden' : scrolling && !atTop ? 'quiet' : 'invite';
 
@@ -85,7 +77,7 @@ export default function ScrollCue() {
       data-mode={atTop ? 'hero' : 'compact'}
       data-state={state}
       inert={hidden}
-      onClick={next}
+      onClick={scrollToNextStop}
       aria-label="Scorri: vai alla sezione successiva"
     >
       <span className="gm-rail-label" aria-hidden="true">Scorri</span>

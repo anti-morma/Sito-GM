@@ -7,8 +7,7 @@
 .gm-about > section { position: relative; z-index: 1; }
 
 /* The promise in every heading: the hero's display italic, lit like the brightest stars. */
-.gm-about :is(.gm-h2, .gm-about-title-rest) em,
-.gm-duo-letter {
+.gm-about :is(.gm-h2, .gm-about-title-rest) em {
   display: inline-block;
   padding: 0 0.08em 0.06em 0;
   background: linear-gradient(100deg, #fbf5e8 0%, #e6e9ff 38%, #b9cdff 70%, var(--accent) 100%);
@@ -121,225 +120,87 @@
 .gm-about-down .gm-cue-track::after { transition: border-color 0.3s var(--ease); }
 .gm-about-down:hover .gm-cue-track::after { border-color: var(--accent); }
 
-/* ---------- 2 · The founders: G ✦ M, two competences, one direction ----------
-   Their surname initials, joined by two lines that meet in a star; from the
-   star, one line runs down between the two of them to the note below. */
-.gm-people-head { max-width: 900px; margin: 0 auto clamp(40px, 7vh, 80px); text-align: center; }
+/* ---------- 2 · The founders, and the monogram their initials make ----------
+   Ludovico on the left, Alessandro on the right, the GM between them
+   (monogram.tsx). On arrival the G is written round from its terminal, the
+   M back from its right foot, and the stroke they share is drawn last, in
+   the site's light; then the sentence under it. Progress lives in three
+   registered numbers so the masks can move smoothly; where they are not
+   supported everything simply appears, and before the page's script runs
+   (.gm-reveal-ready, reveal.tsx) nothing is hidden. */
+@property --mono-g { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --mono-m { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --mono-s { syntax: '<number>'; inherits: true; initial-value: 0; }
+
+.gm-people-head { max-width: 900px; margin: 0 auto clamp(32px, 6vh, 72px); text-align: center; }
 .gm-people-head .gm-label { justify-content: center; }
 
 .gm-duo {
-  --letter: clamp(112px, 12vw, 200px);
-  --gap: clamp(36px, 6vh, 64px);
-  --col-gap: clamp(32px, 6vw, 112px);
+  --mono-w: clamp(200px, min(24vw, 44svh), 380px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--mono-w) minmax(0, 1fr);
+  grid-template-areas: 'left mono right' 'note note note';
+  column-gap: clamp(32px, 5vw, 96px);
+  align-items: start;
 }
-/* The initials and the founders share the same three columns: left, the
-   line of direction (1px), right. */
-.gm-duo-mark,
-.gm-duo-people { display: grid; grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr); column-gap: var(--col-gap); }
-.gm-duo-mark { align-items: center; }
-.gm-duo-cell { position: relative; display: flex; justify-content: center; }
-.gm-duo-letter {
-  font-size: var(--letter);
-  line-height: 0.9;
-  padding: 0 0.1em 0.08em;
-  transition: opacity 1s var(--ease), transform 1.2s var(--ease);
-}
-.gm-duo-cell[data-side='left'] .gm-duo-letter { transform: translateX(-14px); opacity: 0.55; }
-.gm-duo-cell[data-side='right'] .gm-duo-letter { transform: translateX(14px); opacity: 0.55; }
-/* From each initial to the star: drawn towards the middle. */
-.gm-duo-link {
-  position: absolute;
-  top: 50%;
-  height: 1px;
-  background: linear-gradient(90deg, rgb(143 177 255 / 12%), var(--accent));
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 1.1s var(--ease) 0.25s;
-}
-.gm-duo-cell[data-side='left'] .gm-duo-link { left: calc(50% + var(--letter) * 0.42); right: calc(18px - var(--col-gap)); }
-.gm-duo-cell[data-side='right'] .gm-duo-link {
-  left: calc(18px - var(--col-gap));
-  right: calc(50% + var(--letter) * 0.42);
-  background: linear-gradient(90deg, var(--accent), rgb(143 177 255 / 12%));
-  transform-origin: right;
-}
-.gm-duo-star {
-  justify-self: center;
-  width: 44px;
-  height: 44px;
-  overflow: visible;
-  fill: #e6ecff;
-  opacity: 0;
-  transform: scale(0.4) rotate(-45deg);
-  transition: opacity 0.6s var(--ease) 1.05s, transform 0.9s var(--ease) 1.05s;
-}
-.gm-duo.is-on .gm-duo-letter { transform: none; opacity: 1; }
-.gm-duo.is-on .gm-duo-link { transform: none; }
-.gm-duo.is-on .gm-duo-star { opacity: 1; transform: none; }
+.gm-duo-person[data-side='left'] { grid-area: left; text-align: right; }
+.gm-duo-person[data-side='right'] { grid-area: right; }
+.gm-duo-person h3 { color: var(--ink); font-size: clamp(28px, min(2.6vw, 5svh), 44px); font-weight: 500; line-height: 1.02; letter-spacing: -0.035em; }
+.gm-duo-role { margin-top: 12px; color: var(--ink-2); font-size: 12px; font-weight: 500; letter-spacing: 0.16em; line-height: 1.5; text-transform: uppercase; }
+.gm-duo-text { max-width: 40ch; margin-top: 14px; color: var(--ink-2); font-size: clamp(15px, min(1.15vw, 2.5svh), 17px); line-height: 1.6; }
+.gm-duo-person[data-side='left'] .gm-duo-text { margin-left: auto; }
 
-.gm-duo-people { margin-top: var(--gap); text-align: center; }
-.gm-duo-person h3 { color: var(--ink); font-size: clamp(30px, 3vw, 50px); font-weight: 500; line-height: 1.02; letter-spacing: -0.035em; }
-.gm-duo-role { margin-top: 14px; color: var(--ink-2); font-size: 12px; font-weight: 500; letter-spacing: 0.16em; line-height: 1.5; text-transform: uppercase; }
-.gm-duo-text { max-width: 40ch; margin: 18px auto 0; color: var(--ink-2); font-size: clamp(16px, 1.2vw, 18px); line-height: 1.6; }
-/* The column between the two stays empty: the star's light comes down it (converge.tsx). */
+/* The monogram: a trace, then the letters, then the stroke they share. */
+.gm-mono { position: relative; grid-area: mono; align-self: center; aspect-ratio: 848 / 600; }
+.gm-mono-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.gm-mono-trace { fill: rgb(243 241 236 / 7%); }
+.gm-mono-g,
+.gm-mono-m { fill: var(--ink); }
+/* The G: round from its terminal (top right), up, down the bowl, out along the bar. */
+.gm-reveal-ready .gm-mono-g {
+  -webkit-mask-image: conic-gradient(from 74deg at 30.5% 43%, #0000 calc(360deg - var(--mono-g) * 345deg), #000 calc(372deg - var(--mono-g) * 345deg));
+  mask-image: conic-gradient(from 74deg at 30.5% 43%, #0000 calc(360deg - var(--mono-g) * 345deg), #000 calc(372deg - var(--mono-g) * 345deg));
+}
+/* The M: from its right foot back towards the G. */
+.gm-reveal-ready .gm-mono-m {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(var(--mono-m) * 78% - 6%), #0000 calc(var(--mono-m) * 78%));
+  mask-image: linear-gradient(to left, #000 calc(var(--mono-m) * 78% - 6%), #0000 calc(var(--mono-m) * 78%));
+}
+/* The stroke both letters share: one line down, lit. */
+.gm-mono-shared { filter: drop-shadow(0 0 10px rgb(143 177 255 / 45%)); }
+.gm-reveal-ready .gm-mono-shared {
+  -webkit-mask-image: linear-gradient(#000 calc(52% + var(--mono-s) * 56% - 5%), #0000 calc(52% + var(--mono-s) * 56%));
+  mask-image: linear-gradient(#000 calc(52% + var(--mono-s) * 56% - 5%), #0000 calc(52% + var(--mono-s) * 56%));
+}
+
 .gm-duo-note {
-  position: relative;
-  z-index: 1;
-  max-width: 30ch;
-  margin: clamp(150px, 24vh, 250px) auto 0;
+  grid-area: note;
+  justify-self: center;
+  max-width: 34ch;
+  margin-top: clamp(28px, 6svh, 72px);
   color: var(--ink);
   font-family: var(--serif);
-  font-size: clamp(26px, 2.7vw, 42px);
+  font-size: clamp(24px, min(2.4vw, 4.6svh), 38px);
   font-style: italic;
   line-height: 1.25;
   text-align: center;
   text-wrap: balance;
 }
-.gm-duo-note em {
-  color: #f1f4ff;
-  text-shadow: 0 0 0 rgb(143 177 255 / 0%);
-  transition: text-shadow 1.8s ease 1.6s;
-}
+.gm-duo-note em { color: #f1f4ff; text-shadow: 0 0 22px rgb(143 177 255 / 55%); }
 
-/* ---------- The convergence (converge.tsx) ----------
-   Two threads of light, one per founder (plus the star's, side by side),
-   follow the reading line down and meet in one point; there the point
-   ignites and the sentence surfaces. The page is set up so that, without the
-   script, everything simply reads. */
-.gm-duo { position: relative; }
-.gm-people { overflow-x: clip; }
-.gm-duo-mark,
-.gm-duo-people { position: relative; z-index: 1; }
-
-.gm-converge { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.gm-converge path { fill: none; stroke-dasharray: 1 1; stroke-dashoffset: 1; stroke-linecap: butt; }
-.cv-haze { stroke-width: 16; opacity: 0.05; }
-.cv-glow { stroke-width: 4; opacity: 0.2; }
-.cv-core { stroke-width: 1.2; }
-.cv-comet { opacity: 0; transition: opacity 0.4s ease; }
-.cv-comet circle:first-child { animation: cv-flicker 1.6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
-@keyframes cv-flicker { from { opacity: 0.7; transform: scale(0.85); } to { opacity: 1; transform: scale(1.15); } }
-
-.cv-focal { position: absolute; top: 0; left: 50%; z-index: 0; width: 0; height: 0; pointer-events: none; }
-.cv-focal > *,
-.cv-sparks i { position: absolute; top: 0; left: 0; }
-
-/* Before: where the threads will meet, a point barely breathing. */
-.cv-target {
-  width: 5px;
-  height: 5px;
-  margin: -2.5px;
-  border-radius: 50%;
-  background: #cfdcff;
-  box-shadow: 0 0 10px 2px rgb(143 177 255 / 45%);
-  animation: cv-wait 2.4s ease-in-out infinite;
-  transition: opacity 0.3s ease;
-}
-@keyframes cv-wait { 0%, 100% { opacity: 0.18; transform: scale(0.8); } 50% { opacity: 0.55; transform: scale(1.2); } }
-.gm-duo.is-lit .cv-target { opacity: 0; animation: none; }
-
-/* The light that stays: a wide glow under the sentence. */
-.cv-bloom {
-  width: 640px;
-  height: 640px;
-  margin: -320px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(143 177 255 / 20%), rgb(143 177 255 / 6%) 45%, rgb(143 177 255 / 0%));
-  opacity: 0;
-  transform: scale(0.3);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.gm-duo.is-lit .cv-bloom { opacity: 1; transform: none; transition: opacity 1.8s var(--ease), transform 2.4s var(--ease); }
-
-/* The anamorphic streak: wide, thin and blue, the cinema's own flare. */
-.cv-streak {
-  --w: min(1200px, 160vw);
-  width: var(--w);
-  height: 2px;
-  margin: -1px 0 0 calc(var(--w) / -2);
-  background: linear-gradient(90deg, rgb(143 177 255 / 0%), rgb(143 177 255 / 30%) 28%, #ffffff 50%, rgb(143 177 255 / 30%) 72%, rgb(143 177 255 / 0%));
-  opacity: 0;
-  transform: scaleX(0);
-}
-.cv-streak--soft {
-  height: 30px;
-  margin-top: -15px;
-  background: radial-gradient(closest-side, rgb(160 190 255 / 30%), rgb(143 177 255 / 0%));
-  filter: blur(6px);
-}
-.gm-duo.is-lit .cv-streak { animation: cv-streak 2.6s cubic-bezier(0.15, 0.8, 0.2, 1) forwards; }
-.gm-duo.is-lit .cv-streak--soft { animation-duration: 3.2s; }
-@keyframes cv-streak {
-  0% { opacity: 0; transform: scaleX(0); }
-  10% { opacity: 1; transform: scaleX(1); }
-  100% { opacity: 0.4; transform: scaleX(0.38); }
-}
-
-/* The shockwave: two rings, the second a beat later. */
-.cv-ring {
-  width: 140px;
-  height: 140px;
-  margin: -70px;
-  border: 1px solid rgb(214 225 255 / 75%);
-  border-radius: 50%;
-  box-shadow: 0 0 22px rgb(143 177 255 / 40%), inset 0 0 22px rgb(143 177 255 / 25%);
-  opacity: 0;
-}
-.gm-duo.is-lit .cv-ring { animation: cv-ring 1.5s cubic-bezier(0.1, 0.7, 0.2, 1) forwards; }
-.gm-duo.is-lit .cv-ring--late { animation-duration: 2.2s; animation-delay: 0.16s; }
-@keyframes cv-ring {
-  0% { opacity: 0; transform: scale(0.05); }
-  8% { opacity: 1; }
-  100% { opacity: 0; transform: scale(3.4); }
-}
-
-/* Sparks thrown out of the meeting point. */
-.cv-sparks i {
-  width: 3px;
-  height: 3px;
-  margin: -1.5px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 8px 1px #8fb1ff;
-  opacity: 0;
-}
-.gm-duo.is-lit .cv-sparks i { animation: cv-spark var(--t) cubic-bezier(0.05, 0.75, 0.3, 1) forwards; }
-@keyframes cv-spark {
-  0% { opacity: 0; transform: rotate(var(--a)) translateX(4px) scale(1.6); }
-  8% { opacity: 1; }
-  100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(0.3); }
-}
-
-/* The star born where the two meet: overshoots, turns, settles. */
-.cv-star {
-  width: 46px;
-  height: 46px;
-  margin: -23px;
-  overflow: visible;
-  fill: #f4f6ff;
-  filter: drop-shadow(0 0 8px rgb(143 177 255 / 90%)) drop-shadow(0 0 24px rgb(143 177 255 / 55%));
-  opacity: 0;
-  transform: scale(0);
-  transition: opacity 0.4s ease, transform 0.5s ease;
-}
-.gm-duo.is-lit .cv-star { animation: cv-star 1.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-@keyframes cv-star {
-  0% { opacity: 0; transform: scale(0) rotate(-140deg); }
-  22% { opacity: 1; transform: scale(2.1) rotate(-25deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0deg); }
-}
-
-/* The sentence surfaces out of focus, word by word; "il tuo" last, glowing. */
-.gm-duo-word {
-  display: inline-block;
-  transition: opacity 0.5s ease, filter 0.6s ease, transform 0.6s ease;
-}
-.gm-duo.cv-ready:not(.is-lit) .gm-duo-word { opacity: 0; filter: blur(12px); transform: translateY(0.4em) scale(1.06); }
-.gm-duo.is-lit .gm-duo-word {
-  transition: opacity 1s var(--ease), filter 1.3s var(--ease), transform 1.4s var(--ease);
-  transition-delay: calc(0.4s + var(--i) * 0.11s);
-}
-.gm-duo.is-lit .gm-duo-note em { text-shadow: 0 0 22px rgb(143 177 255 / 70%), 0 0 64px rgb(143 177 255 / 35%); }
+/* The sequence: both letters at once, the M a beat behind; the shared
+   stroke when both have arrived; each founder comes up with their letter. */
+.gm-duo { transition: --mono-g 1.7s cubic-bezier(0.55, 0, 0.25, 1), --mono-m 1.5s cubic-bezier(0.55, 0, 0.25, 1) 0.2s, --mono-s 0.8s cubic-bezier(0.5, 0, 0.2, 1) 1.65s; }
+.gm-duo.is-on { --mono-g: 1; --mono-m: 1; --mono-s: 1; }
+.gm-duo-person,
+.gm-duo-note { transition: opacity 1s var(--ease), transform 1s var(--ease); }
+.gm-reveal-ready .gm-duo:not(.is-on) .gm-duo-person { opacity: 0.25; }
+.gm-reveal-ready .gm-duo:not(.is-on) .gm-duo-person[data-side='left'] { transform: translateX(-12px); }
+.gm-reveal-ready .gm-duo:not(.is-on) .gm-duo-person[data-side='right'] { transform: translateX(12px); }
+.gm-duo.is-on .gm-duo-person[data-side='left'] { transition-delay: 0.1s; }
+.gm-duo.is-on .gm-duo-person[data-side='right'] { transition-delay: 0.3s; }
+.gm-reveal-ready .gm-duo:not(.is-on) .gm-duo-note { opacity: 0; transform: translateY(10px); }
+.gm-duo.is-on .gm-duo-note { transition-delay: 2.3s; }
 
 /* ---------- 3 · How we think: the question, then five sides ---------- */
 .gm-think-intro {
@@ -393,10 +254,35 @@
 .gm-about-cta .gm-lead { max-width: none; margin-top: clamp(20px, 3vh, 28px); }
 .gm-about-cta .gm-btn { margin-top: clamp(32px, 5vh, 52px); }
 
+/* ---------- Computers: every section fits one screen (see globals.css) ---------- */
+@media (min-width: 1025px) {
+  .gm-about-hero { padding-bottom: clamp(72px, 12svh, 160px); }
+  .gm-about-title { font-size: clamp(46px, min(6.3vw, 10.5svh), 116px); }
+  .gm-about-title-rest { font-size: clamp(22px, min(2.6vw, 4.6svh), 46px); }
+  .gm-people-head { margin-bottom: clamp(24px, 5svh, 72px); }
+
+  /* How we think: the question on the left, the five sides beside it. */
+  .gm-think .gm-wrap { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); column-gap: clamp(40px, 6vw, 120px); align-items: start; }
+  .gm-think-intro { display: block; margin: 0; }
+  .gm-think-question { margin-top: clamp(20px, 4svh, 40px); font-size: clamp(18px, min(1.5vw, 3svh), 24px); }
+  .gm-principle { grid-template-columns: 44px minmax(0, 2.4fr) minmax(0, 5fr); padding: clamp(14px, 2.8svh, 30px) 0; }
+  .gm-principle-text { font-size: clamp(15px, min(1.15vw, 2.5svh), 18px); }
+
+  .gm-less { min-height: 0; padding-block: clamp(64px, 12svh, 200px); }
+  .gm-less-body { margin-top: clamp(24px, 5svh, 72px); }
+  .gm-about-cta { padding-block: clamp(64px, 12svh, 200px) clamp(64px, 12svh, 180px); }
+  .gm-about-cta-star { width: clamp(48px, 9svh, 76px); height: clamp(48px, 9svh, 76px); margin-bottom: clamp(14px, 3svh, 36px); }
+}
+
 /* ======================================================================
    Tablets and phones
    ====================================================================== */
 @media (max-width: 1024px) {
+  /* The monogram above, the founders under it. */
+  .gm-duo { --mono-w: min(48vw, 300px); grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'mono mono' 'left right' 'note note'; row-gap: clamp(36px, 6svh, 56px); align-items: start; }
+  .gm-mono { justify-self: center; width: var(--mono-w); }
+  .gm-duo-person[data-side='left'] { text-align: left; }
+  .gm-duo-person[data-side='left'] .gm-duo-text { margin-left: 0; }
   .gm-think-intro { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .gm-principle { grid-template-columns: 48px minmax(0, 1fr); row-gap: 6px; }
   .gm-principle-text { grid-column: 2; }
@@ -413,20 +299,11 @@
   /* The route rises in the top corner, above the words. */
   .gm-about-route { top: calc(var(--header-h) - 2svh); right: -6vw; width: min(78vw, 46svh); opacity: 0.75; }
 
-  /* The founders: G ✦ M across the screen, then one after the other. */
-  .gm-duo { --letter: clamp(84px, 26vw, 120px); }
-  /* One row across the screen: G, a line, the star, a line, M. */
-  .gm-duo-mark { display: flex; align-items: center; gap: 10px; }
-  .gm-duo-cell { flex: 1; align-items: center; justify-content: flex-start; gap: 10px; }
-  .gm-duo-cell[data-side='right'] { flex-direction: row-reverse; }
-  .gm-duo-cell .gm-duo-link { position: static; flex: 1; }
-  .gm-duo-star { width: 36px; height: 36px; flex: none; }
-  .gm-duo-people { grid-template-columns: minmax(0, 1fr); row-gap: 40px; }
-  .gm-duo-axis { display: none; }
-  .gm-duo-note { margin-top: clamp(170px, 26svh, 230px); font-size: clamp(25px, 7.4vw, 32px); }
-  .gm-duo-axis + .gm-duo-person { padding-top: 40px; border-top: 1px solid var(--line); }
+  .gm-duo { --mono-w: min(64vw, 280px); grid-template-columns: minmax(0, 1fr); grid-template-areas: 'mono' 'left' 'right' 'note'; }
+  .gm-duo-person[data-side='right'] { padding-top: 36px; border-top: 1px solid var(--line); }
   .gm-duo-person h3 { font-size: clamp(30px, 9vw, 40px); }
   .gm-duo-text { font-size: 16px; }
+  .gm-duo-note { font-size: clamp(24px, 7vw, 30px); }
 
   .gm-think-question { font-size: 19px; }
   .gm-principle { grid-template-columns: 36px minmax(0, 1fr); padding: 20px 0; }
@@ -445,26 +322,12 @@
   .gm-about-down,
   .gm-about-route-star { animation: none; }
   .gm-about-route-trail { animation: none; stroke-dashoffset: 0; }
-  .gm-principle-number,
-  .gm-duo-letter,
-  .gm-duo-link,
-  .gm-duo-star { transition-duration: 0.01s; transition-delay: 0s; }
-  .gm-duo-word,
-  .gm-duo-note em,
-  .cv-bloom { transition: none !important; }
-  .cv-focal *,
-  .cv-comet circle { animation: none !important; }
-  .cv-target,
-  .cv-ring,
-  .cv-sparks { display: none; }
-  .gm-duo.is-lit .cv-star { opacity: 1; transform: none; }
-  .gm-duo.is-lit .cv-streak { opacity: 0.4; transform: scaleX(0.38); }
+  .gm-principle-number { transition-duration: 0.01s; transition-delay: 0s; }
+  .gm-duo,
+  .gm-duo-person,
+  .gm-duo-note { transition: none !important; }
 }
 :root[data-motion='still'] :is(.gm-about-title > *, .gm-about-hero-copy > *, .gm-about-down, .gm-about-route-star) { animation: none !important; }
 :root[data-motion='still'] .gm-about-route-trail { animation: none; stroke-dashoffset: 0; }
-:root[data-motion='still'] :is(.gm-principle-number, .gm-duo-letter, .gm-duo-link, .gm-duo-star) { transition-duration: 0.01s; transition-delay: 0s; }
-:root[data-motion='still'] :is(.gm-duo-word, .gm-duo-note em, .cv-bloom) { transition: none !important; }
-:root[data-motion='still'] :is(.cv-focal *, .cv-comet circle) { animation: none !important; }
-:root[data-motion='still'] :is(.cv-target, .cv-ring, .cv-sparks) { display: none; }
-:root[data-motion='still'] .gm-duo.is-lit .cv-star { opacity: 1; transform: none; }
-:root[data-motion='still'] .gm-duo.is-lit .cv-streak { opacity: 0.4; transform: scaleX(0.38); }
+:root[data-motion='still'] .gm-principle-number { transition-duration: 0.01s; transition-delay: 0s; }
+:root[data-motion='still'] :is(.gm-duo, .gm-duo-person, .gm-duo-note) { transition: none !important; }

@@ -6,6 +6,7 @@ import ContactForm from './_contact/form';
 import GoMoreMobileIntro from './gomore-mobile-intro';
 import GrowTextarea from './grow-textarea';
 import Hero from './hero';
+import HomeFilm from './home-film';
 import HomeSummary from './home-summary';
 import MethodStory from './method-story';
 import ParticleJourney from './particle-journey';
@@ -96,28 +97,10 @@ export default function Home() {
           {/* Method: the GM's stars draw the villa, then the construction footage. */}
           {SHOW_METHOD && <MethodStory />}
 
-          {/* What we do and what we use, one line of work at a time. */}
+          {/* What we do. Desktop: the film of the villa in a lit window
+              (home-film.tsx); phones and tablets: one line of work at a time. */}
+          <HomeFilm />
           <HomeSummary />
-
-          {/* Why GoMore, and who, in a few words: the whole story is on its own
-              page (app/chi-siamo). */}
-          <section id="chi-siamo" className="gm-section gm-about-stop" aria-labelledby="chi-siamo-title" data-scroll-stop>
-            <div className="gm-wrap gm-about-stop-grid">
-              <header data-reveal>
-                <SectionLabel>Perché GoMore</SectionLabel>
-                <h2 id="chi-siamo-title" className="gm-h2">Non costruiamo siti. <span className="gm-h2-line">Costruiamo esperienze con una direzione.</span></h2>
-                <p className="gm-lead">Un progetto digitale non dovrebbe iniziare dalla tecnologia, ma da una domanda: che cosa deve ottenere? Per questo uniamo strategia, UX, design e sviluppo.</p>
-              </header>
-              <div className="gm-about-stop-side" data-reveal style={delay(120)}>
-                <ul className="gm-about-stop-people" aria-label="I fondatori">
-                  {founders.map((person) => <li key={person.name}><strong>{person.name}</strong><span lang="en">{person.role.split(' · ').slice(0, 2).join(' · ')}</span></li>)}
-                </ul>
-                <Link className="gm-btn gm-btn--ghost" href="/chi-siamo" data-cta="chi-siamo">
-                  Scopri chi siamo <span className="gm-btn-arrow" aria-hidden="true">→</span>
-                </Link>
-              </div>
-            </div>
-          </section>
 
           {/* Projects: real, live work */}
           <section id="progetti" className="gm-section gm-projects" aria-labelledby="progetti-title" data-scroll-stop>
@@ -133,6 +116,30 @@ export default function Home() {
               <p className="gm-home-more" data-reveal>
                 <Link className="gm-link" href="/progetti">Tutti i progetti e i casi studio <span className="gm-btn-arrow" aria-hidden="true">→</span></Link>
               </p>
+            </div>
+          </section>
+
+          {/* Why GoMore, and who, in a few words: the whole story is on its own
+              page (app/chi-siamo). */}
+          <section id="chi-siamo" className="gm-section gm-about-stop" aria-labelledby="chi-siamo-title" data-scroll-stop>
+            <div className="gm-wrap gm-about-stop-grid">
+              <header data-reveal>
+                <SectionLabel>Perché GoMore</SectionLabel>
+                <h2 id="chi-siamo-title" className="gm-h2">Non costruiamo siti. <span className="gm-h2-line">Progettiamo esperienze che hanno un perché.</span></h2>
+                <div className="gm-lead gm-about-stop-lead">
+                  <p>Un sito efficace non nasce da un template, né dalla sola estetica. Parte da una comprensione: chi sei, cosa vuoi ottenere e cosa deve fare l’utente una volta arrivato.</p>
+                  <p>Per questo uniamo strategia, UX/UI, design e sviluppo per costruire esperienze progettate intorno alla tua identità e ai tuoi obiettivi.</p>
+                  <p>Ogni scelta ha un motivo.</p>
+                </div>
+              </header>
+              <div className="gm-about-stop-side" data-reveal style={delay(120)}>
+                <ul className="gm-about-stop-people" aria-label="I fondatori">
+                  {founders.map((person) => <li key={person.name}><strong>{person.name}</strong><span lang="en">{person.role.split(' · ').slice(0, 2).join(' · ')}</span></li>)}
+                </ul>
+                <Link className="gm-btn gm-btn--ghost" href="/chi-siamo" data-cta="chi-siamo">
+                  Scopri chi siamo <span className="gm-btn-arrow" aria-hidden="true">→</span>
+                </Link>
+              </div>
             </div>
           </section>
 

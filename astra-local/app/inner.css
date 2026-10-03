@@ -242,3 +242,64 @@
 .gm-pills a { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 20px; border: 1px solid var(--line-2); border-radius: 999px; color: var(--ink); font-size: 15px; font-weight: 500; transition: border-color 0.3s var(--ease); }
 .gm-pills a:hover { border-color: rgb(143 177 255 / 55%); }
 .gm-pills a:hover .gm-btn-arrow { transform: translateX(4px); }
+
+/* ---------- Computers: every section fits one screen (see globals.css) ---------- */
+@media (min-width: 1025px) {
+  .gm-intro-section { padding-block: clamp(32px, 7svh, 112px) clamp(40px, 8svh, 104px); }
+  .gm-page-title { font-size: clamp(46px, min(6.4vw, 11svh), 112px); }
+  .gm-page-lead { margin-top: clamp(18px, 3.4svh, 40px); font-size: clamp(17px, min(1.5vw, 2.9svh), 23px); }
+  .gm-section-head { margin-bottom: clamp(22px, 4.5svh, 64px); }
+  /* A title with words under it: the words beside it, so the content gets the height. */
+  .gm-section-head:has(> .gm-lead) { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: clamp(28px, 6vw, 120px); align-items: end; max-width: none; }
+  .gm-section-head:has(> .gm-lead) > :not(.gm-lead) { grid-column: 1; }
+  .gm-section-head > .gm-lead { grid-area: 1 / 2 / span 2; align-self: end; margin: 0; }
+  .gm-split .gm-h2,
+  .gm-section-head .gm-h2 { font-size: clamp(34px, min(3.8vw, 7.2svh), 64px); }
+
+  /* Project tiles: the title on the left, the projects beside it. */
+  .gm-wrap:has(> .gm-section-head + .gm-tiles) { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 8fr); column-gap: clamp(32px, 4vw, 80px); align-items: start; }
+  .gm-wrap > .gm-section-head:has(+ .gm-tiles) { display: block; margin: 0; }
+  .gm-wrap > .gm-section-head:has(+ .gm-tiles) .gm-lead { margin-top: 18px; }
+  .gm-wrap > .gm-section-head + .gm-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gm-tile-link { align-content: start; gap: clamp(14px, 2.4svh, 22px); }
+  .gm-tile-text { gap: clamp(6px, 1.2svh, 10px); }
+
+  /* The disciplines: name, words and arrow on one line. */
+  .gm-linklist a { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr) auto; column-gap: clamp(24px, 3vw, 56px); padding: clamp(14px, 2.6svh, 26px) 0; }
+  .gm-linklist span { grid-column: 2; grid-row: 1; }
+  .gm-linklist .gm-btn-arrow { grid-row: 1; grid-column: 3; }
+  .gm-linklist strong { font-size: clamp(22px, min(2.2vw, 4.4svh), 34px); }
+
+  /* What a service includes: the title above, the parts in three columns. */
+  .gm-split:has(> .gm-split-body > .gm-numbered) { grid-template-columns: minmax(0, 1fr); row-gap: clamp(22px, 4.5svh, 64px); }
+  .gm-split:has(> .gm-split-body > .gm-numbered) > header { position: static; }
+  .gm-numbered:is(.gm-split-body > *) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: clamp(28px, 3.4vw, 64px); border-top: 0; }
+  .gm-numbered:is(.gm-split-body > *):has(li:nth-child(7)) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .gm-numbered:is(.gm-split-body > *):has(li:nth-child(9)) { grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: clamp(22px, 2.4vw, 48px); }
+  .gm-numbered:is(.gm-split-body > *):has(li:nth-child(9)) h3 { font-size: clamp(17px, 1.3vw, 22px); }
+  .gm-numbered:is(.gm-split-body > *):has(li:nth-child(9)) li { padding-block: clamp(12px, 2svh, 26px); }
+  .gm-numbered:is(.gm-split-body > *):has(li:nth-child(9)) p { font-size: 14.5px; line-height: 1.5; }
+  /* The number above the title, so the words get the column's whole width. */
+  .gm-split-body > .gm-numbered li { grid-template-columns: minmax(0, 1fr); align-content: start; padding: clamp(14px, 2.6svh, 26px) 0; border-top: 1px solid var(--line); border-bottom: 0; }
+  .gm-split-body > .gm-numbered .gm-numbered-index { grid-row: auto; padding: 0 0 4px; }
+  .gm-split-body > .gm-numbered p { font-size: 15px; }
+
+  /* The two ways to work together: side by side, equal, their lists in two columns. */
+  .gm-formats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gm-format { padding: clamp(20px, 3.4svh, 44px) clamp(26px, 3.4vw, 44px); }
+  .gm-format h3 { margin-top: clamp(8px, 1.6svh, 16px); font-size: clamp(26px, min(2.6vw, 5svh), 42px); }
+  .gm-format-text { margin: clamp(8px, 1.6svh, 14px) 0 clamp(12px, 2.4svh, 22px); font-size: 16px; }
+  .gm-format-price { margin: 0 0 clamp(10px, 2svh, 22px); }
+  .gm-format .gm-facts li { padding-block: clamp(3px, 0.7svh, 7px); font-size: 15px; }
+  .gm-format .gm-facts li::before { top: calc(clamp(3px, 0.7svh, 7px) + 0.55em); }
+  .gm-format .gm-facts { columns: 2; column-gap: 24px; }
+  .gm-format .gm-facts li { break-inside: avoid; }
+
+  /* /progetti: each project one screen. */
+  .gm-rows { gap: clamp(56px, 12svh, 160px); }
+  .gm-row-media { width: min(100%, (100svh - var(--header-h) - 120px) * 1.6); }
+  .gm-row:nth-child(odd) .gm-row-media { justify-self: start; }
+  .gm-row:nth-child(even) .gm-row-media { justify-self: end; }
+
+  .gm-closing { padding-block: clamp(72px, 14svh, 220px) clamp(56px, 11svh, 160px); }
+}
