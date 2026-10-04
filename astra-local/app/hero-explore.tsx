@@ -8,7 +8,7 @@ export default function HeroExplore() {
   return (
     <a
       className="gm-btn gm-hero-explore"
-      href="#servizi"
+      href="#cosa-facciamo"
       data-cta="hero"
       onClick={(event) => {
         event.preventDefault();

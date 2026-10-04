@@ -7,7 +7,6 @@ import GoMoreMobileIntro from './gomore-mobile-intro';
 import GrowTextarea from './grow-textarea';
 import Hero from './hero';
 import HomeFilm from './home-film';
-import HomeSummary from './home-summary';
 import ParticleJourney from './particle-journey';
 import ProjectCarousel from './project-carousel';
 import ProjectPreview from './project-preview';
@@ -78,10 +77,8 @@ export default function Home() {
           {/* Hero: the headline, and the GM made of stars */}
           <Hero />
 
-          {/* What we do. Desktop: the film of the villa in a lit window
-              (home-film.tsx); phones and tablets: one line of work at a time. */}
+          {/* What we do, beside the film of the villa in a lit window (home-film.tsx). */}
           <HomeFilm />
-          <HomeSummary />
 
           {/* Projects: real, live work */}
           <section id="progetti" className="gm-section gm-projects" aria-labelledby="progetti-title" data-scroll-stop>

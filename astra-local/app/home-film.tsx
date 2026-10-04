@@ -14,17 +14,16 @@ const Star = ({ className }: { className?: string }) => (
 );
 const START = '/video/blueprint-loop-start.jpg';
 const STILL = '/video/blueprint-loop-still.jpg';
-const DESKTOP = '(min-width: 1025px)';
 // The film's clock: the drawing, then the finished villa, then the drawing again.
 const isResult = (t: number) => t >= 6.4 && t < 9.6;
 
 /**
- * Desktop, right after the opening: what we do, beside a lit window on the
- * project. A line of starlight opens like a shutter into the film of the
+ * Right after the opening, on every screen: what we do, and a lit window on
+ * the project (beside the words on computers, between them on tablets and
+ * phones). A line of starlight opens like a shutter into the film of the
  * villa, from its blueprint to the finished house at sunset, looping on its
  * own (never driven by the scroll). The film's colours light the sky around
  * it, and stars of the site's sky drift into its edge (sky-focus.ts).
- * Phones and tablets keep "Cosa facciamo" as it is (home-summary.tsx).
  */
 export default function HomeFilm() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -37,9 +36,6 @@ export default function HomeFilm() {
   const [still, setStill] = useState(false);
 
   useEffect(() => {
-    const wide = matchMedia(DESKTOP);
-    let teardown = () => {};
-
     const setup = () => {
       const section = sectionRef.current;
       const stage = stageRef.current;
@@ -119,7 +115,9 @@ export default function HomeFilm() {
         const run = visible && entered && !document.hidden && !userPaused && (userPlay || !posterOnly());
         if (run) {
           load();
-          video.play().catch(() => {});
+          // Autoplay refused (a phone saving battery, say): the poster stays,
+          // and the button is there to start it.
+          video.play().catch(() => { if (video.paused) setToggle('paused'); });
         } else if (!video.paused) {
           video.pause();
         }
@@ -247,16 +245,7 @@ export default function HomeFilm() {
       };
     };
 
-    const apply = () => {
-      teardown();
-      teardown = wide.matches ? setup() : () => {};
-    };
-    apply();
-    wide.addEventListener('change', apply);
-    return () => {
-      wide.removeEventListener('change', apply);
-      teardown();
-    };
+    return setup();
   }, []);
 
   return (
