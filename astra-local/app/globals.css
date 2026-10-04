@@ -1111,6 +1111,8 @@ em { font-style: normal; }
 .gm-about-stop-lead p + p { margin-top: 0.8em; }
 /* The closing line, said plainly: the point of the whole paragraph. */
 .gm-about-stop-lead p:last-child { color: var(--ink); }
+/* The closing line in the site's lit italic, as large to the eye as the words above. */
+.gm-about-stop-lead .gm-shine { font-size: 1.28em; }
 .gm-about-stop-side { display: grid; justify-items: start; gap: clamp(28px, 4vh, 40px); }
 .gm-home-more { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; margin-top: clamp(40px, 7vh, 72px); }
 .gm-about-stop-people { width: 100%; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }

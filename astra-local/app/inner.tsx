@@ -5,7 +5,6 @@ import Link from 'next/link';
 import SectionLabel from './section-label';
 import type { Project } from './content';
 import { studyPath } from './seo';
-import { servicePath, type Service } from './services';
 import './inner.css';
 
 export type Crumb = { name: string; path?: string };
@@ -86,18 +85,5 @@ export function Closing({ title, text, action = 'Parliamo del tuo progetto', hre
         </Link>
       </div>
     </section>
-  );
-}
-
-/** Services as a short row of links: where a page only needs to point to them. */
-export function ServiceLinks({ items, label }: { items: Service[]; label: string }) {
-  return (
-    <ul className="gm-pills" aria-label={label} data-reveal>
-      {items.map((service) => (
-        <li key={service.slug}>
-          <Link href={servicePath(service)}>{service.name} <span className="gm-btn-arrow" aria-hidden="true">→</span></Link>
-        </li>
-      ))}
-    </ul>
   );
 }

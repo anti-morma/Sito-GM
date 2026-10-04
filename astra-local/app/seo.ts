@@ -7,9 +7,9 @@
 // page that is about it (home, chi siamo, contatti) under a stable @id; every
 // other page points to that @id, so search engines see one entity, not ten.
 import type { Metadata } from 'next';
-import { areaServed, caseStudies, founders, offers, projects, site, type CaseStudy, type Project } from './content';
+import { areaServed, caseStudies, founders, offers, site, type CaseStudy, type Project } from './content';
 import { cities, where, wherePath } from './places';
-import { servicePath, services, type Service } from './services';
+import { services, type Service } from './services';
 
 /** Under 160 characters: Google shows it whole under the title. */
 export const siteDescription = 'GoMore progetta e sviluppa esperienze digitali su misura unendo strategia, UX, design, sviluppo, 3D, WebGL e AI.';
@@ -34,7 +34,8 @@ export const aboutPath = '/chi-siamo';
 export const aboutDescription = 'Scopri GoMore: strategia, UX, design, sviluppo e creative technology per costruire esperienze digitali con una direzione.';
 
 const personId = (name: string) => `${site.url}${aboutPath}#${name.toLowerCase().replace(/\s+/g, '-')}`;
-const serviceId = (service: Service) => `${site.url}${servicePath(service)}#service`;
+// The disciplines live on /servizi, each under its own anchor.
+const serviceId = (service: Service) => `${site.url}/servizi#${service.slug}`;
 const pageId = (path: string) => `${site.url}${path === '/' ? '' : path}#webpage`;
 
 // ---------------------------------------------------------------------------
@@ -101,7 +102,7 @@ export function organizationLd() {
     areaServed: [{ '@type': 'Country', name: areaServed }, ...cities.map(cityLd)],
     knowsAbout: ['Web design', 'Sviluppo web', 'UX design', 'UI design', 'Strategia digitale', 'Siti web su misura', '3D per il web', 'WebGL', 'Intelligenza artificiale', 'Digital experience', 'SEO tecnica'],
     founder: founders.map((person) => ({ '@type': 'Person', '@id': personId(person.name), name: person.name })),
-    // The disciplines (each declared on its own page) and the two ways to work with the studio.
+    // The disciplines (declared on /servizi) and the two ways to work with the studio.
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: 'Servizi',
@@ -223,30 +224,18 @@ export function servicesLd(description: string) {
       name: `Servizi | ${site.name}`,
       description,
       crumbs: [{ name: 'Servizi', path }],
-      extra: { mainEntity: { '@type': 'ItemList', itemListElement: services.map((service, index) => ({ '@type': 'ListItem', position: index + 1, url: `${site.url}${servicePath(service)}`, name: service.name })) } },
+      extra: {
+        mainEntity: {
+          '@type': 'ItemList',
+          itemListElement: services.map((service, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            item: { '@type': 'Service', '@id': serviceId(service), name: service.name, serviceType: service.name, description: service.summary, provider: { '@id': organizationId }, areaServed },
+          })),
+        },
+      },
     }),
     breadcrumbLd(path, [{ name: 'Servizi', path }]),
-    organizationRef(),
-  );
-}
-
-/** A service page: the Service, offered by the studio, and the work that shows it. */
-export function serviceLd(service: Service) {
-  const path = servicePath(service);
-  const crumbs = [{ name: 'Servizi', path: '/servizi' }, { name: service.name, path }];
-  return graph(
-    webPageLd({ path, name: `${service.seoTitle} | ${site.name}`, description: service.description, crumbs, about: { '@id': serviceId(service) } }),
-    {
-      '@type': 'Service',
-      '@id': serviceId(service),
-      name: service.name,
-      serviceType: service.name,
-      description: service.description,
-      url: `${site.url}${path}`,
-      provider: { '@id': organizationId },
-      areaServed: [{ '@type': 'Country', name: areaServed }, ...cities.map(cityLd)],
-    },
-    breadcrumbLd(path, crumbs),
     organizationRef(),
   );
 }
@@ -324,15 +313,12 @@ export function contactLd(description: string) {
   );
 }
 
-/** Every service, project and the where page: the pages that belong in search results. */
+/** Every project and the where page: the pages that belong in search results. */
 export const indexablePaths = () => [
-  ...services.map(servicePath),
   ...caseStudies.map((project) => studyPath(project.study)),
   wherePath,
 ];
 
-/** Projects linked from elsewhere by slug (services.ts). */
-export const projectBySlug = (slug: string) => projects.find((project) => project.study?.slug === slug);
 
 /** A JSON-LD script, safe to inline. */
 export const jsonLd = (data: unknown) => ({ __html: JSON.stringify(data).replace(/</g, '\\u003c') });

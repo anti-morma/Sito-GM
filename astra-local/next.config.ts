@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
     return [
       { source: '/torino', destination: '/dove-lavoriamo', permanent: true },
       { source: '/taranto', destination: '/dove-lavoriamo', permanent: true },
+      // The disciplines no longer have pages of their own: they are listed on /servizi.
+      { source: '/servizi/:slug', destination: '/servizi', permanent: true },
     ];
   },
   async headers() {

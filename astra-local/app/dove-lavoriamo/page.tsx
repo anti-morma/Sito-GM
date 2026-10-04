@@ -2,7 +2,7 @@ import Reveal from '../reveal';
 import SectionLabel from '../section-label';
 import SiteFooter from '../site-footer';
 import Link from 'next/link';
-import { Closing, PageIntro, ProjectTiles, ServiceLinks } from '../inner';
+import { Closing, PageIntro, ProjectTiles } from '../inner';
 import { caseStudies } from '../content';
 import { where, wherePath } from '../places';
 import { jsonLd, pageMetadata, whereLd } from '../seo';
@@ -54,7 +54,10 @@ export default function WherePage() {
                 <SectionLabel>Servizi</SectionLabel>
                 <h2 className="gm-h2" id="where-services">Che cosa facciamo, ovunque tu sia.</h2>
               </header>
-              <ServiceLinks items={services} label="Servizi" />
+              <ul className="gm-names" aria-label="Le competenze" data-reveal>
+                {services.map((service) => <li key={service.slug}>{service.name}</li>)}
+              </ul>
+              <Link className="gm-link" href="/servizi">Scopri i servizi <span className="gm-btn-arrow" aria-hidden="true">→</span></Link>
             </div>
           </section>
 

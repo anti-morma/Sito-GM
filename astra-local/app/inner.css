@@ -121,24 +121,25 @@
   .gm-tile-link:hover .gm-btn-arrow { transform: translateX(4px); }
 }
 
-/* ---------- Links to the other pages of a family (services, cities) ---------- */
+/* ---------- A list to read, name and one line (the disciplines on /servizi) ---------- */
 .gm-linklist { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
-.gm-linklist a {
+.gm-linklist li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 4px 24px;
   padding: clamp(18px, 3vh, 26px) 0;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
 }
-.gm-linklist strong { font-size: clamp(22px, 2.2vw, 34px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; transition: color 0.3s var(--ease); }
+.gm-linklist strong { font-size: clamp(22px, 2.2vw, 34px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; }
 .gm-linklist span { grid-column: 1; color: var(--ink-2); font-size: 15px; line-height: 1.5; }
-.gm-linklist .gm-btn-arrow { grid-row: 1 / 3; grid-column: 2; color: var(--accent); font-size: 22px; }
-@media (hover: hover) {
-  .gm-linklist a:hover strong { color: var(--accent-hover); }
-  .gm-linklist a:hover .gm-btn-arrow { transform: translateX(6px); }
-}
+
+/* Names in a row, each after a star (so a wrapped line starts like the
+   first): information, not links. */
+.gm-names { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; margin: 0; padding: 0; list-style: none; color: var(--ink-2); font-size: 13px; font-weight: 500; letter-spacing: 0.14em; line-height: 1.5; text-transform: uppercase; }
+.gm-names li::before { content: '✦'; margin-right: 10px; color: var(--accent); font-size: 9px; vertical-align: 0.2em; }
+.gm-names + .gm-link { margin-top: clamp(20px, 3vh, 32px); }
 
 /* ---------- The two ways to work together ---------- */
 .gm-formats { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(20px, 2.4vw, 32px); }
@@ -189,7 +190,6 @@
   .gm-section-head .gm-h2 { font-size: clamp(30px, 8.6vw, 40px); }
   .gm-split-body { font-size: 17px; }
   .gm-numbered li { grid-template-columns: 38px minmax(0, 1fr); }
-  .gm-linklist .gm-btn-arrow { font-size: 18px; }
   .gm-closing::before { content: none; }
   .gm-closing .gm-btn { width: 100%; }
 }
@@ -237,12 +237,6 @@
   .gm-contact-page .gm-contact-grid { grid-template-areas: 'head' 'form' 'more'; grid-template-rows: none; row-gap: 48px; }
 }
 
-/* Links as a short row of pills (ServiceLinks). */
-.gm-pills { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.gm-pills a { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 20px; border: 1px solid var(--line-2); border-radius: 999px; color: var(--ink); font-size: 15px; font-weight: 500; transition: border-color 0.3s var(--ease); }
-.gm-pills a:hover { border-color: rgb(143 177 255 / 55%); }
-.gm-pills a:hover .gm-btn-arrow { transform: translateX(4px); }
-
 /* ---------- Computers: every section fits one screen (see globals.css) ---------- */
 @media (min-width: 1025px) {
   .gm-intro-section { padding-block: clamp(32px, 7svh, 112px) clamp(40px, 8svh, 104px); }
@@ -264,10 +258,9 @@
   .gm-tile-link { align-content: start; gap: clamp(14px, 2.4svh, 22px); }
   .gm-tile-text { gap: clamp(6px, 1.2svh, 10px); }
 
-  /* The disciplines: name, words and arrow on one line. */
-  .gm-linklist a { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr) auto; column-gap: clamp(24px, 3vw, 56px); padding: clamp(14px, 2.6svh, 26px) 0; }
+  /* The disciplines: name and words on one line. */
+  .gm-linklist li { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); column-gap: clamp(24px, 3vw, 56px); padding: clamp(14px, 2.6svh, 26px) 0; }
   .gm-linklist span { grid-column: 2; grid-row: 1; }
-  .gm-linklist .gm-btn-arrow { grid-row: 1; grid-column: 3; }
   .gm-linklist strong { font-size: clamp(22px, min(2.2vw, 4.4svh), 34px); }
 
   /* What a service includes: the title above, the parts in three columns. */

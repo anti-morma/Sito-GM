@@ -154,8 +154,6 @@ export type CaseStudy = {
   /** Deliverables. */
   work: string[];
   result: string;
-  /** Service pages this project shows (services.ts slugs). */
-  serviceSlugs: string[];
   /** Real, verifiable figures only, e.g. { value: '+40%', label: 'richieste dal sito in sei mesi' }. */
   metrics?: { value: string; label: string }[];
   /** The client's own words, with their approval. */
@@ -222,8 +220,6 @@ export const projects: Project[] = [
         'Dati strutturati da gioielleria (JewelryStore) con indirizzo, orari, telefono e dati aziendali',
         'Sitemap e robots.txt per guidare l’indicizzazione',
       ],
-      // The clock is motion on a 2D canvas, not WebGL: the 3D page cites it as motion only.
-      serviceSlugs: ['web-design', 'sviluppo-web', 'ux-ui'],
       work: [
         'Un sito nuovo, progettato e sviluppato da zero: nessun tema, nessun modello già pronto',
         'Strategia e architettura dei contenuti: sei servizi diversi ordinati in un percorso chiaro, in cui ognuno trova subito il suo',
@@ -266,7 +262,6 @@ export const projects: Project[] = [
         'Recensioni degli ospiti collegate a quelle verificate',
       ],
       mobile: 'Sviluppato su misura, veloce e pensato prima di tutto per il telefono.',
-      serviceSlugs: ['web-design', 'sviluppo-web', 'ux-ui'],
       work: [
         'Un sito progettato e sviluppato da zero, su misura per la casa e per chi la sceglie',
         'User experience: un percorso semplice per scegliere tra la villa intera e i singoli piani e arrivare alla prenotazione in pochi passaggi',

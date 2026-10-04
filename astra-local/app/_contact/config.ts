@@ -17,7 +17,7 @@ const config: ContactConfig = {
     { name: 'company', label: 'Attività / brand', placeholder: 'Nome dell’attività o del brand', autoComplete: 'organization', maxLength: 200 },
     // The first option is selected from the start: it must be a true answer
     // for anyone who does not choose.
-    { name: 'type', label: 'Di cosa hai bisogno?', hint: 'Possiamo definirlo insieme.', options: ['Da definire insieme', 'Un sito web nuovo', 'Il rinnovo di un sito esistente', 'Un’esperienza 3D o interattiva', 'Hosting e manutenzione', 'Altro'] },
+    { name: 'type', label: 'Di cosa hai bisogno?', hint: 'Possiamo definirlo insieme.', options: ['Da definire insieme', 'Un sito web nuovo', 'Il rinnovo di un sito esistente', 'Hosting e manutenzione', 'Altro'] },
     {
       name: 'idea',
       label: 'Parlaci del progetto',

@@ -1,11 +1,10 @@
-import Link from 'next/link';
 import Reveal from '../reveal';
 import SectionLabel from '../section-label';
 import SiteFooter from '../site-footer';
 import { Closing, PageIntro, ProjectTiles } from '../inner';
 import { caseStudies, offers } from '../content';
 import { jsonLd, pageMetadata, servicesLd } from '../seo';
-import { servicePath, services } from '../services';
+import { services } from '../services';
 
 const DESCRIPTION = 'Web design, sviluppo web, UX/UI, 3D, WebGL e AI: servizi digitali progettati intorno agli obiettivi del progetto, dalla strategia al lancio.';
 
@@ -15,7 +14,7 @@ const pad = (index: number) => String(index + 1).padStart(2, '0');
 
 /**
  * /servizi: what you can ask us for (a website, and its care), the five
- * disciplines inside every project (each with its own page), and the proof.
+ * disciplines inside every project (information only), and the proof.
  * The home shows what we do at a glance and links here for the details.
  */
 export default function ServicesPage() {
@@ -55,7 +54,7 @@ export default function ServicesPage() {
             </div>
           </section>
 
-          {/* Then what is inside every project: the disciplines, each with its own page. */}
+          {/* Then what is inside every project: the disciplines, as information. */}
           <section className="gm-section" aria-labelledby="disciplines-title">
             <div className="gm-wrap">
               <header className="gm-section-head" data-reveal>
@@ -65,12 +64,9 @@ export default function ServicesPage() {
               </header>
               <ul className="gm-linklist" data-reveal>
                 {services.map((service, index) => (
-                  <li key={service.slug}>
-                    <Link href={servicePath(service)}>
-                      <strong><span className="gm-sr-only">{pad(index)} · </span>{service.name}</strong>
-                      <span>{service.summary}</span>
-                      <span className="gm-btn-arrow" aria-hidden="true">→</span>
-                    </Link>
+                  <li key={service.slug} id={service.slug}>
+                    <strong><span className="gm-sr-only">{pad(index)} · </span>{service.name}</strong>
+                    <span>{service.summary}</span>
                   </li>
                 ))}
               </ul>

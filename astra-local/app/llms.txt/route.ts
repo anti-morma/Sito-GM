@@ -1,7 +1,7 @@
 import { areaServed, caseStudies, founders, offers, site } from '../content';
 import { cityNames, wherePath } from '../places';
 import { aboutPath, siteSummary, studyPath } from '../seo';
-import { servicePath, services } from '../services';
+import { services } from '../services';
 
 // /llms.txt: the studio in plain text for AI assistants and answer engines
 // (ChatGPT, Perplexity, Gemini, Claude), which increasingly answer "who can
@@ -24,7 +24,7 @@ export function GET() {
     '',
     '## Servizi',
     `Panoramica: ${site.url}/servizi`,
-    ...services.map((service) => `- [${service.name}](${site.url}${servicePath(service)}): ${service.summary}`),
+    ...services.map((service) => `- ${service.name}: ${service.summary}`),
     '',
     '## Come si lavora insieme',
     ...offers.map((offer) => `- ${offer.title}: ${offer.text}${offer.price ? ` ${offer.price}.` : ''} Include: ${offer.includes.join('; ')}.`),

@@ -105,11 +105,11 @@ export default function Home() {
             <div className="gm-wrap gm-about-stop-grid">
               <header data-reveal>
                 <SectionLabel>Perché GoMore</SectionLabel>
-                <h2 id="chi-siamo-title" className="gm-h2">Non costruiamo siti. <span className="gm-h2-line">Progettiamo esperienze che hanno un perché.</span></h2>
+                <h2 id="chi-siamo-title" className="gm-h2">Non costruiamo siti. <span className="gm-h2-line">Progettiamo esperienze che <em className="gm-shine">hanno un perché.</em></span></h2>
                 <div className="gm-lead gm-about-stop-lead">
                   <p>Un sito efficace non nasce da un template, né dalla sola estetica. Parte da una comprensione: chi sei, cosa vuoi ottenere e cosa deve fare l’utente una volta arrivato.</p>
                   <p>Per questo uniamo strategia, UX/UI, design e sviluppo per costruire esperienze progettate intorno alla tua identità e ai tuoi obiettivi.</p>
-                  <p>Ogni scelta ha un motivo.</p>
+                  <p><em className="gm-shine">Ogni scelta ha un motivo.</em></p>
                 </div>
               </header>
               <div className="gm-about-stop-side" data-reveal style={delay(120)}>
