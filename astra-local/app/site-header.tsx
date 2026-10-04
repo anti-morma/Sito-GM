@@ -93,8 +93,10 @@ export default function SiteHeader() {
         const block = inside ? anchor.closest('main') : anchor.closest('section');
         const box = anchor.getBoundingClientRect();
         if (!block?.offsetHeight || !box.height) continue;
-        // A label on screen already says where you are.
-        if (box.bottom > edge && box.top < innerHeight) { name = ''; break; }
+        // A label in the upper half of the screen already says where you are;
+        // the next section's, still low on the screen, does not yet (a section
+        // one screen tall, like "Cosa facciamo", would otherwise never dock).
+        if (box.bottom > edge && box.top < innerHeight * 0.5) { name = ''; break; }
         if (box.bottom <= edge) name = block.getBoundingClientRect().bottom > edge + 48 ? nameOf(anchor) : '';
       }
       setHere((current) => name
