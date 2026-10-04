@@ -40,7 +40,7 @@ Su macOS usa `AVVIA.command`. Al primo avvio vengono installate le dipendenze.
 - `app/fonts/`: Instrument Sans e Instrument Serif Italic (OFL), ospitati localmente.
 - `app/gomore-points.json`: le stelle della scritta GOMORE per l'apertura su telefono, una per ogni stella del GM.
 - `app/gm-points.json`: stelle del monogramma (contorno, riempimento e polvere, per lettere sempre leggibili).
-- `app/icon.png`, `app/opengraph-image.png`, `app/robots.ts`, `app/sitemap.ts`: favicon, anteprima social, SEO tecnica.
+- `app/icon.png`, `public/gomore-home-20261004.jpg`, `app/robots.ts`, `app/sitemap.ts`: favicon, anteprima social, SEO tecnica.
 - Luce: apertura e metodo restano cielo notturno. Da progetti in poi, nebulose nei blu del sito dietro ogni sezione e schermi dei progetti che fanno luce; in fondo un'alba sotto il form e il footer (`globals.css`, *Light*).
 
 ## Architettura del sito
@@ -96,7 +96,8 @@ Le pagine interne usano gli stessi mattoni (`app/inner.tsx` + `app/inner.css`): 
 - Telefoni: partono già sul gradino "lite" (`app/quality.ts`): scene a risoluzione 1x, cielo e GM/cervello a 30 fotogrammi al secondo, cervello con un terzo di stelle in meno, logo dell'header a 15 fotogrammi, nessuna nebulosa. Le scene 3D si caricano solo dopo l'apertura (`afterOpening` in `app/idle.ts`), e in cima alla pagina il livello del GM resta spento finché le stelle non escono dal logo. L'apertura usa il 60% delle stelle.
 - Il logo dell'header è `public/gm-logo.webp` (18 KB invece di 170).
 
-- `NEXT_PUBLIC_SITE_URL`: dominio definitivo per canonical, sitemap e dati strutturati (default: astra-local-alpha.vercel.app; quando ci sarà il dominio, impostala su Vercel).
+- `NEXT_PUBLIC_SITE_URL`: dominio per canonical, sitemap e dati strutturati (default: `https://www.gomore.studio`, impostato anche su Vercel in produzione).
+- Anteprima social: `OG_IMAGE` in `app/seo.ts` indica la cattura della home in `public/gomore-home-20261004.jpg`, condivisa da Open Graph e Twitter. Quando si aggiorna l'immagine, usare un nuovo nome file e aggiornare dimensioni e descrizione in `OG_IMAGE` per aggirare la cache. La vecchia `public/opengraph-image.png` rimane disponibile per i link già condivisi; non va rimessa in `app/`, dove Next.js la userebbe automaticamente nei metadati.
 
 ## Misurazione
 

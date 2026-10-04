@@ -4,7 +4,7 @@ import localFont from 'next/font/local';
 import { site } from './content';
 import { MOTION_SCRIPT } from './motion';
 import { OPENING_SCRIPT } from './opening';
-import { openGraphBase, siteDescription, siteSummary } from './seo';
+import { OG_IMAGE, openGraphBase, siteDescription, siteSummary } from './seo';
 import SiteHeader from './site-header';
 import StarSky from './star-sky';
 import Tracking from './tracking';
@@ -26,8 +26,8 @@ export const metadata: Metadata = {
   category: 'Web design',
   // Numbers in the copy are not phone numbers unless they are links.
   formatDetection: { telephone: false, address: false, email: false },
-  openGraph: { ...openGraphBase, title: HOME_TITLE, description: siteSummary },
-  twitter: { card: 'summary_large_image', title: HOME_TITLE, description: siteSummary },
+  openGraph: { ...openGraphBase, title: HOME_TITLE, description: siteSummary, images: [OG_IMAGE] },
+  twitter: { card: 'summary_large_image', title: HOME_TITLE, description: siteSummary, images: [OG_IMAGE] },
   robots: preview
     ? { index: false, follow: false }
     : { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 } },

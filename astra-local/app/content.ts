@@ -3,7 +3,7 @@
 
 export const site = {
   name: 'GoMore',
-  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://astra-local-alpha.vercel.app',
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.gomore.studio',
   // Contacts: the contact section, the footer and the phone menu.
   /** Public contact e-mail, e.g. 'ciao@gomore.it'. */
   email: '',

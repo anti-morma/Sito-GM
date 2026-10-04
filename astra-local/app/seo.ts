@@ -21,8 +21,8 @@ export const siteSummary = `${site.name} è uno studio digitale indipendente: pr
  *  whole block, so each one spreads this first. */
 export const openGraphBase = { type: 'website' as const, locale: 'it_IT', siteName: site.name };
 
-/** The default social image (app/opengraph-image.png, 1200 × 630). */
-const OG_IMAGE = { url: '/opengraph-image.png', width: 1200, height: 630, alt: `${site.name} — studio digitale` };
+/** Homepage capture. Use a new filename for each update to bypass image caches. */
+export const OG_IMAGE = { url: '/gomore-home-20261004.jpg', width: 1185, height: 630, alt: `${site.name} — Più di un sito. La tua identità, online.` };
 
 export const organizationId = `${site.url}/#organization`;
 const websiteId = `${site.url}/#website`;

@@ -16,7 +16,7 @@ import ScrollCue from './scroll-cue';
 import SectionLabel from './section-label';
 import SiteFooter from './site-footer';
 import { founders, projects, site, type Project } from './content';
-import { homeLd, jsonLd, openGraphBase, siteSummary, studyPath } from './seo';
+import { homeLd, jsonLd, OG_IMAGE, openGraphBase, siteSummary, studyPath } from './seo';
 import { contactDetails, DetailText } from './studio-details';
 import './home.css';
 
@@ -25,7 +25,7 @@ import './home.css';
 // digital experiences"): the brand first, then what it does.
 export const metadata: Metadata = {
   alternates: { canonical: '/' },
-  openGraph: { ...openGraphBase, url: '/', title: `${site.name} | Web design, sviluppo e digital experiences`, description: siteSummary, images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: `${site.name} — studio digitale` }] },
+  openGraph: { ...openGraphBase, url: '/', title: `${site.name} | Web design, sviluppo e digital experiences`, description: siteSummary, images: [OG_IMAGE] },
 };
 
 const delay = (ms: number) => ({ '--reveal-delay': `${ms}ms` }) as React.CSSProperties;
