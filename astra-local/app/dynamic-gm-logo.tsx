@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { drawLogo, LOGO_STARS, logoBridge, makeSprites, PHONE_LOGO_QUERY } from './gm-constellation';
+import { useEffect, useRef } from 'react';
+import { drawLogo, LOGO_STARS, logoBridge, makeSprites } from './gm-constellation';
 import { reducedMotion } from './motion';
 import { isLite } from './quality';
 
@@ -18,26 +18,17 @@ const smoothStep = (value: number) => {
 };
 
 /**
- * Phones: the header's GM, a small living constellation (gm-constellation.ts).
- * After the phone opening it is the very monogram that just flew into the
- * corner; on any other visit its stars light up one by one.
+ * The header's GM on every screen, a small living constellation
+ * (gm-constellation.ts). After the phone opening it is the very monogram that
+ * just flew into the corner; on any other visit its stars light up one by one.
  */
 export default function DynamicGMLogo() {
   const ref = useRef<HTMLCanvasElement>(null);
-  const [phone, setPhone] = useState(false);
-
-  useEffect(() => {
-    const query = matchMedia(PHONE_LOGO_QUERY);
-    const update = () => setPhone(query.matches);
-    update();
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  }, []);
 
   useEffect(() => {
     const canvas = ref.current;
     const ctx = canvas?.getContext('2d');
-    if (!phone || !canvas || !ctx) return;
+    if (!canvas || !ctx) return;
     const root = document.documentElement;
     const reduced = reducedMotion();
     const sprites = makeSprites();
@@ -107,8 +98,7 @@ export default function DynamicGMLogo() {
       reduced.removeEventListener('change', onMotion);
       logoBridge.draw = null;
     };
-  }, [phone]);
+  }, []);
 
-  if (!phone) return null;
   return <canvas ref={ref} className="gm-logo-stars" aria-hidden="true" />;
 }

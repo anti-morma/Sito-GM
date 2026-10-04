@@ -430,9 +430,11 @@ em { font-style: normal; }
   .gm-header[data-menu='open'] .gm-menu-toggle i { height: 0; border-bottom: 0; }
   .gm-header[data-menu='open']::before { opacity: 1; }
 }
-.gm-logo-stars { display: none; }
-/* Phones: the GM, a living constellation (dynamic-gm-logo.tsx), holds the
-   top-left corner, the menu the right; both clear of the safe areas. */
+/* The GM, a living constellation (dynamic-gm-logo.tsx), on every screen. */
+.gm-header .gm-logo { position: relative; background: none; }
+.gm-logo-stars { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+/* Phones: the GM holds the top-left corner, the menu the right; both clear
+   of the safe areas. */
 @media (max-width: 600px) {
   .gm-header {
     height: calc(var(--header-h) + env(safe-area-inset-top));
@@ -440,8 +442,6 @@ em { font-style: normal; }
     padding-right: max(var(--gutter), env(safe-area-inset-right));
     padding-left: max(var(--gutter), env(safe-area-inset-left));
   }
-  .gm-header .gm-logo { background: none; }
-  .gm-logo-stars { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 }
 /* Clipped: the dark pool behind the copy must not widen the page on phones. */
 .gm-hero { position: relative; height: 100svh; min-height: 520px; overflow: clip; }

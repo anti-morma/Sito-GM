@@ -5,14 +5,16 @@
 // it lands, the logo's canvas takes over pixel for pixel.
 import logoStars from './gm-logo-stars.json';
 
-// Phones: where the living logo replaces the drawn one, and where the opening plays.
-export const PHONE_LOGO_QUERY = '(max-width: 600px)';
+// Phones: where the opening plays (the living logo is on every screen).
 export const PHONE_OPENING_QUERY = '(max-width: 600px) and (orientation: portrait)';
 
 // The monogram's letters are this wide in their own units (gm-points.json).
 export const MONOGRAM_WIDTH = 0.818;
 // Share of the header logo's box the letters span (globals.css, .gm-header .gm-logo).
 export const LOGO_MARK_SHARE = 0.84;
+// The phone's logo box width (CSS px): the stars' sizes are drawn for it, and
+// a wider box (computers) grows them alike, so the GM keeps the same density.
+export const PHONE_LOGO_WIDTH = 46;
 // How far a logo star wanders, in CSS pixels: less than half a pixel.
 export const LIVING_AMP = 0.32;
 
@@ -105,9 +107,10 @@ export function drawStar(ctx: CanvasRenderingContext2D, sprites: HTMLCanvasEleme
 /** Every logo star in a canvas the size of the logo's box. */
 export function drawLogo(ctx: CanvasRenderingContext2D, sprites: HTMLCanvasElement[], width: number, height: number, t: number, alpha = 1, still = false, each?: (index: number) => number) {
   const scale = logoScale(width);
+  const grow = Math.max(1, width / PHONE_LOGO_WIDTH);
   LOGO_STARS.forEach((star, index) => {
     const s = logoStarAt(star, t, LIVING_AMP, still);
-    drawStar(ctx, sprites, width / 2 + star.x * scale + s.dx, height / 2 - star.y * scale + s.dy, s.r, s.a * alpha * (each ? each(index) : 1), star.tint);
+    drawStar(ctx, sprites, width / 2 + star.x * scale + s.dx * grow, height / 2 - star.y * scale + s.dy * grow, s.r * grow, s.a * alpha * (each ? each(index) : 1), star.tint);
   });
 }
 
