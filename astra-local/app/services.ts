@@ -59,8 +59,8 @@ export const services: Service[] = [
       ],
     },
     projects: [
-      { slug: 'lalinga-oro', note: 'Identità digitale e design di ogni pagina, sul carattere di una maison orafa del 1950.' },
-      { slug: 'residenza-vedovelli', note: 'Il design sul carattere di un’antica limonaia affacciata sul Lago di Garda.' },
+      { slug: 'lalinga-oro', note: 'Una direzione visiva ispirata all’alta orologeria: tipografia classica, spazio e movimento.' },
+      { slug: 'residenza-vedovelli', note: 'Una direzione visiva che lascia parlare la casa, la luce e il lago.' },
     ],
   },
   {
@@ -85,8 +85,8 @@ export const services: Service[] = [
       { title: 'Web application', text: 'Quando un progetto ha bisogno di più di un sito, un’area riservata, uno strumento, un flusso su misura, lo valutiamo insieme, partendo da ciò che deve risolvere.' },
     ],
     projects: [
-      { slug: 'lalinga-oro', note: 'Codice su misura, senza CMS né framework: leggero e pensato prima di tutto per il telefono.' },
-      { slug: 'residenza-vedovelli', note: 'Un sito in tre lingue, veloce, con la prenotazione diretta sempre a portata di mano.' },
+      { slug: 'lalinga-oro', note: 'Sviluppato da zero, senza CMS né template, con l’apertura animata su canvas.' },
+      { slug: 'residenza-vedovelli', note: 'Sviluppo su misura in tre lingue, con le recensioni verificate collegate al sito.' },
     ],
   },
   {
@@ -113,8 +113,8 @@ export const services: Service[] = [
       { title: 'Conversione', text: 'Ogni principio serve a una cosa: rendere più facile il passo che conta, che sia una richiesta, una prenotazione o una visita.' },
     ],
     projects: [
-      { slug: 'residenza-vedovelli', note: 'Un percorso semplice per scegliere tra la villa intera e i singoli piani, e arrivare alla prenotazione in pochi passaggi.' },
-      { slug: 'lalinga-oro', note: 'Sei servizi diversi ordinati in un percorso in cui ognuno trova subito il suo.' },
+      { slug: 'residenza-vedovelli', note: 'La scelta tra villa intera e singoli piani resa immediata, fino alla prenotazione diretta.' },
+      { slug: 'lalinga-oro', note: 'Sei ingressi distinti: ognuno arriva subito al mondo che cerca.' },
     ],
   },
   {
@@ -147,7 +147,7 @@ export const services: Service[] = [
       text: 'Il monogramma GM in apertura e il cervello che ruota prima del modulo contatti sono disegnati da migliaia di stelle in WebGL (Three.js). Le scene si caricano dopo la pagina, scendono di qualità sui dispositivi più lenti e si fermano con il movimento ridotto.',
     },
     projects: [
-      { slug: 'lalinga-oro', note: 'Motion su misura: al primo scroll un orologio si apre e svela il suo meccanismo, pezzo per pezzo.' },
+      { slug: 'lalinga-oro', note: 'Motion su misura: allo scroll un orologio si apre e rivela il suo meccanismo.' },
     ],
   },
   {

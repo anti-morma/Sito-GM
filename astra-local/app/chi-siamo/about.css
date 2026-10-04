@@ -134,6 +134,9 @@
 
 .gm-people-head { max-width: 900px; margin: 0 auto clamp(32px, 6vh, 72px); text-align: center; }
 .gm-people-head .gm-label { justify-content: center; }
+/* Who they are together, before each of them. */
+.gm-people-lead { max-width: 60ch; margin: clamp(16px, 3vh, 28px) auto 0; color: var(--ink-2); font-size: clamp(16px, 1.25vw, 19px); line-height: 1.6; text-wrap: pretty; }
+.gm-people-lead p + p { margin-top: 8px; }
 
 .gm-duo {
   --mono-w: clamp(200px, min(24vw, 44svh), 380px);
@@ -176,17 +179,13 @@
 .gm-duo-note {
   grid-area: note;
   justify-self: center;
-  max-width: 34ch;
+  max-width: 62ch;
   margin-top: clamp(28px, 6svh, 72px);
-  color: var(--ink);
-  font-family: var(--serif);
-  font-size: clamp(24px, min(2.4vw, 4.6svh), 38px);
-  font-style: italic;
-  line-height: 1.25;
   text-align: center;
-  text-wrap: balance;
 }
-.gm-duo-note em { color: #f1f4ff; text-shadow: 0 0 22px rgb(143 177 255 / 55%); }
+.gm-duo-note h3 { color: var(--ink); font-size: clamp(24px, min(2.4vw, 4.6svh), 38px); font-weight: 500; line-height: 1.15; letter-spacing: -0.03em; text-wrap: balance; }
+.gm-duo-note em { color: #f1f4ff; font-family: var(--serif); font-weight: 400; letter-spacing: -0.01em; text-shadow: 0 0 22px rgb(143 177 255 / 55%); }
+.gm-duo-note p { margin-top: clamp(10px, 2svh, 18px); color: var(--ink-2); font-size: clamp(15px, min(1.15vw, 2.5svh), 17px); line-height: 1.6; text-wrap: pretty; }
 
 /* The sequence: both letters at once, the M a beat behind; the shared
    stroke when both have arrived; each founder comes up with their letter. */
@@ -228,16 +227,7 @@
 .gm-principle-title { color: var(--ink); font-size: clamp(20px, 1.7vw, 26px); font-weight: 500; line-height: 1.2; letter-spacing: -0.02em; }
 .gm-principle-text { max-width: 44ch; color: var(--ink-2); font-size: clamp(16px, 1.25vw, 19px); line-height: 1.55; }
 
-/* ---------- 4 · Less, but better ---------- */
-.gm-less { display: flex; align-items: center; min-height: 80svh; padding-block: clamp(120px, 20vh, 240px); }
-.gm-less-wrap { max-width: 900px; text-align: center; }
-.gm-less-wrap .gm-label { justify-content: center; }
-.gm-less-source { margin-top: 20px; color: var(--ink-3); font-size: 12px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; }
-.gm-less-body { max-width: 40ch; margin: clamp(40px, 7vh, 72px) auto 0; color: var(--ink-2); font-size: clamp(17px, 1.35vw, 21px); line-height: 1.65; }
-.gm-less-body p + p { margin-top: 14px; }
-.gm-less-rule { margin-top: clamp(28px, 4vh, 40px) !important; color: var(--ink); font-weight: 500; }
-
-/* ---------- 5 · The call ---------- */
+/* ---------- 4 · The call ---------- */
 .gm-about-cta { padding-block: clamp(96px, 16vh, 200px) clamp(96px, 16vh, 180px); text-align: center; }
 /* The light it rises towards. */
 .gm-about-cta::before {
@@ -260,6 +250,12 @@
   .gm-about-title { font-size: clamp(46px, min(6.3vw, 10.5svh), 116px); }
   .gm-about-title-rest { font-size: clamp(22px, min(2.6vw, 4.6svh), 46px); }
   .gm-people-head { margin-bottom: clamp(24px, 5svh, 72px); }
+  /* The lead and the closing words in wide lines, the monogram a little
+     smaller: the founders, together and apart, in one screen. */
+  .gm-people-lead { max-width: 84ch; margin-top: clamp(12px, 2.4svh, 28px); font-size: clamp(15px, min(1.2vw, 2.6svh), 19px); }
+  .gm-people-lead p + p { margin-top: 2px; }
+  .gm-duo { --mono-w: clamp(180px, min(22vw, 36svh), 360px); }
+  .gm-duo-note { max-width: 84ch; margin-top: clamp(20px, 4svh, 64px); }
 
   /* How we think: the question on the left, the five sides beside it. */
   .gm-think .gm-wrap { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); column-gap: clamp(40px, 6vw, 120px); align-items: start; }
@@ -268,8 +264,6 @@
   .gm-principle { grid-template-columns: 44px minmax(0, 2.4fr) minmax(0, 5fr); padding: clamp(14px, 2.8svh, 30px) 0; }
   .gm-principle-text { font-size: clamp(15px, min(1.15vw, 2.5svh), 18px); }
 
-  .gm-less { min-height: 0; padding-block: clamp(64px, 12svh, 200px); }
-  .gm-less-body { margin-top: clamp(24px, 5svh, 72px); }
   .gm-about-cta { padding-block: clamp(64px, 12svh, 200px) clamp(64px, 12svh, 180px); }
   .gm-about-cta-star { width: clamp(48px, 9svh, 76px); height: clamp(48px, 9svh, 76px); margin-bottom: clamp(14px, 3svh, 36px); }
 }
@@ -303,14 +297,15 @@
   .gm-duo-person[data-side='right'] { padding-top: 36px; border-top: 1px solid var(--line); }
   .gm-duo-person h3 { font-size: clamp(30px, 9vw, 40px); }
   .gm-duo-text { font-size: 16px; }
-  .gm-duo-note { font-size: clamp(24px, 7vw, 30px); }
+  .gm-duo-note h3 { font-size: clamp(24px, 7vw, 30px); }
+  .gm-duo-note p { font-size: 16px; }
+  .gm-people-lead { font-size: 16px; }
 
   .gm-think-question { font-size: 19px; }
   .gm-principle { grid-template-columns: 36px minmax(0, 1fr); padding: 20px 0; }
   .gm-principle-title { font-size: 20px; }
   .gm-principle-text { font-size: 16px; }
 
-  .gm-less { min-height: 0; padding-block: 120px; }
   .gm-about-cta .gm-btn { width: 100%; }
   .gm-about-cta::before { content: none; }
 }

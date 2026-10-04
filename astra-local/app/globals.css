@@ -1585,6 +1585,27 @@ html[data-intro='waiting']::after {
 @media (min-width: 761px), (orientation: landscape) {
   .gm-projects .gm-project-list > .gm-project > .gm-project-media { width: min(100%, 980px, (100svh - var(--header-h) - 300px) * 1.6); aspect-ratio: 16 / 10; }
 }
+/* Computers: the whole section in one screen, from "Progetti" to "Esplora i
+   progetti". Smaller title and name, tighter spaces, and one line under the
+   preview: arrows and dots on the left, the project's buttons in the middle,
+   "Esplora i progetti" on the right. The preview takes the height that is
+   left (--project-rest: everything around it). */
+@media (min-width: 1025px) {
+  .gm-projects { --project-rest: calc(var(--header-h) + 16px + 96px + 26svh); }
+  .gm-projects .gm-project-carousel .gm-project-controls { position: absolute; left: 0; bottom: 4px; margin: 0; }
+  .gm-projects .gm-wrap > .gm-home-more { justify-content: flex-end; margin-top: -52px; pointer-events: none; }
+  .gm-projects .gm-wrap > .gm-home-more > * { pointer-events: auto; }
+  /* At the bottom of the screen it would never reach the reveal line: it
+     comes in with the title instead. */
+  .gm-reveal-ready .gm-projects .gm-projects-head.is-visible ~ .gm-home-more { opacity: 1; transform: none; transition-delay: 0.3s; }
+  .gm-projects .gm-projects-head { margin-bottom: clamp(14px, 2.4svh, 36px); }
+  .gm-projects .gm-projects-head .gm-label { margin-bottom: clamp(10px, 1.6svh, 20px); }
+  .gm-projects .gm-projects-head .gm-h2 { font-size: clamp(30px, min(3.2vw, 5.6svh), 58px); }
+  .gm-projects .gm-project h3 { font-size: clamp(26px, min(2.4vw, 4.4svh), 44px); }
+  .gm-projects .gm-project-text .gm-project-category { margin-top: 6px; font-size: 12px; }
+  .gm-projects .gm-project-list > .gm-project > .gm-project-media { width: min(100%, 980px, (100svh - var(--project-rest)) * 1.6); margin-top: clamp(10px, 1.8svh, 22px); }
+  .gm-projects .gm-project-list > .gm-project > .gm-project-actions { margin-top: clamp(12px, 2svh, 24px); }
+}
 /* Phones upright: the phone recording, larger. */
 @media (max-width: 760px) and (orientation: portrait) {
   .gm-projects .gm-project-carousel { --shot: min(74vw, 320px, 58svh * 0.609); margin-inline: 0; }

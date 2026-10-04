@@ -1,0 +1,248 @@
+/* ======================================================================
+   Case studies told as a story (app/progetti/[slug]/case-story.tsx, used
+   by lalinga-oro.tsx and residenza-vedovelli.tsx): an editorial piece to
+   read from top to bottom. One column of text, the chapters by name on a
+   reading path beside it (computers), large type, a lot of room, the two
+   recordings of the site as the only images. Everything here is scoped
+   to .gm-story. Same tokens, type and light as the rest of the site
+   (globals.css, case-study.css).
+   ====================================================================== */
+
+.gm-story { --story-space: clamp(88px, 14vh, 184px); }
+.gm-story em { font-style: italic; }
+/* The site's italic: the serif, lit from warm white to the accent. */
+.gm-story :is(.gm-st-headline, .gm-st-manifesto, .gm-st-result) em {
+  padding: 0 0.08em 0.08em 0;
+  background: linear-gradient(100deg, #fbf5e8 0%, #e6e9ff 38%, #b9cdff 70%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* ---------- Hero: the name, its promise, three lines, the facts ---------- */
+.gm-st-hero { padding-top: clamp(40px, 9vh, 104px); }
+.gm-st-headline { max-width: 22ch; margin-top: clamp(16px, 2.6vh, 28px); font-size: clamp(30px, 3.6vw, 60px); line-height: 1.08; text-wrap: balance; }
+.gm-st-intro { max-width: 50ch; margin-top: clamp(28px, 5vh, 52px); color: var(--ink-2); font-size: clamp(17px, 1.3vw, 20px); line-height: 1.6; }
+.gm-st-intro p + p { margin-top: 12px; }
+.gm-st-intro .gm-st-intro-first { color: var(--ink); }
+.gm-st-meta {
+  display: grid;
+  grid-template-columns: 1.25fr 0.7fr 0.8fr 1.45fr 0.8fr;
+  gap: 24px clamp(20px, 3vw, 48px);
+  margin: clamp(44px, 8vh, 88px) 0 0;
+  padding: 22px 0 0;
+  border-top: 1px solid var(--line-2);
+}
+.gm-st-meta dt { color: var(--ink-3); font-size: 11px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; }
+.gm-st-meta dd { margin: 10px 0 0; color: var(--ink); font-size: 15px; line-height: 1.5; }
+
+/* The site at work, the page's first image. */
+.gm-st-showcase { margin-top: clamp(56px, 10vh, 120px); }
+
+
+/* ---------- The story: one column to read, the path beside it ---------- */
+.gm-st-story { margin-top: clamp(24px, 4vh, 56px); }
+.gm-st-aside { display: none; }
+.gm-st-flow { min-width: 0; max-width: 920px; }
+.gm-st-part { padding-top: var(--story-space); scroll-margin-top: calc(var(--header-h) + 24px); }
+/* Each step opens with its name, in the site's italic. */
+.gm-st-heading {
+  width: fit-content;
+  margin-bottom: clamp(24px, 4.4vh, 48px);
+  padding: 0 0.08em 0.06em 0;
+  background: linear-gradient(100deg, #fbf5e8 0%, #e6e9ff 45%, #b9cdff 85%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: var(--serif);
+  font-size: clamp(34px, 3.4vw, 56px);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* Words: one measure, the lines that matter in white. */
+.gm-st-prose { max-width: 46ch; color: var(--ink-2); font-size: clamp(17px, 1.3vw, 20px); line-height: 1.62; }
+.gm-st-prose p + p { margin-top: 14px; }
+.gm-st-strong { color: var(--ink); font-size: clamp(20px, 1.7vw, 26px); font-weight: 500; line-height: 1.32; letter-spacing: -0.02em; }
+.gm-st-prose .gm-st-strong + p { margin-top: 16px; }
+.gm-st-prose p + .gm-st-strong { margin-top: 22px; }
+.gm-st-kicker { color: var(--ink-3); font-size: 12px; font-weight: 500; letter-spacing: 0.16em; line-height: 1.4; text-transform: uppercase; }
+
+/* The starting point: one sentence in two tones, then a row of names (Lalinga's six worlds). */
+.gm-st-statement,
+.gm-st-turn { max-width: 32ch; font-size: clamp(25px, 2.5vw, 40px); font-weight: 500; line-height: 1.18; letter-spacing: -0.03em; text-wrap: balance; }
+.gm-st-statement { color: var(--ink); }
+.gm-st-turn { margin-top: 0.4em; color: var(--ink-3); }
+.gm-st-worlds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: clamp(20px, 3vw, 48px); margin: clamp(36px, 6vh, 64px) 0; padding: 0; list-style: none; }
+.gm-st-worlds li { padding: 14px 0; border-top: 1px solid var(--line); color: var(--ink); font-size: clamp(19px, 1.6vw, 25px); font-weight: 500; letter-spacing: -0.02em; }
+
+/* The goals: each under the one word it is about. */
+.gm-st-part--goals { padding-top: clamp(48px, 9vh, 104px); }
+.gm-st-goals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(28px, 4vw, 64px); margin: 18px 0 0; padding: 0; list-style: none; }
+.gm-st-goals li { display: grid; gap: 8px; align-content: start; padding: clamp(18px, 3vh, 28px) 0; border-top: 1px solid var(--line-2); }
+.gm-st-goals strong { color: var(--ink); font-family: var(--serif); font-size: clamp(26px, 2.3vw, 36px); font-style: italic; font-weight: 400; line-height: 1.1; }
+.gm-st-goals span { max-width: 34ch; color: var(--ink-2); font-size: clamp(16px, 1.2vw, 18px); line-height: 1.5; }
+
+/* The choice: the decision as one large line, then why and where it leads. */
+.gm-st-manifesto {
+  max-width: 20ch;
+  margin-bottom: clamp(36px, 7vh, 72px);
+  color: var(--ink);
+  font-size: clamp(36px, 4.4vw, 72px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.gm-st-manifesto em { display: block; margin-top: 0.08em; }
+.gm-st-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 80px); align-items: start; }
+.gm-st-pair--lines-first .gm-st-paths { order: -1; }
+.gm-st-prose--after { margin-top: clamp(28px, 5vh, 56px); }
+.gm-st-paths p { padding: 14px 0; border-top: 1px solid var(--line); color: var(--ink-2); font-size: clamp(16px, 1.2vw, 18px); line-height: 1.45; }
+.gm-st-paths p.gm-st-strong { padding-top: 20px; color: var(--ink); font-size: clamp(20px, 1.7vw, 26px); }
+
+/* The experience: its sides, each under its name. */
+.gm-st-blocks { display: grid; }
+.gm-st-block { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 12px clamp(24px, 4vw, 64px); padding: clamp(20px, 3.4vh, 32px) 0; border-top: 1px solid var(--line); color: var(--ink-2); font-size: clamp(16px, 1.15vw, 18px); line-height: 1.6; }
+.gm-st-block:last-child { border-bottom: 1px solid var(--line); }
+.gm-st-block h3 { color: var(--ink); font-size: 12px; font-weight: 500; letter-spacing: 0.16em; line-height: 1.6; text-transform: uppercase; }
+.gm-st-block p + p { margin-top: 10px; }
+.gm-st-block .gm-st-block-lead { color: var(--ink); font-size: clamp(18px, 1.45vw, 22px); font-weight: 500; line-height: 1.35; letter-spacing: -0.015em; }
+
+/* Technology and the like: the proof, smaller and quieter. */
+.gm-st-part--proof .gm-st-heading { font-size: clamp(28px, 2.6vw, 42px); }
+.gm-st-proof { color: var(--ink-2); font-size: clamp(16px, 1.2vw, 18px); line-height: 1.6; }
+.gm-st-proof > p { max-width: 52ch; }
+.gm-st-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px clamp(24px, 4vw, 56px); margin: 24px 0 0; padding: 0; list-style: none; }
+.gm-st-list li { position: relative; padding-left: 22px; color: var(--ink); font-size: 15px; line-height: 1.5; }
+.gm-st-list li::before {
+  content: '';
+  position: absolute;
+  top: 0.45em;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+}
+
+/* The phone: the words, and the phone beside them. */
+.gm-st-phone { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: clamp(32px, 6vw, 96px); align-items: center; }
+.gm-story .gm-st-phone .gm-case-phone-frame { width: min(260px, 64vw); }
+
+/* The result: one sentence, the largest of the story. */
+.gm-st-result { max-width: 22ch; margin-bottom: clamp(28px, 5vh, 56px); color: var(--ink); font-size: clamp(34px, 4.2vw, 68px); font-weight: 500; line-height: 1.06; letter-spacing: -0.045em; text-wrap: balance; }
+
+/* What we built: the work in short, two columns of stars. */
+.gm-st-credits { margin: 0; gap: clamp(12px, 2vh, 18px) clamp(24px, 4vw, 56px); }
+.gm-st-credits li { padding-left: 24px; font-size: clamp(16px, 1.25vw, 19px); }
+.gm-st-credits li::before { top: 0.5em; }
+.gm-st-visit { margin-top: clamp(32px, 6vh, 56px); }
+/* Before the next project and the call, the page's usual close. */
+.gm-st-part--built { padding-bottom: clamp(72px, 12vh, 160px); }
+
+/* ---------- Computers: the path beside the story ---------- */
+@media (min-width: 1025px) {
+  /* Every block fits one screen (the site's rule for computers): sizes
+     follow the screen's height as well as its width. */
+  .gm-story { --story-space: clamp(88px, 15svh, 168px); }
+  .gm-st-hero { padding-top: clamp(28px, 6svh, 104px); }
+  .gm-st-hero .gm-case-crumbs { margin-bottom: clamp(20px, 4svh, 48px); }
+  .gm-st-hero .gm-case-title { font-size: clamp(46px, min(6.4vw, 11svh), 112px); }
+  .gm-st-headline { max-width: none; margin-top: clamp(10px, 2svh, 26px); font-size: clamp(28px, min(3.2vw, 6svh), 56px); }
+  /* The first line on the left, the rest beside it. */
+  .gm-st-intro { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: clamp(40px, 8vw, 160px); max-width: none; margin-top: clamp(24px, 5svh, 64px); font-size: clamp(16px, min(1.3vw, 2.7svh), 20px); }
+  .gm-st-intro .gm-st-intro-first { grid-row: span 2; max-width: 22ch; font-size: clamp(20px, min(1.8vw, 3.6svh), 28px); font-weight: 500; line-height: 1.3; letter-spacing: -0.02em; }
+  .gm-st-intro p + p { margin-top: 0; }
+  .gm-st-intro p:nth-child(3) { margin-top: 12px; }
+  .gm-st-meta { margin-top: clamp(28px, 6svh, 88px); }
+
+  .gm-st-story { display: grid; grid-template-columns: minmax(170px, 210px) minmax(0, 1fr); column-gap: clamp(48px, 7vw, 140px); }
+  .gm-st-aside { display: block; }
+  .gm-st-heading { margin-bottom: clamp(20px, 4.4svh, 48px); font-size: clamp(32px, min(3.2vw, 6.4svh), 56px); }
+  .gm-st-statement, .gm-st-turn { font-size: clamp(24px, min(2.5vw, 4.8svh), 40px); }
+  .gm-st-worlds { margin-block: clamp(24px, 5.4svh, 64px); }
+  .gm-st-worlds li { padding-block: clamp(10px, 1.8svh, 14px); }
+  .gm-st-goals li { padding-block: clamp(14px, 2.8svh, 28px); }
+  .gm-st-manifesto { margin-bottom: clamp(28px, 6svh, 72px); font-size: clamp(34px, min(4.4vw, 7.6svh), 72px); }
+  .gm-st-paths p { padding-block: clamp(10px, 1.9svh, 14px); }
+  .gm-st-block { padding-block: clamp(16px, 3svh, 32px); }
+  .gm-st-result { font-size: clamp(32px, min(4.2vw, 7.4svh), 68px); }
+  .gm-story .gm-st-phone .gm-case-phone-frame { width: min(260px, (100svh - var(--header-h) - 230px) * 0.609); }
+}
+
+/* The path: the chapters by name on a thin line that fills as you read
+   (story-path.tsx). The one you are in is lit; those behind you keep
+   a softer light. */
+.gm-st-path { position: sticky; top: calc(var(--header-h) + 14svh); padding-top: var(--story-space); }
+.gm-st-path ol { position: relative; display: grid; gap: 4px; margin: 0; padding: 0 0 0 22px; list-style: none; }
+.gm-st-path ol::before,
+.gm-st-path ol::after { content: ''; position: absolute; top: 15px; bottom: 15px; left: 3px; width: 1px; }
+.gm-st-path ol::before { background: var(--line-2); }
+.gm-st-path ol::after { background: var(--accent); transform: scaleY(var(--story-read, 0)); transform-origin: top; transition: transform 0.25s linear; }
+.gm-st-path li { position: relative; }
+.gm-st-path li::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: -22px;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: var(--bg);
+  transition: background-color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.gm-st-path a { display: block; padding: 6px 0; color: var(--ink-3); font-size: 14px; line-height: 1.3; transition: color 0.3s var(--ease); }
+.gm-st-path a:hover { color: var(--ink); }
+.gm-st-path li:has(~ li[data-current])::before { border-color: var(--accent); background: var(--accent); }
+.gm-st-path li:has(~ li[data-current]) a { color: var(--ink-2); }
+.gm-st-path li[data-current]::before { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 4px rgb(143 177 255 / 16%); }
+.gm-st-path li[data-current] a { color: var(--ink); }
+@media (prefers-reduced-motion: reduce) {
+  .gm-st-path ol::after { transition: none; }
+}
+
+/* ---------- Tablets ---------- */
+@media (max-width: 1024px) {
+  .gm-st-meta { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .gm-st-meta > div:first-child { grid-column: span 2; }
+  .gm-st-meta > div:nth-child(4) { grid-column: span 2; }
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 760px) {
+  .gm-story { --story-space: clamp(72px, 12vh, 104px); }
+  .gm-st-headline { font-size: clamp(27px, 7.6vw, 36px); }
+  .gm-st-intro { font-size: 17px; }
+  .gm-st-meta { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 18px; }
+  .gm-st-meta > div:first-child,
+  .gm-st-meta > div:nth-child(4) { grid-column: 1 / -1; }
+  .gm-st-meta dd { font-size: 15px; }
+  .gm-st-heading { font-size: clamp(32px, 9vw, 40px); }
+  .gm-st-part--proof .gm-st-heading { font-size: clamp(28px, 8vw, 34px); }
+  .gm-st-statement, .gm-st-turn { font-size: clamp(23px, 6.4vw, 28px); }
+  .gm-st-worlds { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-block: 36px; }
+  .gm-st-worlds li { font-size: 20px; }
+  .gm-st-goals { grid-template-columns: minmax(0, 1fr); }
+  .gm-st-goals strong { font-size: 26px; }
+  .gm-st-manifesto { font-size: clamp(32px, 9vw, 42px); margin-bottom: 36px; }
+  .gm-st-pair { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+  .gm-st-block { grid-template-columns: minmax(0, 1fr); }
+  .gm-st-block .gm-st-block-lead { font-size: 19px; }
+  .gm-st-list { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .gm-st-phone { grid-template-columns: minmax(0, 1fr); gap: 44px; }
+  .gm-story .gm-st-phone .gm-case-phone-frame { justify-self: center; width: min(250px, 66vw); }
+  .gm-st-result { font-size: clamp(30px, 8.6vw, 40px); }
+  .gm-st-visit { width: 100%; }
+}

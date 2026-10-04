@@ -30,8 +30,8 @@ function Halo({ id }: { id: string }) {
 
 /**
  * Chi siamo, in the order a visitor asks: who you are (the opening says it
- * plainly), the two people (G and M, one direction), how you think, what you
- * believe, and one action. Motion only where it carries meaning
+ * plainly), the two people (G and M, one direction), how you think, and one
+ * action. Motion only where it carries meaning
  * (scenes.tsx); everything reads with reduced motion.
  */
 export default function AboutPage() {
@@ -97,6 +97,10 @@ export default function AboutPage() {
               <header className="gm-people-head" data-reveal>
                 <SectionLabel>I fondatori</SectionLabel>
                 <h2 className="gm-h2" id="people-title">Due competenze. <em>Una direzione.</em></h2>
+                <div className="gm-people-lead">
+                  <p>{site.name} nasce dall’incontro tra due prospettive complementari: strategia e tecnologia.</p>
+                  <p>Abbiamo competenze diverse e aree di maggiore specializzazione, ma lavoriamo sempre a stretto contatto: ogni progetto nasce dal confronto tra entrambi e viene sviluppato insieme.</p>
+                </div>
               </header>
 
               {/* Ludovico, the GM, Alessandro: their initials are the studio's monogram (monogram.tsx). */}
@@ -112,7 +116,11 @@ export default function AboutPage() {
                   <p className="gm-duo-role" lang="en">{second.role}</p>
                   <p className="gm-duo-text">{second.text}</p>
                 </article>
-                <p className="gm-duo-note">Due sguardi diversi, un solo obiettivo: <em>il tuo.</em></p>
+                {/* Two specialisms, one piece of work: it comes once the shared stroke is drawn. */}
+                <div className="gm-duo-note">
+                  <h3>Due specializzazioni. <em>Un unico lavoro.</em></h3>
+                  <p>Le competenze non sono compartimenti separati. Ci confrontiamo, collaboriamo e interveniamo entrambi nelle diverse fasi del progetto, mettendo a disposizione ciò che sappiamo fare meglio per costruire il risultato finale.</p>
+                </div>
               </div>
             </div>
           </section>
@@ -139,21 +147,7 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* 4 · What we believe, in three lines. */}
-          <section className="gm-section gm-less" aria-labelledby="less-title">
-            <div className="gm-wrap gm-less-wrap" data-reveal>
-              <SectionLabel>Filosofia</SectionLabel>
-              <h2 className="gm-h2 gm-h2--xl" id="less-title" lang="en">Less, <em>but better.</em></h2>
-              <p className="gm-less-source">Dieter Rams · <span lang="de">Weniger, aber besser</span></p>
-              <div className="gm-less-body">
-                <p>Non crediamo che un progetto debba essere più complesso per essere più importante.</p>
-                <p>Crediamo nella complessità quando è necessaria. Nella semplicità quando è sufficiente.</p>
-                <p className="gm-less-rule">Ogni elemento deve avere un motivo.</p>
-              </div>
-            </div>
-          </section>
-
-          {/* 5 · The call. */}
+          {/* 4 · The call. */}
           <section className="gm-section gm-about-cta" aria-labelledby="about-cta-title">
             <div className="gm-wrap gm-about-cta-wrap" data-reveal>
               <svg className="gm-about-cta-star" viewBox="-40 -40 80 80" aria-hidden="true">

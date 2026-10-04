@@ -91,13 +91,13 @@ export const founders = [
   {
     name: 'Ludovico Gusmano',
     role: 'Strategy · UX/UI · Business',
-    text: 'Ideatore di ogni progetto, dalla prima idea al sito online. Strategia, user experience, user interface e user flow; psicologia del consumatore e principi di persuasione; gerarchia visiva, carico cognitivo e leggi della UX; business, economia e finanza. Definisce obiettivi, struttura e identità del sito: come le persone lo percepiscono, come si muovono e cosa le porta a scegliere.',
+    text: 'Si concentra principalmente su strategia, UX/UI e visione del business, definendo struttura, esperienza e direzione del progetto.',
     knowsAbout: ['Strategia digitale', 'UX design', 'UI design', 'User flow', 'Psicologia del consumatore', 'Business', 'Economia e finanza'],
   },
   {
     name: 'Alessandro Mormandi',
     role: 'Development · 3D · Creative Technology',
-    text: 'Struttura e architettura tecnologica del sito, sviluppo e scrittura del codice, front-end, performance, 3D e WebGL, animazioni e interazioni. Trasforma il progetto in un sito veloce, solido e curato in ogni dettaglio.',
+    text: 'Si concentra principalmente su sviluppo, 3D e tecnologia creativa, trasformando la direzione del progetto in un’esperienza digitale concreta.',
     knowsAbout: ['Sviluppo web', 'Front-end', 'Performance web', '3D e WebGL', 'Creative technology'],
   },
 ];
@@ -186,18 +186,18 @@ export const projects: Project[] = [
   {
     name: 'Lalinga Oro',
     category: 'Gioielleria · Taranto',
-    description: 'Tre generazioni di orafi a Taranto, dal 1950. Un orologio che prende vita allo scroll racconta la loro precisione e porta ognuno, in pochi secondi, al servizio che cerca.',
+    description: 'Gioielleria, orologeria e laboratorio orafo a Taranto dal 1950. Sei attività in un unico percorso, aperto da un orologio che si svela allo scroll.',
     href: 'https://lalingaoro.it',
     preview: '/projects/lalinga',
     study: {
       slug: 'lalinga-oro',
       seoTitle: 'Lalinga Oro, gioielleria a Taranto: caso studio',
       seoDescription: 'Il sito di Lalinga Oro, gioielleria di famiglia a Taranto dal 1950: sei mestieri in un solo percorso e un orologio che si apre allo scroll.',
-      client: 'Gioielleria, orologeria e laboratorio orafo di famiglia, a Taranto dal 1950.',
+      client: 'Una gioielleria, orologeria e laboratorio orafo di famiglia, a Taranto dal 1950.',
       place: 'Taranto',
-      sector: 'Gioielleria · Orologeria',
+      sector: 'Luxury retail',
       services: ['Strategia e struttura', 'Brand experience', 'Web design', 'Sviluppo e animazioni'],
-      headline: 'Tre generazioni di mestiere, in un solo scroll.',
+      headline: 'Tre generazioni di mestiere, in un’unica esperienza digitale.',
       overview: 'Un sito nuovo per una gioielleria, orologeria e laboratorio orafo di famiglia, in via Anfiteatro a Taranto dal 1950. Nove pagine: una per ciascuno dei sei mestieri della maison, la sua storia e i contatti.',
       challenge: 'Una maison di famiglia dal 1950 e sei mestieri diversi: orologi, oreficeria, gioielli, pelletteria, compro oro e un laboratorio interno. Il rischio era un catalogo. Serviva un sito che trasmettesse fiducia e precisione, e che facesse trovare a ognuno la propria strada.',
       goals: [
@@ -237,11 +237,10 @@ export const projects: Project[] = [
   },
   {
     name: 'Residenza Vedovelli',
-    category: 'Casa vacanze · Lago di Garda',
-    description: 'Una residenza sul Lago di Garda, da visitare piano per piano in tre lingue. Un sito che porta gli ospiti a prenotare direttamente dai proprietari, senza commissioni ai portali.',
+    category: 'Hospitality · Lago di Garda',
+    description: 'Un’antica limonaia sul Lago di Garda, da esplorare piano per piano in tre lingue, fino alla prenotazione diretta.',
     href: 'https://www.residenzavedovelli.it',
     preview: '/projects/vedovelli',
-    home: { category: 'Hospitality · Lago di Garda' },
     study: {
       slug: 'residenza-vedovelli',
       seoTitle: 'Residenza Vedovelli, Lago di Garda: caso studio',
@@ -250,7 +249,7 @@ export const projects: Project[] = [
       place: 'Torri del Benaco · Lago di Garda',
       sector: 'Hospitality · Affitti brevi',
       services: ['Web design', 'Digital experience', 'Sviluppo', 'Sito in tre lingue'],
-      headline: 'La casa sul lago, piano per piano.',
+      headline: 'La casa sul lago, raccontata piano per piano.',
       overview: 'Il sito di una residenza ricavata da un’antica limonaia a Torri del Benaco: la villa intera e i suoi tre piani, prenotabili insieme o da soli, raccontati in italiano, inglese e tedesco.',
       challenge: 'Tre piani che si prenotano da soli o insieme, ospiti da tutta Europa e portali che trattengono una commissione su ogni notte. Serviva un sito che aiutasse a scegliere la soluzione giusta e desse un motivo per prenotare direttamente.',
       goals: [

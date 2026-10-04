@@ -21,8 +21,8 @@ export default function ProjectsPage() {
           <PageIntro
             crumbs={[{ name: 'Progetti' }]}
             label="Progetti"
-            title={<>Progetti, <em>non promesse.</em></>}
-            lead={['Ogni progetto nasce da un problema diverso. Per questo ogni soluzione deve avere una direzione propria.', 'Sono tutti online: puoi leggere come ci abbiamo ragionato, poi aprirli e giudicare da te.']}
+            title={<>Made to be <em>seen.</em></>}
+            lead={['Progetti digitali costruiti per attirare lo sguardo, guidare l’esperienza e lasciare un’impressione.']}
           />
 
           <section className="gm-section" aria-label="Casi studio">

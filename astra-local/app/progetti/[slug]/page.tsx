@@ -8,6 +8,8 @@ import SiteFooter from '../../site-footer';
 import { Closing } from '../../inner';
 import { caseStudies, type CaseStudy } from '../../content';
 import { jsonLd, pageMetadata, studyLd, studyPath } from '../../seo';
+import LalingaOro from './lalinga-oro';
+import ResidenzaVedovelli from './residenza-vedovelli';
 import '../case-study.css';
 
 // One page per project, built at deploy time from content.ts.
@@ -85,6 +87,13 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
     </div>
   );
   const chapters = chaptersOf(study, phone);
+  // Projects told as a story (case-story.tsx), each in its own file; any
+  // other project follows the shared model below.
+  const stories: Record<string, typeof LalingaOro> = {
+    'lalinga-oro': LalingaOro,
+    'residenza-vedovelli': ResidenzaVedovelli,
+  };
+  const Own = stories[study.slug];
 
   return (
     <>
@@ -93,6 +102,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
       {/* The page and its footer share one light at the bottom: the dawn. */}
       <div className="gm-page">
         <main className="gm-case" id="contenuto">
+          {Own ? <Own project={project} index={index} total={caseStudies.length} /> : <>
           {/* Who, where, what, at a glance. */}
           <section className="gm-case-hero gm-wrap" aria-labelledby="case-title">
             <nav className="gm-case-crumbs" aria-label="Percorso">
@@ -182,6 +192,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
               </a>
             )}
           </section>
+          </>}
 
           {/* On to the next project. */}
           {next !== project && (
