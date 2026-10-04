@@ -82,6 +82,7 @@
 .gm-film-toggle:hover,
 .gm-film-toggle:focus-visible { opacity: 1; }
 .gm-film-toggle[disabled] { opacity: 0; }
+.gm-film-toggle[hidden] { display: none; }
 .gm-film-toggle svg { position: absolute; inset: 0; transform: rotate(-90deg); }
 .gm-film-toggle circle { fill: none; stroke-width: 1.5; }
 .gm-film-toggle .track { stroke: rgb(243 241 236 / 18%); }

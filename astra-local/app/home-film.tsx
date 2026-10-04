@@ -77,11 +77,21 @@ export default function HomeFilm() {
         toggle.disabled = state === 'loading';
         toggle.setAttribute('aria-label', state === 'playing' ? 'Metti in pausa il video' : state === 'paused' ? 'Riproduci il video' : 'Video in caricamento');
       };
-
-      if (posterOnly()) {
+      const stopFrames = () => {
+        if ('requestVideoFrameCallback' in video) video.cancelVideoFrameCallback(videoFrame);
+      };
+      const showPoster = () => {
+        stopFrames();
+        delete section.dataset.playing;
         setStill(true);
         setPhase('risultato');
         setToggle('paused');
+      };
+      const onImageLoad = () => { if (!section.hasAttribute('data-playing')) glowFrom(image); };
+      image.addEventListener('load', onImageLoad);
+
+      if (posterOnly()) {
+        showPoster();
       } else {
         setPhase('progetto');
         setToggle('loading');
@@ -126,6 +136,7 @@ export default function HomeFilm() {
 
       // The film's own frames drive the glow, the ring and the caption.
       const tick = (_now?: number, meta?: { mediaTime: number }) => {
+        if (video.paused) return;
         const t = meta?.mediaTime ?? video.currentTime;
         const now = performance.now();
         if (now - lastGlow > 120) { lastGlow = now; glowFrom(video); }
@@ -143,9 +154,9 @@ export default function HomeFilm() {
         }
         focus();
       };
-      const onPause = () => { setToggle('paused'); focus(); };
+      const onPause = () => { stopFrames(); setToggle('paused'); focus(); };
       const onTime = () => { if (!('requestVideoFrameCallback' in video)) tick(); };
-      const onError = () => { toggle.hidden = true; };
+      const onError = () => { video.pause(); showPoster(); toggle.hidden = true; focus(); };
       const onToggle = () => {
         if (video.paused) {
           userPaused = false;
@@ -201,10 +212,11 @@ export default function HomeFilm() {
       const onVisibility = () => sync();
       document.addEventListener('visibilitychange', onVisibility);
       const onMotion = () => {
-        if (motion.matches && !userPlay) {
+        if (motion.matches) {
+          // A new request to stop animations also overrides manual playback.
+          userPlay = false;
           video.pause();
-          setStill(true);
-          setPhase('risultato');
+          showPoster();
         }
         sync();
       };
@@ -231,7 +243,8 @@ export default function HomeFilm() {
         seen.disconnect();
         resize.disconnect();
         timers.forEach(clearTimeout);
-        if ('requestVideoFrameCallback' in video) video.cancelVideoFrameCallback(videoFrame);
+        stopFrames();
+        image.removeEventListener('load', onImageLoad);
         document.removeEventListener('visibilitychange', onVisibility);
         motion.removeEventListener('change', onMotion);
         video.removeEventListener('playing', onPlaying);
