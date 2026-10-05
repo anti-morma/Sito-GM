@@ -46,8 +46,20 @@ function ProjectCard({ project }: { project: Project }) {
         <h3>{project.name}</h3>
         <p className="gm-project-category">{project.home?.category ?? project.category}</p>
       </div>
-      {/* The site itself, moving: just to watch (the buttons under it act). */}
-      <div className="gm-project-media">{media}</div>
+      {/* The whole preview opens the live site, just like the link below. */}
+      {project.href ? (
+        <a
+          className="gm-project-media"
+          href={project.href}
+          target="_blank"
+          rel="noopener"
+          aria-label={`Visita il sito di ${project.name} (${host}, si apre in una nuova scheda)`}
+          data-cta="sito-cliente"
+          data-project={project.name}
+        >
+          {media}
+        </a>
+      ) : <div className="gm-project-media">{media}</div>}
       <div className="gm-project-actions">
         {study && (
           <Link className="gm-btn gm-btn--primary" href={study} data-cta="progetto" data-project={project.name}>
