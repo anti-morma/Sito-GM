@@ -39,7 +39,7 @@ export function GET() {
     '## Contatti',
     `- Modulo di contatto: ${site.url}/contatti`,
     ...(site.email ? [`- Email: ${site.email}`] : []),
-    ...(site.phone ? [`- Telefono: ${site.phone}`] : []),
+    ...site.phones.map((v) => `- Telefono: +39 ${v}`),
     '',
   ];
   return new Response(lines.join('\n'), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });

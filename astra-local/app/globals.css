@@ -390,6 +390,8 @@ em { font-style: normal; }
 .gm-mobile-menu-info { display: grid; gap: 6px; color: var(--ink-3); font-size: 12px; line-height: 1.5; text-align: center; }
 .gm-mobile-menu-contacts { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 22px; margin: 0; padding: 0; list-style: none; }
 .gm-mobile-menu .gm-mobile-menu-contacts li { border: 0; }
+/* The e-mail on a line of its own, the two phones side by side below it. */
+.gm-mobile-menu-contacts li[data-kind='email'] { flex-basis: 100%; text-align: center; }
 .gm-mobile-menu-contacts a,
 .gm-mobile-menu-contacts .gm-detail-missing { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); font-size: 17px; }
 .gm-mobile-menu-legal span:not(:last-child)::after,
@@ -1176,9 +1178,17 @@ em { font-style: normal; }
 .gm-mobile-menu-info .gm-where-link { justify-self: center; margin: 0 0 10px; }
 .gm-where-link + .gm-footer-legal { margin-top: 14px; }
 .gm-footer-legal { margin-top: 6px; }
+/* The e-mail, then the two phones, one under the other. */
+.gm-footer-bottom ul.gm-footer-contacts { flex-direction: column; align-items: flex-start; gap: 0; }
+/* With a mouse, a tighter stack (touch screens keep the 44px tap height). */
+@media (hover: hover) and (pointer: fine) { .gm-footer-bottom .gm-footer-contacts a { min-height: 30px; } }
 .gm-footer-bottom ul { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px; margin: 0; padding: 0; list-style: none; }
 .gm-footer-bottom a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); text-decoration: none; }
 .gm-footer-bottom a:hover { color: var(--ink); }
+
+/* A phone with its handset (footer, phone menu). */
+.gm-detail-with-icon { gap: 8px; }
+.gm-detail-icon { flex: none; color: var(--accent); }
 
 /* A studio detail not filled in yet (development only, see studio-details.tsx). */
 .gm-detail-missing { opacity: 0.5; text-decoration: underline dashed; text-underline-offset: 4px; }

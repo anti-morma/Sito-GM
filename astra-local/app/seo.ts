@@ -116,7 +116,7 @@ export function organizationLd() {
     })),
     ...(address ? { address } : {}),
     ...(site.email ? { email: site.email } : {}),
-    ...(site.phone ? { telephone: site.phone } : {}),
+    ...(site.phones.length ? { telephone: site.phones.map((v) => `+39 ${v}`) } : {}),
     ...(site.legalName ? { legalName: site.legalName } : {}),
     ...(site.vat ? { vatID: site.vat } : {}),
     ...(site.profiles.length ? { sameAs: site.profiles } : {}),

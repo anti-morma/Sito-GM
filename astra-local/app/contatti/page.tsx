@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import ContactForm from '../_contact/form';
 import GrowTextarea from '../grow-textarea';
 import Reveal from '../reveal';
@@ -6,7 +5,7 @@ import SiteFooter from '../site-footer';
 import { PageIntro } from '../inner';
 import { nextSteps, site } from '../content';
 import { contactLd, jsonLd, pageMetadata } from '../seo';
-import { contactDetails, DetailText } from '../studio-details';
+import { ContactWays, contactDetails } from '../studio-details';
 
 const DESCRIPTION = 'Raccontaci che cosa vuoi costruire: un sito web su misura, un rinnovo, un’esperienza 3D. Ti rispondiamo per una prima consulenza, senza impegno.';
 
@@ -46,9 +45,7 @@ export default function ContactPage() {
                 </div>
                 {contacts.length > 0 && (
                   <p className="gm-contact-mail">
-                    Oppure {contacts.map((item, index) => (
-                      <Fragment key={item.key}>{index > 0 && ' o '}{item.key === 'email' ? 'scrivici a ' : 'chiamaci al '}<DetailText item={item} /></Fragment>
-                    ))}
+                    Oppure <ContactWays items={contacts} emailLead="scrivici a " or=" o " />
                   </p>
                 )}
               </div>

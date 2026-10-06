@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Fragment } from 'react';
 import Link from 'next/link';
 import Bridge from './bridge';
 import ContactForm from './_contact/form';
@@ -16,7 +15,7 @@ import SectionLabel from './section-label';
 import SiteFooter from './site-footer';
 import { founders, projects, site, type Project } from './content';
 import { homeLd, jsonLd, OG_IMAGE, openGraphBase, siteSummary, studyPath } from './seo';
-import { contactDetails, DetailText } from './studio-details';
+import { ContactWays, contactDetails } from './studio-details';
 import './home.css';
 
 
@@ -145,19 +144,13 @@ export default function Home() {
                 <SectionLabel>Contatti</SectionLabel>
                 <h2 id="contatti-title" className="gm-h2 gm-h2--xl">Parliamo del tuo progetto.</h2>
                 <p className="gm-lead">Hai un’attività, un’idea o un progetto da portare online? Raccontaci cosa hai in mente. Ci bastano poche righe per iniziare a capire dove possiamo portarlo.</p>
-                {/* The studio's real e-mail and phone (content.ts): "e-mail" and
-                    "telefono" are the links; a detail not filled in is left out. */}
+                {/* The studio's real e-mail and phones (content.ts): "e-mail" and
+                    the numbers are the links; a detail not filled in is left out. */}
                 {contacts.length > 0 && (
                   <p className="gm-contact-mail">
                     Preferisci parlarne direttamente?{' '}
                     <span className="gm-contact-ways">
-                      {contacts.map((item, index) => (
-                        <Fragment key={item.key}>
-                          {index > 0 && ' oppure '}
-                          {item.key === 'email' ? (index ? 'scrivici via ' : 'Scrivici via ') : (index ? 'chiamaci al ' : 'Chiamaci al ')}
-                          <DetailText item={{ ...item, text: item.key === 'email' ? 'e-mail' : 'telefono' }} />
-                        </Fragment>
-                      ))}.
+                      <ContactWays items={contacts} emailText="e-mail" emailLead="Scrivici via " />.
                     </span>
                   </p>
                 )}

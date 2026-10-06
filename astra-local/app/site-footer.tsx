@@ -35,7 +35,7 @@ export default function SiteFooter({ cta = true }: { cta?: boolean }) {
           </div>
           {contacts.length > 0 && (
             <ul className="gm-footer-contacts" aria-label="Contatti">
-              {contacts.map((item) => <li key={item.key}><DetailText item={item} /></li>)}
+              {contacts.map((item) => <li key={item.key}><DetailText item={item} icon /></li>)}
             </ul>
           )}
           <ul aria-label="Informazioni legali">

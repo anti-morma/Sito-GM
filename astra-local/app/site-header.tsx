@@ -206,7 +206,7 @@ export default function SiteHeader() {
             <WhereLink current={pathname === wherePath} onClick={() => setMenuOpen(false)} />
             {contacts.length > 0 && (
               <ul className="gm-mobile-menu-contacts" aria-label="Contatti">
-                {contacts.map((item) => <li key={item.key}><DetailText item={item} /></li>)}
+                {contacts.map((item) => <li key={item.key} data-kind={item.kind}><DetailText item={item} icon /></li>)}
               </ul>
             )}
             {legal.length > 0 && (

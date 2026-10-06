@@ -7,8 +7,9 @@ export const site = {
   // Contacts: the contact section, the footer and the phone menu.
   /** Public contact e-mail, e.g. 'ciao@gomore.it'. */
   email: 'info@gomore.studio',
-  /** Phone as it should read, e.g. '+39 333 123 4567' (the link dials the digits). */
-  phone: '',
+  /** Phones as they should read, one per line, e.g. '333 123 4567' (the link
+   *  dials +39 and the digits). First Ludovico's, then Alessandro's, unnamed. */
+  phones: ['345 736 4061', '371 190 8462'],
   // Legal details: the footer, the phone menu and the privacy policy
   // (an Italian business site must show its P.IVA).
   /** The owners, each with their own Partita IVA: shown name by name in the
