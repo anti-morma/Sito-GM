@@ -8,7 +8,7 @@ import DynamicGMLogo from './dynamic-gm-logo';
 import { isReducedMotion } from './motion';
 import MotionToggle from './motion-toggle';
 import { wherePath } from './places';
-import { contactDetails, DetailText, legalDetails } from './studio-details';
+import { contactDetails, detailClass, DetailText, legalDetails } from './studio-details';
 import WhereLink from './where-link';
 
 // The site's pages, in order. Each link always opens its page, from anywhere:
@@ -211,7 +211,7 @@ export default function SiteHeader() {
             )}
             {legal.length > 0 && (
               <p className="gm-mobile-menu-legal">
-                {legal.map((item) => <span key={item.key}><DetailText item={item} /></span>)}
+                {legal.map((item) => <span key={item.key} className={detailClass(item)}><DetailText item={item} /></span>)}
               </p>
             )}
             <p className="gm-mobile-menu-pages">

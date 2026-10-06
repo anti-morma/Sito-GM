@@ -1,0 +1,18 @@
+{
+  "studio": {
+    "email": "info@gomore.studio",
+    "sito": "www.gomore.studio"
+  },
+  "persone": [
+    {
+      "nome": "Ludovico Gusmano",
+      "ruolo": "Strategy · UX/UI",
+      "telefono": "+39 345 736 4061"
+    },
+    {
+      "nome": "Alessandro Mormandi",
+      "ruolo": "Development · 3D",
+      "telefono": "+39 371 190 8462"
+    }
+  ]
+}

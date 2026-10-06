@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { primaryCta, site } from './content';
-import { contactDetails, DetailText, legalDetails } from './studio-details';
+import { contactDetails, detailClass, DetailText, legalDetails } from './studio-details';
 import WhereLink from './where-link';
 
 /** The same footer on every page: the last call (where the page has none of
@@ -29,7 +29,7 @@ export default function SiteFooter({ cta = true }: { cta?: boolean }) {
             <WhereLink />
             {legal.length > 0 && (
               <p className="gm-footer-legal">
-                {legal.map((item) => <span key={item.key}><DetailText item={item} /></span>)}
+                {legal.map((item) => <span key={item.key} className={detailClass(item)}><DetailText item={item} /></span>)}
               </p>
             )}
           </div>

@@ -394,6 +394,10 @@ em { font-style: normal; }
 .gm-mobile-menu-contacts .gm-detail-missing { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); font-size: 17px; }
 .gm-mobile-menu-legal span:not(:last-child)::after,
 .gm-footer-legal span:not(:last-child)::after { content: '·'; margin-inline: 0.5em; }
+/* The owners, each on a line of their own with their P.IVA. */
+.gm-detail-line { display: block; }
+.gm-mobile-menu-legal span.gm-detail-line::after,
+.gm-footer-legal span.gm-detail-line::after { content: none; }
 .gm-mobile-menu-pages { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 24px; }
 .gm-mobile-menu-pages :is(a, .gm-motion-toggle) { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); font-size: 13px; }
 

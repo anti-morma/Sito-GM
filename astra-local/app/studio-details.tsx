@@ -6,7 +6,7 @@ import { site } from './content';
 // placeholders, to show where each detail will go.
 const preview = process.env.NODE_ENV !== 'production';
 
-type Detail = { key: string; text: string; href?: string; missing?: boolean };
+type Detail = { key: string; text: string; href?: string; missing?: boolean; line?: boolean };
 
 const detail = (key: string, value: string, placeholder: string, format = (v: string) => v, href?: (v: string) => string): Detail[] =>
   value ? [{ key, text: format(value), href: href?.(value) }]
@@ -19,13 +19,18 @@ export const contactDetails = () => [
 ];
 
 export const legalDetails = () => [
-  ...detail('name', site.legalName, 'Ragione sociale'),
-  ...detail('vat', site.vat, 'P.IVA', (v) => `P.IVA ${v}`),
+  // The owners, one per line, each with their P.IVA; otherwise a single holder.
+  ...(site.owners.length
+    ? site.owners.map((o): Detail => ({ key: `owner-${o.vat}`, text: `${o.name} · P.IVA ${o.vat}`, line: true }))
+    : [...detail('name', site.legalName, 'Ragione sociale'), ...detail('vat', site.vat, 'P.IVA', (v) => `P.IVA ${v}`)]),
   ...detail('address', site.address, 'Sede legale'),
   ...detail('pec', site.pec, 'PEC', (v) => `PEC ${v}`),
 ];
 
 /** One detail: a link when it has one, a dimmed placeholder while it is missing. */
+/** A detail that sits on a line of its own (an owner and their P.IVA). */
+export const detailClass = (item: Detail) => (item.line ? 'gm-detail-line' : undefined);
+
 export function DetailText({ item }: { item: Detail }) {
   if (item.missing) return <span className="gm-detail-missing" title="Da completare in app/content.ts">{item.text}</span>;
   return item.href ? <a href={item.href}>{item.text}</a> : <>{item.text}</>;

@@ -6,11 +6,17 @@ export const site = {
   url: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.gomore.studio',
   // Contacts: the contact section, the footer and the phone menu.
   /** Public contact e-mail, e.g. 'ciao@gomore.it'. */
-  email: '',
+  email: 'info@gomore.studio',
   /** Phone as it should read, e.g. '+39 333 123 4567' (the link dials the digits). */
   phone: '',
   // Legal details: the footer, the phone menu and the privacy policy
   // (an Italian business site must show its P.IVA).
+  /** The owners, each with their own Partita IVA: shown name by name in the
+   *  footer, the phone menu and the legal pages, in place of legalName/vat. */
+  owners: [
+    { name: 'Ludovico Gusmano', vat: '03499980732' },
+    { name: 'Alessandro Mormandi', vat: '03500090737' },
+  ],
   /** Ragione sociale, e.g. 'GoMore S.r.l.' or 'Mario Rossi'. */
   legalName: '',
   /** Partita IVA, digits only, e.g. '01234567890'. */

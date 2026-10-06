@@ -3,8 +3,8 @@ import SiteFooter from './site-footer';
 import { site } from './content';
 
 export const owner = () => ({
-  name: site.legalName || '[Ragione sociale da completare]',
-  vat: site.vat || '[P.IVA da completare]',
+  name: site.owners.length ? site.owners.map((o) => o.name).join(' e ') : site.legalName || '[Ragione sociale da completare]',
+  vat: site.owners.length ? site.owners.map((o) => `${o.name}: P.IVA ${o.vat}`).join(', ') : site.vat || '[P.IVA da completare]',
   address: site.address || '[Sede legale da completare]',
   email: site.email || '[E-mail di contatto da completare]',
 });
